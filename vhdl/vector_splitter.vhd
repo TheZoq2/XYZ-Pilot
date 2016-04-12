@@ -16,6 +16,9 @@ end VectorSplitter;
 
 architecture Behavioral of VectorSplitter is
 begin
-
+    vec(0) <= memory(Vector.MEMORY_SIZE / 4 * 1 - 1 downto Vector.MEMORY_SIZE / 4 * 0);
+    vec(1) <= memory(Vector.MEMORY_SIZE / 4 * 2 - 1 downto Vector.MEMORY_SIZE / 4 * 1);
+    vec(2) <= memory(Vector.MEMORY_SIZE / 4 * 3 - 1 downto Vector.MEMORY_SIZE / 4 * 2);
+    vec(3) <= memory(Vector.MEMORY_SIZE / 4 * 4 - 1 downto Vector.MEMORY_SIZE / 4 * 3);
 end Behavioral;
 
