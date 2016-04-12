@@ -5,18 +5,22 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 entity pixel_mem is
 port (clk : in std_logic;
     -- port IN
-    write_x : in std_logic_vector(8 downto 0);
-    write_y : in std_logic_vector(7 downto 0);
+    write_adress: in std_logic_vector(16 downto 0);
     we : in std_logic;
     write_data : in std_logic;
     -- port OUT
-    read_x : in std_logic_vector(8 downto 0);
-    read_y : in std_logic_vector(7 downto 0);
+    read_adress: in std_logic_vector(16 downto 0);
     re : in std_logic;
     read_data : out std_logic;
 end pixel_mem;
 
 architecture Behavioral of pixel_mem is
+
+signal write_x :std_logic_vector(8 downto 0); -- X pos for input
+signal write_y :std_logic_vector(7 downto 0); -- X pos for input
+signal read_x :std_logic_vector(8 downto 0); -- X pos for input
+signal read_y :std_logic_vector(7 downto 0); -- X pos for input
+
 
 -- Declaration of pixel memory of 131072 adresses
 type ram_t is array (0 to 131071) of std_logic;
@@ -25,6 +29,10 @@ type ram_t is array (0 to 131071) of std_logic;
 signal ram : ram_t := (others => '0');
 
 begin
+		write_x <= write_adress(16 downto 8);
+		write_y <= write_adress(7 downto 0);
+		read_x <= read_adress(16 downto 8);
+		read_y <= read_adress(7 downto 0);
     process(clk)
     begin
         if (rising_edge(clk)) then
