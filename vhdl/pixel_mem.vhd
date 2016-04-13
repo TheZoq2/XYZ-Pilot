@@ -11,7 +11,7 @@ port (clk : in std_logic;
     -- port OUT
     read_adress: in std_logic_vector(16 downto 0);
     re : in std_logic;
-    read_data : out std_logic;
+    read_data : out std_logic);
 end pixel_mem;
 
 architecture Behavioral of pixel_mem is
@@ -38,12 +38,12 @@ begin
         if (rising_edge(clk)) then
             -- WRITE
             if (we = '1') then
-                pixel_mem(320*conv_integer(write_y)+
-                conv_integer(write_x)) <= write_data;
+                ram(320*conv_integer(write_y)+
+		conv_integer(write_x)) <= write_data;
             end if;
             -- READ
             if (re = '1') then
-                read_data <= pixel_mem(320*conv_integer(read_y)+
+                read_data <= ram(320*conv_integer(read_y)+
                 conv_integer(read_x));
             end if;
         end if;
