@@ -31,11 +31,11 @@ component pixel_mem is
 port (clk : in std_logic;
     -- port IN
     write_adress: in std_logic_vector(16 downto 0);		-- Write adress	
-    we : in std_logic;									-- Write enable
+    we : in std_logic;									-- Write Enable
     write_data : in std_logic;							-- Write data
     -- port OUT
     read_adress: in std_logic_vector(16 downto 0);		-- Read adress
-    re : in std_logic;									-- Read enable
+    re : in std_logic;									-- Read Enable
     read_data : out std_logic);							-- Read data
 end component;
 
