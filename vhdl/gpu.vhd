@@ -9,6 +9,11 @@ package GPU_Info is
 
     constant MODEL_ADDR_SIZE: positive := 16;
     constant MODEL_DATA_SIZE: positive := 64;
+
+    constant READ_OBJECT_STATE: std_logic_vector(1 downto 0) := "00";
+    constant FETCH_LINE_STATE: std_logic_vector(1 downto 0) := "01";
+    constant CALCULATE_LENGTH_STATE: std_logic_vector(1 downto 0) := "10";
+    constant CALCULATE_PIXELS_STATE: std_logic_vector(1 downto 0) := "11";
 end package;
 
 --Behaviour code
@@ -33,6 +38,10 @@ entity GPU is
             line_register: inout std_logic_vector(GPU_Info.MODEL_ADDR_SIZE - 1 downto 0);
             line_data: in std_logic_vector(GPU_Info.MODEL_DATA_SIZE - 1 downto 0)
 
+            pixel_address: out std_logic_vector(16 downto 0);
+            pixel_data: out std_logic;
+            pixel_write_enable: out std_logic;
+
         );
 end entity;
 
@@ -51,8 +60,16 @@ architecture Behavioral of GPU is
 
     signal transform_reg_addr: std_logic_vector(3 downto 0);
     signal transform_reg_write_enable: std_logic;
-begin
 
+    --Decides which vector register in the gpu to write the current line in the model memory  to
+    signal write_start_or_end: std_logic;
+
+    signal start_vector: work.Vector.InMemory_t;
+    signal end_vector: work.Vector.InMemory_t;
+
+    signal x_pixel: std_logic_vector(8 downto 0);
+    signal y_pixel: std_logic_vector(7 downto 0);
+begin
     -------------------------------------------
     --Updating the line register
     with line_mux_in select
@@ -75,12 +92,12 @@ begin
     --Main GPU state machine
     process(clk) begin
         if rising_edge(clk) then
-            if gpu_state = "00" then
+            if gpu_state = GPU_Info.READ_OBJECT_STATE then
                 
                 --If we have read all the data
                 if current_obj_offset = "100" then
                     current_obj_offset <= "0";
-                    gpu_state <= "01";
+                    gpu_state <= GPU_Info.FETCH_LINE_STATE;
                     transform_reg_write_enable <= '0';
                 else
                     --Reading a new model and transform
@@ -88,14 +105,23 @@ begin
 
                     transform_reg_write_enable <= '1';
                 end if;
-            elsif gpu_state = "01" then
+            elsif gpu_state = GPU_Info.FETCH_LINE_STATE then
                 --Reading the next start and end of lines
-            else 
+                if write_start_or_end = '1' then
+                    start_vector <= line_data;
+                    write_start_or_end <= '1';
+                else
+                    end_vector <= line_data;
+                    write_start_or_end <= '1';
+
+                    gpu_state <= GPU_Info.CALCULATE_LENGTH_STATE;
+                end if
+            elsif gpu_state = GPU_Info.CALCULATE_LENGTH_STATE then
+                --TODO: Do length and  normal calculation
+            else
                 --Calculating pixels
+                
             end if;
         end if;
     end process;
-
-    
 end Behavioral;
-
