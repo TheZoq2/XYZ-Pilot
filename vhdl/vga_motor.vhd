@@ -26,9 +26,9 @@ architecture Behavioral of vga_motor is
 	signal 	x_mem_pos	: std_logic_vector(8 downto 0); 	-- X memory position
 	signal 	y_mem_pos	: std_logic_vector(7 downto 0);		-- Y memory position
 
-  	signal	x_pixel	   	: std_logic_vector(9 downto 0);   	-- Horizontal pixel counter
-	signal	y_pixel	  	: std_logic_vector(9 downto 0);		-- Vertical pixel counter
-  	signal	clk_div	   	: std_logic_vector(1 downto 0);		-- Clock divisor, to generate 25 MHz signal
+  	signal	x_pixel	   	: std_logic_vector(9 downto 0) := "0000000000";   	-- Horizontal pixel counter
+	signal	y_pixel	  	: std_logic_vector(9 downto 0) := "0000000000";		-- Vertical pixel counter
+  	signal	clk_div	   	: std_logic_vector(1 downto 0) := "00";		-- Clock divisor, to generate 25 MHz signal
   	signal	clk_25		: std_logic;						-- One pulse width 25 MHz signal
 
   	signal  blank		: std_logic;                   		-- blanking signal
@@ -69,7 +69,7 @@ begin
   		if rising_edge(clk) then
       		if(clk_25 = '1') then
 				if(x_pixel = x_max) then
-					x_pixel <= "0";
+					x_pixel <= "0000000000";
 				else
 					x_pixel <= x_pixel + 1;
 				end if;
@@ -99,9 +99,9 @@ begin
  	process(clk)
   	begin
     	if rising_edge(clk) then
-      		if(clk_25 = '1') then
+      		if(clk_25 = '1') and (x_pixel = x_max)then
 				if(y_pixel = y_max) then
-					y_pixel <= "0";
+					y_pixel <= "0000000000";
 				else
 					y_pixel <= y_pixel + 1;
 				end if;
@@ -146,9 +146,9 @@ begin
 		if rising_edge(clk) then
 			if(clk_25 = '1') then
 				re <= '1';
+			else
+				re <= '0';
 			end if;
-		else
-			re <= '0';
 		end if;
 	end process;
 				
@@ -161,9 +161,10 @@ begin
 	addr <= x_mem_pos & y_mem_pos;
 
 	-- MUX
+	-- data = 1 represent white pixel, data = 0 represent black pixel
 	pixel_data <= "00000000" when blank = '1' else
-								"11111111" when data = '1' else
-								"00000000";
+				"00000000" when data = '1' else
+				"11111111";
 
 
 end Behavioral;

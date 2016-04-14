@@ -62,7 +62,7 @@ pixel_mem_we <= '0';
 
 -- Pixel memory component connection
 	U1 : pixel_mem port map(clk=>clk, write_adress=>pixel_mem_write_addr, we=>pixel_mem_we, 
-	write_data=>pixel_mem_write_data, read_adress=>pixel_mem_read_addr, re=>pixel_mem_we,
+	write_data=>pixel_mem_write_data, read_adress=>pixel_mem_read_addr, re=>pixel_mem_re,
 	read_data=>pixel_mem_read_data);
 
 end Behavioral;
