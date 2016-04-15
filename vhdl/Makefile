@@ -41,7 +41,7 @@ lab.%: vector_merger.vhd
 lab.%: Vector.vhd 
 lab.%: vga_motor.vhd 
 lab.%: pixel_mem.vhd 
-
+ 
 lab.%: T=vector_tb.vhd
 lab.%: U=Nexys3.ucf
 
