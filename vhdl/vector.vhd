@@ -1,5 +1,4 @@
 --Package with types used to represent vectors in memory and in modules
-
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.std_logic_arith.all;
