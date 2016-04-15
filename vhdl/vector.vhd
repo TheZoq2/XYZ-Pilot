@@ -1,5 +1,4 @@
 --Package with types used to represent vectors in memory and in modules
-
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.std_logic_arith.all;
@@ -11,5 +10,10 @@ package  Vector is
     subtype InMemory_t is std_logic_vector(MEMORY_SIZE - 1 downto 0);
 
     type Elements_t is array(3 downto 0) of std_logic_vector(MEMORY_SIZE / 4 - 1 downto 0);
+
+    constant FRAC_PART: positive := 12;
+    constant OTHER_PART: positive := 5;
+
+    type Elements_t is sfixed(FRAC_PART downto -OTHER_PART);
 end package;
 
