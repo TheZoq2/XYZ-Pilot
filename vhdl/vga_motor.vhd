@@ -34,12 +34,12 @@ architecture Behavioral of vga_motor is
   	signal  blank		: std_logic;                   		-- blanking signal
 
 	constant x_max 			: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(799,10));
-	constant x_blank		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(639,10));
-	constant x_sync_start	: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(655,10));
-	constant x_sync_end		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(751,10));
+	constant x_blank		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(640,10));
+	constant x_sync_start	: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(656,10));
+	constant x_sync_end		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(752,10));
 	constant y_max			: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(520,10));
-	constant y_blank		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(479,10));
-	constant y_sync_start	: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(489,10));
+	constant y_blank		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(480,10));
+	constant y_sync_start	: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(490,10));
 	constant y_sync_end		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(492,10));
 
 
@@ -61,9 +61,7 @@ begin
   	-- 25 MHz clock (one system clock pulse width)
   	clk_25 <= '1' when (clk_div = 3) else '0';
 	
-	
   	-- Horizontal pixel counter
-
 	process(clk)
   	begin
   		if rising_edge(clk) then
@@ -79,12 +77,11 @@ begin
 
 
   
-  -- Horizontal sync
-
+  	-- Horizontal sync
 	process(clk)
   	begin
     	if rising_edge(clk) then
-      		if (x_pixel >= x_sync_start and x_pixel < x_sync_end) then
+      		if (x_pixel >= x_sync_start and x_pixel <= x_sync_end) then
 				h_sync <= '0';
 			else
 				h_sync <= '1';
@@ -94,8 +91,7 @@ begin
   
 
   
-  -- Vertical pixel counter
-
+  	-- Vertical pixel counter
  	process(clk)
   	begin
     	if rising_edge(clk) then
@@ -108,15 +104,13 @@ begin
 			end if;
     	end if;
   	end process;
-
 	
 
-  -- Vertical sync
-
+  	-- Vertical sync
 	process(clk)
   	begin
     	if rising_edge(clk) then
-      		if (y_pixel >= y_sync_start and y_pixel < y_sync_end) then
+      		if (y_pixel >= y_sync_start and y_pixel <= y_sync_end) then
 				v_sync <= '0';
 			else
 				v_sync <= '1';
@@ -124,10 +118,8 @@ begin
     	end if;
   end process;
 
-
-
   
-  -- Video blanking signal
+  	-- Video blanking signal
 	process(clk)
   	begin
     	if rising_edge(clk) then
@@ -139,32 +131,20 @@ begin
 		end if;
   	end process;
 
-	
-	-- Read enable 
-	process(clk)
-	begin
-		if rising_edge(clk) then
-			if(clk_25 = '1') then
-				re <= '1';
-			else
-				re <= '0';
-			end if;
-		end if;
-	end process;
-				
 
-	
+	-- Read Enable
+	re <= clk_25;
 
 	-- Conversion from pixel count to position in memory
 	x_mem_pos <= x_pixel(9 downto 1); -- "x_pixel / 2"
 	y_mem_pos <= y_pixel(8 downto 1); -- "y_pixel / 2"
-	addr <= x_mem_pos & y_mem_pos;
+	addr <= (x_mem_pos & y_mem_pos);
 
 	-- MUX
 	-- data = 1 represent white pixel, data = 0 represent black pixel
-	pixel_data <= "00000000" when blank = '1' else
-				"00000000" when data = '1' else
-				"11111111";
+	pixel_data <= "11111111" when blank = '1' else
+				"11111111" when data = '1' else
+				"00000000";
 
 
 end Behavioral;

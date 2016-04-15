@@ -26,7 +26,8 @@ signal read_y :std_logic_vector(7 downto 0); -- Y pos for output
 type ram_t is array (0 to 131071) of std_logic;
 
 -- Clears all adresses
-signal ram : ram_t := (321 => '1',641 => '1', 961 => '1', 962 => '1', 963 => '1', others => '0');
+signal ram : ram_t := (963 => '1',1283 => '1', 1603 => '1', 1604 => '1', 1605 => '1',
+			319 =>'1',76480=>'1', others => '0');
 
 
 begin
