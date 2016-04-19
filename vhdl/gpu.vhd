@@ -24,6 +24,7 @@ use IEEE.std_logic_unsigned.all;
 
 use work.Vector;
 use work.GPU_Info;
+--use work.vector_alu.all;
 
 entity GPU is
     port(
@@ -36,16 +37,30 @@ entity GPU is
 
             --Data from the  model memory
             line_register: inout std_logic_vector(GPU_Info.MODEL_ADDR_SIZE - 1 downto 0);
-            line_data: in std_logic_vector(GPU_Info.MODEL_DATA_SIZE - 1 downto 0)
+            line_data: in std_logic_vector(GPU_Info.MODEL_DATA_SIZE - 1 downto 0);
 
             pixel_address: out std_logic_vector(16 downto 0);
             pixel_data: out std_logic;
-            pixel_write_enable: out std_logic;
+            pixel_write_enable: out std_logic
 
         );
 end entity;
 
 architecture Behavioral of GPU is
+    component VectorLength is
+        port(
+                vec1: in Vector.Elements_t;
+                result: out std_logic_vector(15 downto 0)
+            );
+    end component;
+    component VectorSubtractor is
+        port(
+                vec1: in Vector.Elements_t;
+                vec2: in Vector.Elements_t;
+                result: out Vector.Elements_t
+            );
+    end component;
+
     --The mux which decides if we want to start reading a new model or read more lines in the  current  one
     signal line_mux_in: std_logic_vector(1 downto 0);
     signal line_mux_out: std_logic_vector(GPU_Info.MODEL_ADDR_SIZE - 1  downto 0);
@@ -58,7 +73,7 @@ architecture Behavioral of GPU is
     signal current_obj_offset: std_logic_vector(2 downto 0);
     signal current_obj: std_logic_vector(GPU_Info.OBJ_ADDR_SIZE - 1 downto 0);
 
-    signal transform_reg_addr: std_logic_vector(3 downto 0);
+    signal transform_reg_addr: std_logic_vector(2 downto 0);
     signal transform_reg_write_enable: std_logic;
 
     --Decides which vector register in the gpu to write the current line in the model memory  to
@@ -69,7 +84,26 @@ architecture Behavioral of GPU is
 
     signal x_pixel: std_logic_vector(8 downto 0);
     signal y_pixel: std_logic_vector(7 downto 0);
+
+    signal length_left: std_logic_vector(15 downto 0); --The length remaining  to be drawn
+
+    signal draw_start: Vector.Elements_t; --The start of the vector to be drawn on the screen
+    signal draw_end: Vector.Elements_t; --The end of ^^
+    signal draw_diff: Vector.Elements_t; --The vector between draw_start and  draw_end
+    signal draw_length: std_logic_vector(15 downto 0); --The length of draw_diff which will be put into length_left
+    signal draw_normal: Vector.Elements_t --Normalised version of the draw_diff vector. Will be used  for stepping along the line
+
 begin
+    draw_length_calculator: VectorLength port map(
+                        vec1 => draw_diff,
+                        result => draw_length
+                    );
+    draw_diff_calculator: VectorSubtractor port map(
+                        vec1 => draw_start,
+                        vec2 => draw_end,
+                        result => draw_diff
+                    );
+
     -------------------------------------------
     --Updating the line register
     with line_mux_in select
@@ -115,9 +149,10 @@ begin
                     write_start_or_end <= '1';
 
                     gpu_state <= GPU_Info.CALCULATE_LENGTH_STATE;
-                end if
+                end if;
             elsif gpu_state = GPU_Info.CALCULATE_LENGTH_STATE then
                 --TODO: Do length and  normal calculation
+
             else
                 --Calculating pixels
                 
