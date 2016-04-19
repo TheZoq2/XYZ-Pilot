@@ -12,7 +12,6 @@ package sqrt_pkg is
 end sqrt_pkg;
 
 package body sqrt_pkg is
-
     function sqrt (d: unsigned) 
         return UNSIGNED is
         variable a : unsigned(31 downto 0):=d;  --original input.
@@ -44,9 +43,7 @@ end sqrt_pkg;
 --              Vector adder
 -----------------------------------------------------------
 library IEEE;
-use IEEE.std_logic_1164.all;
-use IEEE.std_logic_arith.all;
-use IEEE.std_logic_unsigned.all;
+use IEEE.numeric_std.all;
 
 use work.Vector;
 
@@ -72,9 +69,7 @@ end Behavioral;
 --              Vector subtractor
 -----------------------------------------------------------
 library IEEE;
-use IEEE.std_logic_1164.all;
-use IEEE.std_logic_arith.all;
-use IEEE.std_logic_unsigned.all;
+use  IEEE.numeric_std.all;
 
 use work.Vector;
 
@@ -98,10 +93,7 @@ end Behavioral;
 ----------------------------------------------------------
 
 library IEEE;
-use IEEE.std_logic_1164.all;
-use IEEE.std_logic_arith.all;
-use IEEE.std_logic_unsigned.all;
-use IEEE.numeric_std;
+use IEEE.numeric_std.all;
 
 use work.Vector;
 use work.sqrt_pkg.all;
@@ -111,16 +103,15 @@ entity VectorLength is
             --The two vectors that should be added together
             vec1: in Vector.Elements_t;
 
-            result: out std_logic_vector(15 downto 0)
+            result: out unsigned(15 downto 0)
         );
 end VectorLength;
 
 architecture Behavioral of VectorLength is
-    signal sum: std_logic_vector(31 downto 0);
-    signal sqrt_result: std_logic_vector(15 downto 0);
+    signal sum: signed(31 downto 0);
+    signal sqrt_result: unsigned(15 downto 0);
 begin
     sum <= vec1(0) * vec1(0) + vec1(1) * vec1(1) + vec1(2) * vec1(2) + vec1(3) * vec1(3);
 
-    sqrt_result <= std_logic_vector(sqrt(numeric_std.unsigned(vec1(0))));
-    result <= sqrt_result(15 downto 0);
+    result <= sqrt(unsigned(sum));
 end Behavioral;

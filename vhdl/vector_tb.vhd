@@ -1,7 +1,5 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
-use IEEE.std_logic_arith.all;
-use IEEE.std_logic_unsigned.all;
 use IEEE.numeric_std.all;
 
 --Include the  types required by the splitter
@@ -26,12 +24,25 @@ architecture Behavioral of vector_tb is
         );
     end component;
 
+    component VectorLength is
+        port(
+                vec1: in Vector.Elements_t;
+                result: out unsigned(15 downto 0)
+            );
+    end  component;
+
     signal memory: Vector.InMemory_t := std_logic_vector(to_unsigned(0, Vector.MEMORY_SIZE));
     signal vec: Vector.Elements_t;
 
     signal merge_memory: Vector.InMemory_t := std_logic_vector(to_unsigned(0, Vector.MEMORY_SIZE));
     signal merge_vec: Vector.Elements_t;
+
+    signal vec_length: unsigned(15 downto 0);
 begin
+    uut_len: VectorLength PORT MAP(
+            vec1 => vec,
+            result => vec_length
+        );
     
     uut: VectorSplitter PORT MAP(
                 memory => memory,
@@ -55,7 +66,19 @@ begin
         memory <= (x"ffffffffffffffff");
 
         wait for 5 ns;
-        memory <= std_logic_vector(to_unsigned(0, memory'length));
+        memory <= (x"0001000100010001");
+
+        wait for 5 ns;
+        memory <= (x"000f000f000f000f");
+
+        wait for 5 ns;
+        memory <= (x"000f000f000f000f");
+
+        wait for 5 ns;
+        memory <= (x"0000000000000000");
+
+        wait for 5 ns;
+        memory <= (x"f00f000100050002");
 
         wait;
     end process;

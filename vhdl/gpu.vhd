@@ -1,5 +1,6 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
 
 --Constants
 package GPU_Info is
@@ -10,10 +11,14 @@ package GPU_Info is
     constant MODEL_ADDR_SIZE: positive := 16;
     constant MODEL_DATA_SIZE: positive := 64;
 
-    constant READ_OBJECT_STATE: std_logic_vector(1 downto 0) := "00";
-    constant FETCH_LINE_STATE: std_logic_vector(1 downto 0) := "01";
-    constant CALCULATE_LENGTH_STATE: std_logic_vector(1 downto 0) := "10";
-    constant CALCULATE_PIXELS_STATE: std_logic_vector(1 downto 0) := "11";
+    
+    subtype gpu_state_type is std_logic_vector(1 downto 0);
+
+    --'Enums' for the states of the GPU
+    constant READ_OBJECT_STATE: gpu_state_type := "00";
+    constant FETCH_LINE_STATE: gpu_state_type := "01";
+    constant CALCULATE_LENGTH_STATE: gpu_state_type := "10";
+    constant CALCULATE_PIXELS_STATE: gpu_state_type := "11";
 end package;
 
 --Behaviour code
@@ -82,16 +87,18 @@ architecture Behavioral of GPU is
     signal start_vector: work.Vector.InMemory_t;
     signal end_vector: work.Vector.InMemory_t;
 
-    signal x_pixel: std_logic_vector(8 downto 0);
-    signal y_pixel: std_logic_vector(7 downto 0);
+    --The amount of steps left until the line is  done drawing
+    signal length_left: std_logic_vector(15 downto 0); 
 
-    signal length_left: std_logic_vector(15 downto 0); --The length remaining  to be drawn
+    --The coordinate that is being drawn
+    signal current_pixel: Vector.Elements_2D_t;
 
     signal draw_start: Vector.Elements_t; --The start of the vector to be drawn on the screen
     signal draw_end: Vector.Elements_t; --The end of ^^
     signal draw_diff: Vector.Elements_t; --The vector between draw_start and  draw_end
     signal draw_length: std_logic_vector(15 downto 0); --The length of draw_diff which will be put into length_left
-    signal draw_normal: Vector.Elements_t --Normalised version of the draw_diff vector. Will be used  for stepping along the line
+    signal draw_normal: Vector.Elements_t; --Normalised version of the draw_diff vector. Will be used  for stepping along the line
+
 
 begin
     draw_length_calculator: VectorLength port map(
@@ -130,7 +137,7 @@ begin
                 
                 --If we have read all the data
                 if current_obj_offset = "100" then
-                    current_obj_offset <= "0";
+                    current_obj_offset <= "000";
                     gpu_state <= GPU_Info.FETCH_LINE_STATE;
                     transform_reg_write_enable <= '0';
                 else
@@ -151,10 +158,13 @@ begin
                     gpu_state <= GPU_Info.CALCULATE_LENGTH_STATE;
                 end if;
             elsif gpu_state = GPU_Info.CALCULATE_LENGTH_STATE then
-                --TODO: Do length and  normal calculation
+                --Do length and  normal calculation
+                length_left <= draw_length;
 
+                gpu_state <= GPU_Info.CALCULATE_PIXELS_STATE;
             else
                 --Calculating pixels
+                --current_pixel(0) <= current_pixel(0)
                 
             end if;
         end if;
