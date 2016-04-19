@@ -27,7 +27,7 @@ type ram_t is array (0 to 131071) of std_logic;
 
 -- Clears all adresses
 signal ram : ram_t := (963 => '1',1283 => '1', 1603 => '1', 1604 => '1', 1605 => '1',
-			319 =>'1',76480=>'1', others => '0');
+			319 =>'1',0=>'1',76480=>'1',76799=>'1', others => '0');
 
 
 begin
