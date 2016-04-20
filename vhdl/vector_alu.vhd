@@ -115,3 +115,37 @@ begin
 
     result <= sqrt(unsigned(sum));
 end Behavioral;
+
+
+--########################################################
+--               Normal calculator
+--########################################################
+library IEEE;
+use IEEE.numeric_std.all;
+
+use work.Vector;
+
+entity VectorNormal is
+    port(
+            --The two vectors that should be added together
+            vec1: in Vector.Elements_t;
+            len: in unsigned(15 downto 0);
+
+            result: out Vector.Elements_Big_t
+        );
+end VectorNormal;
+
+architecture Behavioral of VectorNormal is
+    signal long_version: Vector.Elements_Big_t;
+begin
+    long_version(0)(31 downto 16) <= vec1(0);
+    long_version(1)(31 downto 16) <= vec1(1);
+    long_version(2)(31 downto 16) <= vec1(2);
+    long_version(3)(31 downto 16) <= vec1(3);
+
+    result(0) <= long_version(0) / signed(len);
+    result(1) <= long_version(1) / signed(len);
+    result(2) <= long_version(2) / signed(len);
+    result(3) <= long_version(3) / signed(len);
+end Behavioral;
+
