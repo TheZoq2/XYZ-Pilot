@@ -19,7 +19,6 @@ architecture Behavioral of lab_tb is
 	signal rst						:	std_logic	:= '0';
 	signal h_sync,v_sync			:	std_logic;	
 	signal pixel_data				:	std_logic_vector(7 downto 0);
-	signal test						:	std_logic	:= '0';
 	
 
 begin
@@ -32,12 +31,6 @@ begin
 
 	-- clk 100 MHz
 	clk <= not clk after 5 ns;
-	
-	testing :	process
-	begin
-		wait for 6 ns;
-		test <= not h_sync or not v_sync or test;
-	end process;
 
 end;
 
