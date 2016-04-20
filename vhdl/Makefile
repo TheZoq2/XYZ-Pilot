@@ -35,7 +35,7 @@ PART=xc6slx16-3-csg324
 
 lab.%: S=vector_splitter.vhd gpu.vhd vector_merger.vhd vector_alu.vhd vector.vhd
 
-lab.%: T=vector_tb.vhd
+lab.%: T=gpu_tb.vhd
 lab.%: U=Nexys3.ucf
 
 

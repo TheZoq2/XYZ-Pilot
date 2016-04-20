@@ -122,6 +122,7 @@ end Behavioral;
 --########################################################
 library IEEE;
 use IEEE.numeric_std.all;
+use IEEE.std_logic_1164.all;
 
 use work.Vector;
 
@@ -138,6 +139,11 @@ end VectorNormal;
 architecture Behavioral of VectorNormal is
     signal long_version: Vector.Elements_Big_t;
 begin
+    long_version(0)(15 downto 0) <= (others => '0');
+    long_version(1)(15 downto 0) <= (others => '0');
+    long_version(2)(15 downto 0) <= (others => '0');
+    long_version(3)(15 downto 0) <= (others => '0');
+
     long_version(0)(31 downto 16) <= vec1(0);
     long_version(1)(31 downto 16) <= vec1(1);
     long_version(2)(31 downto 16) <= vec1(2);

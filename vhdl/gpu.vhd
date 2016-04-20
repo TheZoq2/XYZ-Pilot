@@ -34,18 +34,18 @@ entity GPU is
     port(
             clk: in std_logic;
 
-            --The address of the current object in the  object memory
-            obj_ptr: out unsigned(GPU_Info.OBJ_ADDR_SIZE - 1 downto 0);
-            --The output of the object memory
-            obj_data: in std_logic_vector(GPU_Info.OBJ_DATA_SIZE - 1 downto 0);
+            ----The address of the current object in the  object memory
+            --obj_ptr: out unsigned(GPU_Info.OBJ_ADDR_SIZE - 1 downto 0);
+            ----The output of the object memory
+            --obj_data: in std_logic_vector(GPU_Info.OBJ_DATA_SIZE - 1 downto 0);
 
-            --Data from the  model memory
-            line_register: inout std_logic_vector(GPU_Info.MODEL_ADDR_SIZE - 1 downto 0);
-            line_data: in std_logic_vector(GPU_Info.MODEL_DATA_SIZE - 1 downto 0);
+            ----Data from the  model memory
+            --line_register: inout std_logic_vector(GPU_Info.MODEL_ADDR_SIZE - 1 downto 0);
+            --line_data: in std_logic_vector(GPU_Info.MODEL_DATA_SIZE - 1 downto 0);
 
-            pixel_address: out std_logic_vector(16 downto 0);
-            pixel_data: out std_logic;
-            pixel_write_enable: out std_logic;
+            --pixel_address: out std_logic_vector(16 downto 0);
+            --pixel_data: out std_logic;
+            --pixel_write_enable: out std_logic;
 
             pixel_out: out Vector.Elements_t;
 
@@ -83,7 +83,7 @@ architecture Behavioral of GPU is
 
     signal next_line_reg: std_logic_vector(GPU_Info.MODEL_ADDR_SIZE -1 downto 0);
 
-    signal gpu_state: std_logic_vector(1 downto 0);
+    signal gpu_state: std_logic_vector(1 downto 0) := GPU_Info.READ_OBJECT_STATE;
 
 
     signal current_obj_offset: unsigned(2 downto 0);
@@ -116,8 +116,8 @@ begin
                         result => draw_length
                     );
     draw_diff_calculator: VectorSubtractor port map(
-                        vec1 => draw_start,
-                        vec2 => draw_end,
+                        vec2 => draw_start,
+                        vec1 => draw_end,
                         result => draw_diff
                     );
     draw_normal_calculator: VectorNormal port map(
@@ -132,21 +132,21 @@ begin
 
     -------------------------------------------
     --Updating the line register
-    with line_mux_in select
-        line_mux_out <= obj_data when "00",
-                        next_line_reg when "01",
-                        line_mux_out when others;
+    --with line_mux_in select
+    --    line_mux_out <= obj_data when "00",
+    --                    next_line_reg when "01",
+    --                    line_mux_out when others;
 
-    process(clk) begin
-        if rising_edge(clk) then
-            line_register <= line_mux_out;
-        end if;
-    end process;
+    --process(clk) begin
+    --    if rising_edge(clk) then
+    --        line_register <= line_mux_out;
+    --    end if;
+    --end process;
     -------------------------------------------
     --      Transfrorm register input
     -------------------------------------------
-    obj_ptr <= current_obj + current_obj_offset;
-    transform_reg_addr <= current_obj_offset(2 downto 0);
+    --obj_ptr <= current_obj + current_obj_offset;
+    --transform_reg_addr <= current_obj_offset(2 downto 0);
     -------------------------------------------
 
     --Main GPU state machine
@@ -182,8 +182,11 @@ begin
                 length_left <= draw_length;
                 
                 --Saving the pixel to be drawn
+                current_pixel(0)(15 downto 0) <= (others => '0');
+                current_pixel(1)(15 downto 0) <= (others => '0');
+
                 current_pixel(0)(31 downto 16) <= draw_start(0);
-                current_pixel(0)(31 downto 16) <= draw_start(1);
+                current_pixel(1)(31 downto 16) <= draw_start(1);
 
                 gpu_state <= GPU_Info.CALCULATE_PIXELS_STATE;
             else
