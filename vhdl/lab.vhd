@@ -88,7 +88,11 @@ begin
 
 -- PLS IGNORE
 pixel_mem_we <= '0';
-pixel_mem_re <= '0';
+pixel_mem_write_data <= '0';
+pixel_mem_write_addr <= (others => '0');
+program_mem_re <= '0';
+program_mem_read_adress <= (others => '0');
+program_mem_read_instruction <= (others => '0');
 
 -- VGA motor component connection
 	U0 : vga_motor port map(clk=>clk, data=>pixel_mem_read_data, addr=>pixel_mem_read_addr,

@@ -20,7 +20,10 @@ architecture Behavioral of uart is
 
 constant eof 		: std_logic_vector(63 downto 0) := (others => '1'); -- EOF
 
-signal is_eof		: std_logic := '0';									-- Boolean to be set to 1 when finished
+ ------ DISABLE UART------
+signal is_eof		: std_logic := '1';									-- Boolean to be set to 1 when finished
+ -------------------------
+
 signal bitn			: std_logic_vector(3 downto 0) := (others => '0');  -- Counter for bit number in a single byte
 signal bitn2		: std_logic_vector(7 downto 0) := (others => '0');  -- Counter for bit number for a whole instruction
 signal clkn			: std_logic_vector(9 downto 0) := (others => '0');  -- Counter for the clock number for each bit in every byte sequence
@@ -114,6 +117,7 @@ process(uart_clk) begin
  we <= mp;
 
  is_eof <= '1' when instr = eof else '0';
+
 
  -- Clock Mux
  cpu_clk <= clk when is_eof = '1' else '0';
