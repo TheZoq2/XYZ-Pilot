@@ -43,9 +43,9 @@ entity GPU is
             --line_register: inout std_logic_vector(GPU_Info.MODEL_ADDR_SIZE - 1 downto 0);
             --line_data: in std_logic_vector(GPU_Info.MODEL_DATA_SIZE - 1 downto 0);
 
-            --pixel_address: out std_logic_vector(16 downto 0);
-            --pixel_data: out std_logic;
-            --pixel_write_enable: out std_logic;
+            pixel_address: out std_logic_vector(16 downto 0);
+            pixel_data: out std_logic;
+            pixel_write_enable: out std_logic;
 
             pixel_out: out Vector.Elements_t;
 
@@ -207,4 +207,9 @@ begin
     pixel_out(1) <= current_pixel(1)(31 downto 16);
     pixel_out(2) <= x"0000";
     pixel_out(3) <= x"0000";
+
+    pixel_address(16 downto 8) <= std_logic_vector(current_pixel(0)(24 downto 16));
+    pixel_address(7 downto 0) <= std_logic_vector(current_pixel(1)(23 downto 16));
+    pixel_data <= '1';
+    pixel_write_enable <= '1';
 end Behavioral;

@@ -39,6 +39,79 @@ package body sqrt_pkg is
     
     end sqrt;
 end sqrt_pkg;
+
+
+
+-----------------------------------------------------------
+--                  Division algoritm
+--Code taken from http://vhdlguru.blogspot.se/2010/03/vhdl-function-for-division-two-signed.html 
+-----------------------------------------------------------
+library IEEE;
+use IEEE.std_logic_1164.all;
+use ieee.numeric_std.all;    -- for UNSIGNED
+
+package div_pkg is 
+    function  divide  (a : UNSIGNED; b : UNSIGNED) return UNSIGNED;
+    
+end div_pkg;
+
+package body div_pkg is
+    function  divide  (a : UNSIGNED; b : UNSIGNED) return UNSIGNED is
+        variable a1 : unsigned(a'length-1 downto 0):=a;
+        variable b1 : unsigned(b'length-1 downto 0):=b;
+        variable p1 : unsigned(b'length downto 0):= (others => '0');
+        variable i : integer:=0;
+
+    begin
+        for i in 0 to b'length-1 loop
+            p1(b'length-1 downto 1) := p1(b'length-2 downto 0);
+            p1(0) := a1(a'length-1);
+            a1(a'length-1 downto 1) := a1(a'length-2 downto 0);
+            p1 := p1-b1;
+            if(p1(b'length-1) ='1') then
+                a1(0) :='0';
+                p1 := p1+b1;
+            else
+                a1(0) :='1';
+            end if;
+        end loop;
+        return a1;
+
+    end divide;
+end div_pkg;
+
+-----------------------------------------------------------
+--                  Signed division
+-----------------------------------------------------------
+library IEEE;
+use IEEE.std_logic_1164.all;
+use ieee.numeric_std.all;    -- for UNSIGNED
+
+use work.div_pkg.all;
+
+entity signed_divide is
+    port(
+        val: in signed(31 downto 0);
+        div: in signed(31 downto 0);
+        result: out signed(31 downto 0)
+    );
+end entity;
+
+architecture Behaviour of signed_divide is
+    signal unsigned_val: unsigned(31 downto 0);
+    signal unsigned_div: unsigned(31 downto 0);
+
+    signal div_result: unsigned(31 downto 0);
+begin
+    unsigned_val <= unsigned(abs(val));
+    unsigned_div <= unsigned(abs(div));
+
+    div_result <= divide(unsigned_val, unsigned_div);
+
+    with (val(31) xor div(31)) select
+        result <= signed(div_result) when '0',
+                  -signed(div_result) when others;
+end architecture;
 -----------------------------------------------------------
 --              Vector adder
 -----------------------------------------------------------
@@ -116,7 +189,6 @@ begin
     result <= sqrt(unsigned(sum));
 end Behavioral;
 
-
 --########################################################
 --               Normal calculator
 --########################################################
@@ -125,6 +197,8 @@ use IEEE.numeric_std.all;
 use IEEE.std_logic_1164.all;
 
 use work.Vector;
+use work.div_pkg.all;
+use work.signed_divide;
 
 entity VectorNormal is
     port(
@@ -138,7 +212,30 @@ end VectorNormal;
 
 architecture Behavioral of VectorNormal is
     signal long_version: Vector.Elements_Big_t;
+    signal long_len: signed(31 downto 0);
+
+    component signed_divide is
+        port(
+            val: in signed(31 downto 0);
+            div: in signed(31 downto 0);
+            result: out signed(31 downto 0)
+        );
+    end component;
 begin
+    divider0: signed_divide port  map(
+                    val => long_version(0),
+                    div => long_len,
+                    result => result(0)
+                );
+    divider1: signed_divide port  map(
+                    val => long_version(1),
+                    div => long_len,
+                    result => result(1)
+                );
+
+    long_len(31 downto 16) <= (others => '0');
+    long_len(15 downto 0) <= signed(len);
+
     long_version(0)(15 downto 0) <= (others => '0');
     long_version(1)(15 downto 0) <= (others => '0');
     long_version(2)(15 downto 0) <= (others => '0');
@@ -147,11 +244,6 @@ begin
     long_version(0)(31 downto 16) <= vec1(0);
     long_version(1)(31 downto 16) <= vec1(1);
     long_version(2)(31 downto 16) <= vec1(2);
-    long_version(3)(31 downto 16) <= vec1(3);
-
-    result(0) <= long_version(0) / signed(len);
-    result(1) <= long_version(1) / signed(len);
-    result(2) <= long_version(2) / signed(len);
-    result(3) <= long_version(3) / signed(len);
+   long_version(3)(31 downto 16) <= vec1(3);
 end Behavioral;
 

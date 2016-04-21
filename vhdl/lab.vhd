@@ -3,6 +3,8 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;            -- basic IEEE library
 use IEEE.NUMERIC_STD.ALL;   			-- IEEE library for the unsigned type
+use work.Vector;
+use work.GPU_Info;
 
 entity lab is
 	port(clk 		: in std_logic;						-- System clock
@@ -39,6 +41,26 @@ port (clk : in std_logic;
     read_data : out std_logic);							-- Read data
 end component;
 
+--GPU
+component gpu is 
+    port(
+            clk: in std_logic;
+
+            pixel_address: out std_logic_vector(16 downto 0);
+            pixel_data: out std_logic;
+            pixel_write_enable: out std_logic;
+
+            pixel_out: out Vector.Elements_t;
+
+            dbg_draw_start: in Vector.Elements_t;
+            dbg_draw_end: in Vector.Elements_t
+        );
+end component;
+--signals for the gpu
+signal draw_start: Vector.Elements_t;
+signal draw_end: Vector.Elements_t;
+
+
 -- "Fake" signals for writin to pixel_mem
 signal pixel_mem_write_data	:	std_logic;
 signal pixel_mem_write_addr	: 	std_logic_vector(16 downto 0);
@@ -50,11 +72,24 @@ signal pixel_mem_read_addr	: 	std_logic_vector(16 downto 0);
 signal pixel_mem_re			:	std_logic;
 
 begin
+    draw_start(0) <= x"00f0";
+    draw_start(1) <= x"0020";
+    draw_start(2) <= x"0000";
+    draw_start(3) <= x"0000";
 
--- PLS IGNORE
-pixel_mem_write_data <= '0';
-pixel_mem_write_addr <= std_logic_vector(to_unsigned(0,17));
-pixel_mem_we <= '0';
+    draw_end(0) <= x"0100";
+    draw_end(1) <= x"0220";
+    draw_end(2) <= x"0000";
+    draw_end(3) <= x"0000";
+
+    gpu_map: gpu port map(
+                             clk => clk, 
+                             pixel_address => pixel_mem_write_addr,
+                             pixel_data => pixel_mem_write_data,
+                             pixel_write_enable =>pixel_mem_we,
+                             dbg_draw_start => draw_start,
+                             dbg_draw_end => draw_end
+                         );
 
 -- VGA motor component connection
 	U0 : vga_motor port map(clk=>clk, data=>pixel_mem_read_data, addr=>pixel_mem_read_addr,
