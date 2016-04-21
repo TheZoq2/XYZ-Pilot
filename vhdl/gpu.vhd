@@ -55,28 +55,6 @@ entity GPU is
 end entity;
 
 architecture Behavioral of GPU is
-    component VectorLength is
-        port(
-                vec1: in Vector.Elements_t;
-                result: out unsigned(15 downto 0)
-            );
-    end component;
-    component VectorSubtractor is
-        port(
-                vec1: in Vector.Elements_t;
-                vec2: in Vector.Elements_t;
-                result: out Vector.Elements_t
-            );
-    end component;
-    component VectorNormal is 
-        port(
-            vec1: in Vector.Elements_t;
-            len: in unsigned(15 downto 0);
-
-            result: out Vector.Elements_Big_t
-        );
-    end component;
-
     --The mux which decides if we want to start reading a new model or read more lines in the  current  one
     signal line_mux_in: std_logic_vector(1 downto 0);
     signal line_mux_out: std_logic_vector(GPU_Info.MODEL_ADDR_SIZE - 1  downto 0);
@@ -98,118 +76,107 @@ architecture Behavioral of GPU is
     signal start_vector: work.Vector.InMemory_t;
     signal end_vector: work.Vector.InMemory_t;
 
-    --The amount of steps left until the line is  done drawing
-    signal length_left: unsigned(15 downto 0); 
-
     --The coordinate that is being drawn
-    signal current_pixel: Vector.Elements_2D_t;
+    signal current_pixel: Vector.Elements_t;
 
     signal draw_start: Vector.Elements_t; --The start of the vector to be drawn on the screen
     signal draw_end: Vector.Elements_t; --The end of ^^
     signal draw_diff: Vector.Elements_t; --The vector between draw_start and  draw_end
-    signal draw_length: unsigned(15 downto 0); --The length of draw_diff which will be put into length_left
-    signal draw_normal: Vector.Elements_Big_t; --Normalised version of the draw_diff vector. Will be used  for stepping along the line
+
+    --Versions of draw_start and end that have not been corrected for the line to be in the first
+    --octant
+    signal raw_start: Vector.Elements_t;
+    signal raw_end: Vector.Elements_t; 
+
+    signal octant: unsigned(2 downto 0);
+
+    signal draw_d_var: signed(15 downto 0);
+    component VectorSubtractor is
+        port(
+                --The two vectors that should be added together
+                vec1: in Vector.Elements_t;
+                vec2: in Vector.Elements_t;
+
+                result: out Vector.Elements_t
+            );
+    end component ;
 
 begin
-    draw_length_calculator: VectorLength port map(
-                        vec1 => draw_diff,
-                        result => draw_length
-                    );
     draw_diff_calculator: VectorSubtractor port map(
-                        vec2 => draw_start,
-                        vec1 => draw_end,
-                        result => draw_diff
-                    );
-    draw_normal_calculator: VectorNormal port map(
-                        vec1 => draw_diff,
-                        len => draw_length,
-                        result => draw_normal
-                    );
+                vec2 => draw_start,
+                vec1 => draw_end,
+                result => draw_diff
+            );
 
-    draw_start <= dbg_draw_start;
-    draw_end <= dbg_draw_end;
-
-
-    -------------------------------------------
-    --Updating the line register
-    --with line_mux_in select
-    --    line_mux_out <= obj_data when "00",
-    --                    next_line_reg when "01",
-    --                    line_mux_out when others;
-
-    --process(clk) begin
-    --    if rising_edge(clk) then
-    --        line_register <= line_mux_out;
-    --    end if;
-    --end process;
-    -------------------------------------------
-    --      Transfrorm register input
-    -------------------------------------------
-    --obj_ptr <= current_obj + current_obj_offset;
-    --transform_reg_addr <= current_obj_offset(2 downto 0);
-    -------------------------------------------
+    raw_start <= dbg_draw_start;
+    raw_end <= dbg_draw_end;
+    
+    with octant select
+        draw_start <= ( raw_start(0), raw_start(1), x"0000", x"0000") when "000",
+                      ( raw_start(1), raw_start(0), x"0000", x"0000") when "001",
+                      ( raw_start(0),-raw_start(0), x"0000", x"0000") when "010",
+                      (-raw_start(0), raw_start(1), x"0000", x"0000") when "011",
+                      (-raw_start(0),-raw_start(1), x"0000", x"0000") when "100",
+                      (-raw_start(1),-raw_start(0), x"0000", x"0000") when "101",
+                      (-raw_start(1), raw_start(0), x"0000", x"0000") when "110",
+                      ( raw_start(0),-raw_start(1), x"0000", x"0000") when others;
+    with octant select
+        draw_end   <= ( raw_end(0), raw_end(1), x"0000", x"0000") when "000",
+                      ( raw_end(1), raw_end(0), x"0000", x"0000") when "001",
+                      ( raw_end(0),-raw_end(0), x"0000", x"0000") when "010",
+                      (-raw_end(0), raw_end(1), x"0000", x"0000") when "011",
+                      (-raw_end(0),-raw_end(1), x"0000", x"0000") when "100",
+                      (-raw_end(1),-raw_end(0), x"0000", x"0000") when "101",
+                      (-raw_end(1), raw_end(0), x"0000", x"0000") when "110",
+                      ( raw_end(0),-raw_end(1), x"0000", x"0000") when others;
 
     --Main GPU state machine
     process(clk) begin
         if rising_edge(clk) then
             if gpu_state = GPU_Info.READ_OBJECT_STATE then
                 gpu_state <= GPU_Info.FETCH_LINE_STATE;
-                ----If we have read all the data
-                --if current_obj_offset = "100" then
-                --    current_obj_offset <= "000";
-                --    gpu_state <= GPU_Info.FETCH_LINE_STATE;
-                --    transform_reg_write_enable <= '0';
-                --else
-                --    --Reading a new model and transform
-                --    current_obj_offset <= current_obj_offset + 1;
-
-                --    transform_reg_write_enable <= '1';
-                --end if;
             elsif gpu_state = GPU_Info.FETCH_LINE_STATE then
-                --Reading the next start and end of lines
-                --if write_start_or_end = '1' then
-                --    start_vector <= line_data;
-                --    write_start_or_end <= '1';
-                --else
-                --    end_vector <= line_data;
-                --    write_start_or_end <= '1';
-
-                --    gpu_state <= GPU_Info.CALCULATE_LENGTH_STATE;
-                --end if;
                 gpu_state <= GPU_Info.CALCULATE_LENGTH_STATE;
             elsif gpu_state = GPU_Info.CALCULATE_LENGTH_STATE then
-                --Do length and  normal calculation
-                length_left <= draw_length;
-                
-                --Saving the pixel to be drawn
-                current_pixel(0)(15 downto 0) <= (others => '0');
-                current_pixel(1)(15 downto 0) <= (others => '0');
-
-                current_pixel(0)(31 downto 16) <= draw_start(0);
-                current_pixel(1)(31 downto 16) <= draw_start(1);
+                --Set up the pixel drawing calculation
+                draw_d_var <= draw_diff(1) - draw_diff(0);
+                current_pixel(0) <= draw_start(0);
+                current_pixel(1) <= draw_start(1);
 
                 gpu_state <= GPU_Info.CALCULATE_PIXELS_STATE;
             else
-                if length_left = 0 then
-                    gpu_state <= GPU_Info.CALCULATE_LENGTH_STATE;
+                if current_pixel(0) > draw_end(0) then
+                    gpu_state <= GPU_Info.READ_OBJECT_STATE;
                 else
-                    --Calculating pixels
-                    current_pixel(0) <= current_pixel(0) + draw_normal(0);
-                    current_pixel(1) <= current_pixel(1) + draw_normal(1);
-
-                    length_left <= length_left - 1;
+                    current_pixel(0) <= current_pixel(0) + 1;
+                    if draw_d_var >= 0 then
+                        current_pixel(1) <= current_pixel(1) + 1;
+                        draw_d_var <= draw_d_var + draw_diff(1) - draw_diff(0);
+                    else
+                        draw_d_var <= draw_d_var + draw_diff(1);
+                    end if;
                 end if;
             end if;
         end if;
     end process;
 
-    pixel_out(0) <= current_pixel(0)(31 downto 16);
-    pixel_out(1) <= current_pixel(1)(31 downto 16);
+    with octant select
+        pixel_out <=  ( current_pixel(0), current_pixel(1), x"0000", x"0000") when "000",
+                      ( current_pixel(1), current_pixel(0), x"0000", x"0000") when "001",
+                      (-current_pixel(1), current_pixel(0), x"0000", x"0000") when "010",
+                      (-current_pixel(0), current_pixel(1), x"0000", x"0000") when "011",
+                      (-current_pixel(0),-current_pixel(1), x"0000", x"0000") when "100",
+                      (-current_pixel(1),-current_pixel(0), x"0000", x"0000") when "101",
+                      ( current_pixel(1),-current_pixel(0), x"0000", x"0000") when "110",
+                      ( current_pixel(0),-current_pixel(1), x"0000", x"0000") when others;
+
+    pixel_out(0) <= current_pixel(0);
+    pixel_out(1) <= current_pixel(1);
     pixel_out(2) <= x"0000";
     pixel_out(3) <= x"0000";
 
-    pixel_address(16 downto 8) <= std_logic_vector(current_pixel(0)(24 downto 16));
-    pixel_address(7 downto 0) <= std_logic_vector(current_pixel(1)(23 downto 16));
+    pixel_address(16 downto 8) <= std_logic_vector(current_pixel(0)(8 downto 0));
+    pixel_address(7 downto 0) <= std_logic_vector(current_pixel(1)(7 downto 0));
     pixel_data <= '1';
     pixel_write_enable <= '1';
 end Behavioral;

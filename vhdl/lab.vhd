@@ -71,16 +71,58 @@ signal pixel_mem_read_data	:	std_logic;
 signal pixel_mem_read_addr	: 	std_logic_vector(16 downto 0);
 signal pixel_mem_re			:	std_logic;
 
-begin
-    draw_start(0) <= x"00f0";
-    draw_start(1) <= x"0020";
-    draw_start(2) <= x"0000";
-    draw_start(3) <= x"0000";
+signal current_line: unsigned(7 downto 0) := to_unsigned(0, 8);
+signal time_at_current: unsigned(31 downto 0) := to_unsigned(0, 32);
 
-    draw_end(0) <= x"0100";
-    draw_end(1) <= x"0220";
-    draw_end(2) <= x"0000";
-    draw_end(3) <= x"0000";
+begin
+
+    process(clk) begin
+        if rising_edge(clk) then
+            time_at_current <= time_at_current + 1;
+
+            if time_at_current = to_unsigned(100000000, 32) then
+                if current_line = 2 then
+                    current_line <= current_line + 1;
+                else
+                    current_line <= current_line + 1;
+                end if;
+
+                time_at_current <= to_unsigned(0, time_at_current'length);
+            else
+                if current_line = 0 then
+                    draw_start(0) <= x"0000";
+                    draw_start(1) <= x"0000";
+                    draw_start(2) <= x"0000";
+                    draw_start(3) <= x"0000";
+
+                    draw_end(0) <= to_signed(10, 16);
+                    draw_end(1) <= to_signed(5, 16);
+                    draw_end(2) <= x"0000";
+                    draw_end(3) <= x"0000";
+                elsif current_line = 1 then
+                    draw_start(0) <= x"0000";
+                    draw_start(1) <= x"0000";
+                    draw_start(2) <= x"0000";
+                    draw_start(3) <= x"0000";
+
+                    draw_end(0) <= to_signed(100, 16);
+                    draw_end(1) <= to_signed(50, 16);
+                    draw_end(2) <= x"0000";
+                    draw_end(3) <= x"0000";
+                elsif current_line = 2 then
+                    draw_start(0) <= to_signed(50, 16);
+                    draw_start(1) <= to_signed(20, 16);
+                    draw_start(2) <= x"0000";
+                    draw_start(3) <= x"0000";
+
+                    draw_end(0) <= to_signed(100, 16);
+                    draw_end(1) <= to_signed(25, 16);
+                    draw_end(2) <= x"0000";
+                    draw_end(3) <= x"0000";
+                end if;
+            end if;
+        end if;
+    end process;
 
     gpu_map: gpu port map(
                              clk => clk, 
