@@ -88,7 +88,8 @@ architecture Behavioral of GPU is
     signal raw_start: Vector.Elements_t;
     signal raw_end: Vector.Elements_t; 
 
-    signal octant: unsigned(2 downto 0);
+    signal octant: unsigned(2 downto 0) := "000";
+    signal octant_selector: std_logic_vector(2 downto 0);
 
     signal draw_d_var: signed(15 downto 0);
     component VectorSubtractor is
@@ -103,32 +104,39 @@ architecture Behavioral of GPU is
 
 begin
     draw_diff_calculator: VectorSubtractor port map(
-                vec2 => draw_start,
-                vec1 => draw_end,
+                vec2 => raw_start,
+                vec1 => raw_end,
                 result => draw_diff
             );
 
     raw_start <= dbg_draw_start;
     raw_end <= dbg_draw_end;
+
+    draw_start <= (to_signed(0, 16), to_signed(0, 16), to_signed(0, 16), to_signed(0, 16));
+    with octant select
+        draw_end   <= (x"0000", x"0000", draw_diff(1), draw_diff(0)) when "000",
+                      (x"0000", x"0000", draw_diff(0), draw_diff(1)) when "001",
+                      (x"0000", x"0000",-draw_diff(0), draw_diff(0)) when "010",
+                      (x"0000", x"0000", draw_diff(1),-draw_diff(0)) when "011",
+                      (x"0000", x"0000",-draw_diff(1),-draw_diff(0)) when "100",
+                      (x"0000", x"0000",-draw_diff(0),-draw_diff(1)) when "101",
+                      (x"0000", x"0000", draw_diff(0),-draw_diff(1)) when "110",
+                      (x"0000", x"0000",-draw_diff(1), draw_diff(0)) when others;
+
     
-    with octant select
-        draw_start <= ( raw_start(0), raw_start(1), x"0000", x"0000") when "000",
-                      ( raw_start(1), raw_start(0), x"0000", x"0000") when "001",
-                      ( raw_start(0),-raw_start(0), x"0000", x"0000") when "010",
-                      (-raw_start(0), raw_start(1), x"0000", x"0000") when "011",
-                      (-raw_start(0),-raw_start(1), x"0000", x"0000") when "100",
-                      (-raw_start(1),-raw_start(0), x"0000", x"0000") when "101",
-                      (-raw_start(1), raw_start(0), x"0000", x"0000") when "110",
-                      ( raw_start(0),-raw_start(1), x"0000", x"0000") when others;
-    with octant select
-        draw_end   <= ( raw_end(0), raw_end(1), x"0000", x"0000") when "000",
-                      ( raw_end(1), raw_end(0), x"0000", x"0000") when "001",
-                      ( raw_end(0),-raw_end(0), x"0000", x"0000") when "010",
-                      (-raw_end(0), raw_end(1), x"0000", x"0000") when "011",
-                      (-raw_end(0),-raw_end(1), x"0000", x"0000") when "100",
-                      (-raw_end(1),-raw_end(0), x"0000", x"0000") when "101",
-                      (-raw_end(1), raw_end(0), x"0000", x"0000") when "110",
-                      ( raw_end(0),-raw_end(1), x"0000", x"0000") when others;
+    octant_selector(0) <= '1' when draw_end(0) >= 0 else '0';
+    octant_selector(1) <= '1' when draw_end(1) >= 0 else '0';
+    octant_selector(2) <= '1' when abs(draw_end(0)) > abs(draw_end(1)) else '0';
+    
+    with octant_selector select
+        octant <= "000" when "000",
+                  "001" when "010",
+                  "010" when "011",
+                  "011" when "111",
+                  "100" when "110",
+                  "101" when "101",
+                  "110" when "100",
+                  "111" when others;
 
     --Main GPU state machine
     process(clk) begin
@@ -161,19 +169,14 @@ begin
     end process;
 
     with octant select
-        pixel_out <=  ( current_pixel(0), current_pixel(1), x"0000", x"0000") when "000",
-                      ( current_pixel(1), current_pixel(0), x"0000", x"0000") when "001",
-                      (-current_pixel(1), current_pixel(0), x"0000", x"0000") when "010",
-                      (-current_pixel(0), current_pixel(1), x"0000", x"0000") when "011",
-                      (-current_pixel(0),-current_pixel(1), x"0000", x"0000") when "100",
-                      (-current_pixel(1),-current_pixel(0), x"0000", x"0000") when "101",
-                      ( current_pixel(1),-current_pixel(0), x"0000", x"0000") when "110",
-                      ( current_pixel(0),-current_pixel(1), x"0000", x"0000") when others;
-
-    pixel_out(0) <= current_pixel(0);
-    pixel_out(1) <= current_pixel(1);
-    pixel_out(2) <= x"0000";
-    pixel_out(3) <= x"0000";
+        pixel_out <=  (x"0000", x"0000", raw_start(1) + current_pixel(1),  raw_start(0) + current_pixel(0)) when "000",
+                      (x"0000", x"0000", raw_start(1) + current_pixel(0),  raw_start(0) + current_pixel(1)) when "001",
+                      (x"0000", x"0000", raw_start(1) + current_pixel(0), -raw_start(0) + current_pixel(1)) when "010",
+                      (x"0000", x"0000", raw_start(1) + current_pixel(1), -raw_start(0) + current_pixel(0)) when "011",
+                      (x"0000", x"0000",-raw_start(1) + current_pixel(1), -raw_start(0) + current_pixel(0)) when "100",
+                      (x"0000", x"0000",-raw_start(1) + current_pixel(0), -raw_start(0) + current_pixel(1)) when "101",
+                      (x"0000", x"0000",-raw_start(1) + current_pixel(0),  raw_start(0) + current_pixel(1)) when "110",
+                      (x"0000", x"0000",-raw_start(1) + current_pixel(1),  raw_start(0) + current_pixel(0)) when others;
 
     pixel_address(16 downto 8) <= std_logic_vector(current_pixel(0)(8 downto 0));
     pixel_address(7 downto 0) <= std_logic_vector(current_pixel(1)(7 downto 0));

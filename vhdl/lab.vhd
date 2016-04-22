@@ -81,7 +81,7 @@ begin
             time_at_current <= time_at_current + 1;
 
             if time_at_current = to_unsigned(100000000, 32) then
-                if current_line = 2 then
+                if current_line = 7 then
                     current_line <= current_line + 1;
                 else
                     current_line <= current_line + 1;
@@ -90,35 +90,32 @@ begin
                 time_at_current <= to_unsigned(0, time_at_current'length);
             else
                 if current_line = 0 then
-                    draw_start(0) <= x"0000";
-                    draw_start(1) <= x"0000";
-                    draw_start(2) <= x"0000";
-                    draw_start(3) <= x"0000";
+                    draw_start(0) <= to_signed(170, 16);
+                    draw_start(1) <= to_signed(120, 16);
 
-                    draw_end(0) <= to_signed(10, 16);
-                    draw_end(1) <= to_signed(5, 16);
-                    draw_end(2) <= x"0000";
-                    draw_end(3) <= x"0000";
+                    draw_end(0) <= to_signed(140, 16);
+                    draw_end(1) <= to_signed(120, 16);
                 elsif current_line = 1 then
-                    draw_start(0) <= x"0000";
-                    draw_start(1) <= x"0000";
-                    draw_start(2) <= x"0000";
-                    draw_start(3) <= x"0000";
-
-                    draw_end(0) <= to_signed(100, 16);
-                    draw_end(1) <= to_signed(50, 16);
-                    draw_end(2) <= x"0000";
-                    draw_end(3) <= x"0000";
+                    draw_end(0) <= to_signed(200, 16);
+                    draw_end(1) <= to_signed(120, 16);
                 elsif current_line = 2 then
-                    draw_start(0) <= to_signed(50, 16);
-                    draw_start(1) <= to_signed(20, 16);
-                    draw_start(2) <= x"0000";
-                    draw_start(3) <= x"0000";
-
+                    draw_end(0) <= to_signed(170, 16);
+                    draw_end(1) <= to_signed(90, 16);
+                elsif current_line = 3 then
+                    draw_end(0) <= to_signed(170, 16);
+                    draw_end(1) <= to_signed(150, 16);
+                elsif current_line = 4 then
                     draw_end(0) <= to_signed(100, 16);
                     draw_end(1) <= to_signed(25, 16);
-                    draw_end(2) <= x"0000";
-                    draw_end(3) <= x"0000";
+                elsif current_line = 5 then
+                    draw_end(0) <= to_signed(100, 16);
+                    draw_end(1) <= to_signed(25, 16);
+                elsif current_line = 6 then
+                    draw_end(0) <= to_signed(100, 16);
+                    draw_end(1) <= to_signed(25, 16);
+                elsif current_line = 7 then
+                    draw_end(0) <= to_signed(100, 16);
+                    draw_end(1) <= to_signed(25, 16);
                 end if;
             end if;
         end if;

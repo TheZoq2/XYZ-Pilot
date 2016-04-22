@@ -244,6 +244,6 @@ begin
     long_version(0)(31 downto 16) <= vec1(0);
     long_version(1)(31 downto 16) <= vec1(1);
     long_version(2)(31 downto 16) <= vec1(2);
-   long_version(3)(31 downto 16) <= vec1(3);
+    long_version(3)(31 downto 16) <= vec1(3);
 end Behavioral;
 
