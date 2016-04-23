@@ -2,11 +2,13 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
+use work.Vector;
+
 --Constants
 package GPU_Info is
     --The length of the addresses and data in the object memory
     constant OBJ_ADDR_SIZE: positive := 16;
-    constant OBJ_DATA_SIZE: positive := 64;
+    constant OBJ_DATA_SIZE: positive := Vector.MEMORY_SIZE;
 
     constant MODEL_ADDR_SIZE: positive := 16;
     constant MODEL_DATA_SIZE: positive := 64;
@@ -63,7 +65,6 @@ architecture Behavioral of GPU is
 
     signal gpu_state: std_logic_vector(1 downto 0) := GPU_Info.READ_OBJECT_STATE;
 
-
     signal current_obj_offset: unsigned(2 downto 0);
     signal current_obj: unsigned(GPU_Info.OBJ_ADDR_SIZE - 1 downto 0);
 
@@ -71,7 +72,7 @@ architecture Behavioral of GPU is
     signal transform_reg_write_enable: std_logic;
 
     --Decides which vector register in the gpu to write the current line in the model memory  to
-    signal write_start_or_end: std_logic;
+    signal read_start_or_end: std_logic;
 
     signal start_vector: work.Vector.InMemory_t;
     signal end_vector: work.Vector.InMemory_t;
@@ -101,7 +102,6 @@ architecture Behavioral of GPU is
                 result: out Vector.Elements_t
             );
     end component ;
-
 begin
     draw_diff_calculator: VectorSubtractor port map(
                 vec2 => raw_start,
@@ -147,7 +147,8 @@ begin
                 gpu_state <= GPU_Info.CALCULATE_LENGTH_STATE;
             elsif gpu_state = GPU_Info.CALCULATE_LENGTH_STATE then
                 --Set up the pixel drawing calculation
-                draw_d_var <= draw_diff(1) - draw_diff(0);
+                --Since start.x = 0, dx = end.x in bresenham's algorithm
+                draw_d_var <= draw_end(1) - draw_end(0);
                 current_pixel(0) <= draw_start(0);
                 current_pixel(1) <= draw_start(1);
 
@@ -159,9 +160,9 @@ begin
                     current_pixel(0) <= current_pixel(0) + 1;
                     if draw_d_var >= 0 then
                         current_pixel(1) <= current_pixel(1) + 1;
-                        draw_d_var <= draw_d_var + draw_diff(1) - draw_diff(0);
+                        draw_d_var <= draw_d_var + draw_end(1) - draw_end(0);
                     else
-                        draw_d_var <= draw_d_var + draw_diff(1);
+                        draw_d_var <= draw_d_var + draw_end(1);
                     end if;
                 end if;
             end if;
