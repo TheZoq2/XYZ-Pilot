@@ -7,10 +7,10 @@ port (
         clk : in std_logic;
         -- port 1
         read_addr : in std_logic_vector(15 downto 0);
-        read_data : in Vector.InMemory_t
+        read_data : out Vector.InMemory_t
         -- port 2
     );
-end block_RAM;
+end entity;
 
 architecture Behavioral of ObjectMem is
 

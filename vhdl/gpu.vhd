@@ -36,14 +36,8 @@ entity GPU is
     port(
             clk: in std_logic;
 
-            ----The address of the current object in the  object memory
-            --obj_ptr: out unsigned(GPU_Info.OBJ_ADDR_SIZE - 1 downto 0);
-            ----The output of the object memory
-            --obj_data: in std_logic_vector(GPU_Info.OBJ_DATA_SIZE - 1 downto 0);
-
-            ----Data from the  model memory
-            --line_register: inout std_logic_vector(GPU_Info.MODEL_ADDR_SIZE - 1 downto 0);
-            --line_data: in std_logic_vector(GPU_Info.MODEL_DATA_SIZE - 1 downto 0);
+            obj_read_addr: out std_logic_vector(15 downto 0) := to_signed(0);
+            obj_mem_data: in work.vector.InMemory_t;
 
             pixel_address: out std_logic_vector(16 downto 0);
             pixel_data: out std_logic;
