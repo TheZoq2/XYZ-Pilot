@@ -177,3 +177,8 @@ Temporary Items
 .apdisk
 
 work
+
+*.o
+*.out
+*.ghw
+*.cf
