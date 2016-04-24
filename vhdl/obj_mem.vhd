@@ -6,7 +6,7 @@ use IEEE.std_logic_1164.all;
 use work.Vector;
 use work.GPU_Info;
 
-entity ModelMem is
+entity ObjMem is
 port (
         clk : in std_logic;
         -- port 1
@@ -15,7 +15,7 @@ port (
     );
 end entity;
 
-architecture Behavioral of ModelMem is
+architecture Behavioral of ObjMem is
 
 -- Deklaration av ett dubbelportat block-RAM
 -- med 2048 adresser av 8 bitars bredd.
@@ -23,24 +23,26 @@ type ram_t is array (0 to 511) of Vector.InMemory_t;
 
     -- Nollställ alla bitar på alla adresser
     signal ram : ram_t := (
-        0  => x"0001000000000000",
-        1  => x"0002000000000000",
-        2  => x"0003000000000000",
-        3  => x"0004000000000000",
-        4  => x"ffffffffffffffff",
-        5  => x"ffffffffffffffff",
+        0  => x"0000000000000000",
+        1  => x"0000000000000000",
+        2  => x"0000000000000000",
+        3  => x"0000000000000000",
+        4  => x"0000000000000000",
 
-        6  => x"0001000100000000",
-        7  => x"0002000100000000",
-        8  => x"0003000100000000",
-        9  => x"0004000100000000",
-        10 => x"ffffffffffffffff",
-        11 => x"ffffffffffffffff",
+        0  => x"0000000000000000",
+        1  => x"0000000000000000",
+        2  => x"0000000000000000",
+        3  => x"0000000000000000",
+        9  => x"0000000000000006",
 
-        12 => x"0001000200000000",
-        13 => x"0002000200000000",
-        14 => x"ffffffffffffffff",
+        10 => x"0000000000000000",
+        11 => x"0006000600000000",
+        12 => x"0000000000000000",
+        13 => x"0007000700000000",
+        14 => x"000000000000000b",
+
         15 => x"ffffffffffffffff",
+        16 => x"ffffffffffffffff",
         others => (others => '0'));
 
 begin

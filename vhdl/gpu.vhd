@@ -6,10 +6,13 @@ use work.Vector;
 
 --Constants
 package GPU_Info is
+    --TODO: Optimse the size of obj addr and model addr
     --The length of the addresses and data in the object memory
     constant OBJ_ADDR_SIZE: positive := 16;
     constant OBJ_DATA_SIZE: positive := Vector.MEMORY_SIZE;
-    --TODO: Create subtypes for obj data
+
+    subtype ObjAddr_t is unsigned(OBJ_ADDR_SIZE - 1 downto 0);
+    subtype ObjData_t is std_logic_vector(OBJ_DATA_SIZE - 1 downto 0);
 
     constant MODEL_ADDR_SIZE: positive := 16;
 
@@ -37,6 +40,9 @@ entity GPU is
     port(
             clk: in std_logic;
 
+            obj_mem_addr: out GPU_Info.ObjAddr_t;
+            obj_mem_data: out GPU_Info.ObjData_t;
+
             pixel_address: out std_logic_vector(16 downto 0);
             pixel_data: out std_logic;
             pixel_write_enable: out std_logic;
@@ -57,11 +63,9 @@ architecture Behavioral of GPU is
 
     signal gpu_state: std_logic_vector(1 downto 0) := GPU_Info.READ_OBJECT_STATE;
 
-    signal current_obj_offset: unsigned(2 downto 0);
-    signal current_obj: unsigned(GPU_Info.OBJ_ADDR_SIZE - 1 downto 0);
-
-    signal transform_reg_addr: unsigned(2 downto 0);
-    signal transform_reg_write_enable: std_logic;
+    --The offset from the start of the current object pointer in memory to the current 'line' in the memory
+    signal current_obj_start: unsigned(15 downto 0) := "000";
+    signal current_obj_offset: unsigned(2 downto 0) := "000";
 
     --Decides which vector register in the gpu to write the current line in the model memory  to
     signal set_start_or_end: std_logic := '0';
@@ -140,7 +144,7 @@ begin
                 vec => raw_end
             );
 
-
+    model_mem_addr <= current_obj_start + current_obj_offset;
     --raw_start <= start_vector;
     --raw_end <= end_vector;
 
@@ -152,6 +156,12 @@ begin
         if rising_edge(clk) then
             if gpu_state = GPU_Info.READ_OBJECT_STATE then
                 gpu_state <= GPU_Info.FETCH_LINE_STATE;
+
+                if current_obj_offset = unsigned(4) then
+                    model_mem_addr <= obj_mem_data(15 downto 0);
+                else
+                    current_obj_offset <= current_obj_offset + 1;
+                end if;
             elsif gpu_state = GPU_Info.FETCH_LINE_STATE then
                 --Reading the lines to draw
                 if set_start_or_end = '0' then
