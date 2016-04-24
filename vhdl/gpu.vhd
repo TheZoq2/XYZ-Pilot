@@ -92,6 +92,8 @@ architecture Behavioral of GPU is
     --Model data signals
     signal model_mem_addr: GPU_Info.ModelAddr_t := x"0000";
     signal model_mem_data: GPU_Info.ModelData_t;
+    --1 When ready to read, 0 when waiting for the next data
+    signal model_mem_state: std_logic := '0';
 
     component VectorSubtractor is
         port(
@@ -157,7 +159,6 @@ begin
                 else
                     end_vector <= model_mem_data;
 
-                    dummy <= '1';
                     
                     gpu_state <= GPU_Info.START_PIXEL_CALC;
                 end if;
@@ -165,16 +166,24 @@ begin
                 --Prepare to read the next line
                 model_mem_addr <= model_mem_addr + 1;
                 --Toggle between reading start or end vectors
-                set_start_or_end <= not set_start_or_end;
+                if model_mem_state = '1' then
+                    set_start_or_end <= not set_start_or_end;
+                end if;
+                model_mem_state <= not model_mem_state;
 
             elsif gpu_state = GPU_Info.START_PIXEL_CALC then
                 --Set up the pixel drawing calculation
                 --Since start.x = 0, dx = end.x in bresenham's algorithm
-                draw_d_var <= draw_end(1) - draw_end(0);
-                current_pixel(0) <= draw_start(0);
-                current_pixel(1) <= draw_start(1);
+                if end_vector = x"ffffffffffffffff" then
+                    gpu_state <= GPU_Info.READ_OBJECT_STATE;
+                    dummy <= '1';
+                else
+                    draw_d_var <= draw_end(1) - draw_end(0);
+                    current_pixel(0) <= draw_start(0);
+                    current_pixel(1) <= draw_start(1);
 
-                gpu_state <= GPU_Info.CALCULATE_PIXELS_STATE;
+                    gpu_state <= GPU_Info.CALCULATE_PIXELS_STATE;
+                end if;
             else
                 if current_pixel(0) > draw_end(0) then
                     gpu_state <= GPU_Info.READ_OBJECT_STATE;
@@ -233,5 +242,7 @@ begin
     pixel_address(16 downto 8) <= std_logic_vector(current_pixel(0)(8 downto 0));
     pixel_address(7 downto 0) <= std_logic_vector(current_pixel(1)(7 downto 0));
     pixel_data <= '1';
-    pixel_write_enable <= '1';
+    with gpu_state select
+        pixel_write_enable <= '1' when GPU_Info.CALCULATE_PIXELS_STATE,
+                              '0' when others;
 end Behavioral;
