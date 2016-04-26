@@ -20,13 +20,14 @@ package GPU_Info is
     subtype ModelAddr_t is unsigned(MODEL_ADDR_SIZE - 1 downto 0);
     subtype ModelData_t is Vector.InMemory_t;
     
-    subtype gpu_state_type is std_logic_vector(1 downto 0);
+    subtype gpu_state_type is std_logic_vector(2 downto 0);
 
     --'Enums' for the states of the GPU
-    constant READ_OBJECT_STATE: gpu_state_type := "00";
-    constant FETCH_LINE_STATE: gpu_state_type := "01";
-    constant START_PIXEL_CALC: gpu_state_type := "10";
-    constant CALCULATE_PIXELS_STATE: gpu_state_type := "11";
+    constant READ_OBJECT_STATE: gpu_state_type := "000";
+    constant FETCH_LINE_STATE: gpu_state_type := "001";
+    constant START_PIXEL_CALC: gpu_state_type := "010";
+    constant CALCULATE_PIXELS_STATE: gpu_state_type := "011";
+    constant NEXT_LINE_STATE: gpu_state_type := "100";
 end package;
 
 library IEEE;
@@ -58,12 +59,13 @@ type ram_t is array (0 to 511) of Vector.InMemory_t;
         0  => x"00aa007800000000",
         1  => x"00aa005A00000000",
 
-        --y 120 - 150
         2  => x"00aa007800000000",
-        3  => x"00aa009600000000",
+        3  => x"008C007800000000",
 
+        --y 120 - 150
         4  => x"00aa007800000000",
-        5  => x"008C007800000000",
+        5  => x"00c8005A00000000",
+
 
         6  => x"00aa007800000000",
         7  => x"00C8007800000000",
