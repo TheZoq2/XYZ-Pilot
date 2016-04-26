@@ -1,32 +1,3 @@
-library IEEE;
-use IEEE.std_logic_1164.all;
-use IEEE.numeric_std.all;
-
-use work.Vector;
-
---Constants
-package GPU_Info is
-    --TODO: Optimse the size of obj addr and model addr
-    --The length of the addresses and data in the object memory
-    constant OBJ_ADDR_SIZE: positive := 16;
-    constant OBJ_DATA_SIZE: positive := Vector.MEMORY_SIZE;
-
-    subtype ObjAddr_t is unsigned(OBJ_ADDR_SIZE - 1 downto 0);
-    subtype ObjData_t is std_logic_vector(OBJ_DATA_SIZE - 1 downto 0);
-
-    constant MODEL_ADDR_SIZE: positive := 16;
-
-    subtype ModelAddr_t is unsigned(MODEL_ADDR_SIZE - 1 downto 0);
-    subtype ModelData_t is Vector.InMemory_t;
-    
-    subtype gpu_state_type is std_logic_vector(1 downto 0);
-
-    --'Enums' for the states of the GPU
-    constant READ_OBJECT_STATE: gpu_state_type := "00";
-    constant FETCH_LINE_STATE: gpu_state_type := "01";
-    constant START_PIXEL_CALC: gpu_state_type := "10";
-    constant CALCULATE_PIXELS_STATE: gpu_state_type := "11";
-end package;
 
 --Behaviour code
 library IEEE;
@@ -41,13 +12,12 @@ entity GPU is
             clk: in std_logic;
 
             obj_mem_addr: out GPU_Info.ObjAddr_t;
-            obj_mem_data: out GPU_Info.ObjData_t;
+            obj_mem_data: in GPU_Info.ObjData_t := x"0000000000000000";
 
             pixel_address: out std_logic_vector(16 downto 0);
             pixel_data: out std_logic;
             pixel_write_enable: out std_logic;
 
-            pixel_out: out Vector.Elements_t;
 
             dbg_draw_start: in Vector.Elements_t;
             dbg_draw_end: in Vector.Elements_t
@@ -64,7 +34,7 @@ architecture Behavioral of GPU is
     signal gpu_state: std_logic_vector(1 downto 0) := GPU_Info.READ_OBJECT_STATE;
 
     --The offset from the start of the current object pointer in memory to the current 'line' in the memory
-    signal current_obj_start: unsigned(15 downto 0) := "000";
+    signal current_obj_start: unsigned(15 downto 0) := x"0000";
     signal current_obj_offset: unsigned(2 downto 0) := "000";
 
     --Decides which vector register in the gpu to write the current line in the model memory  to
@@ -79,6 +49,7 @@ architecture Behavioral of GPU is
     signal draw_start: Vector.Elements_t; --The start of the vector to be drawn on the screen
     signal draw_end: Vector.Elements_t; --The end of ^^
     signal draw_diff: Vector.Elements_t := (to_signed(0, 16), to_signed(0, 16), to_signed(0, 16), to_signed(0, 16)); --The vector between draw_start and  draw_end
+    signal pixel_out: Vector.Elements_t;
 
     --Versions of draw_start and end that have not been corrected for the line to be in the first
     --octant
@@ -144,7 +115,7 @@ begin
                 vec => raw_end
             );
 
-    model_mem_addr <= current_obj_start + current_obj_offset;
+    obj_mem_addr <= current_obj_start + current_obj_offset;
     --raw_start <= start_vector;
     --raw_end <= end_vector;
 
@@ -157,8 +128,8 @@ begin
             if gpu_state = GPU_Info.READ_OBJECT_STATE then
                 gpu_state <= GPU_Info.FETCH_LINE_STATE;
 
-                if current_obj_offset = unsigned(4) then
-                    model_mem_addr <= obj_mem_data(15 downto 0);
+                if current_obj_offset = 4 then
+                    model_mem_addr <= unsigned(obj_mem_data(15 downto 0));
                 else
                     current_obj_offset <= current_obj_offset + 1;
                 end if;
@@ -249,8 +220,8 @@ begin
                       (x"0000", x"0000", raw_start(1) - current_pixel(0),  raw_start(0) + current_pixel(1)) when "110",
                       (x"0000", x"0000", raw_start(1) - current_pixel(1),  raw_start(0) + current_pixel(0)) when others;
 
-    pixel_address(16 downto 8) <= std_logic_vector(current_pixel(0)(8 downto 0));
-    pixel_address(7 downto 0) <= std_logic_vector(current_pixel(1)(7 downto 0));
+    pixel_address(16 downto 8) <= std_logic_vector(pixel_out(0)(8 downto 0));
+    pixel_address(7 downto 0) <= std_logic_vector(pixel_out(1)(7 downto 0));
     pixel_data <= '1';
     with gpu_state select
         pixel_write_enable <= '1' when GPU_Info.CALCULATE_PIXELS_STATE,

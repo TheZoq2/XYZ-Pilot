@@ -28,8 +28,6 @@ architecture Behavioral of gpu_tb is
             --pixel_data: out std_logic;
             --pixel_write_enable: out std_logic;
 
-            pixel_out: out Vector.Elements_t;
-
             dbg_draw_start: in Vector.Elements_t;
             dbg_draw_end: in Vector.Elements_t
         );
@@ -45,8 +43,7 @@ begin
     uut_len: gpu PORT MAP(
             clk => clk,
             dbg_draw_start => draw_start,
-            dbg_draw_end => draw_end,
-            pixel_out => pixel_out
+            dbg_draw_end => draw_end
         );
 
     clk <= not clk after 5 ns;
