@@ -29,11 +29,6 @@ package GPU_Info is
     constant CALCULATE_PIXELS_STATE: gpu_state_type := "11";
 end package;
 
-
-
-
-
-
 library IEEE;
 
 use IEEE.Numeric_std.all;
@@ -64,8 +59,8 @@ type ram_t is array (0 to 511) of Vector.InMemory_t;
         1  => x"00aa005A00000000",
 
         --y 120 - 150
-        --2  => x"00aa007800000000",
-        --3  => x"00aa009600000000",
+        2  => x"00aa007800000000",
+        3  => x"00aa009600000000",
 
         4  => x"00aa007800000000",
         5  => x"008C007800000000",

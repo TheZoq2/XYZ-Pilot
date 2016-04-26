@@ -127,6 +127,8 @@ begin
         if rising_edge(clk) then
             if gpu_state = GPU_Info.READ_OBJECT_STATE then
                 gpu_state <= GPU_Info.FETCH_LINE_STATE;
+                model_mem_state <= '0';
+                set_start_or_end <= '0';
 
                 if current_obj_offset = 4 then
                     model_mem_addr <= unsigned(obj_mem_data(15 downto 0));
@@ -144,11 +146,12 @@ begin
                     gpu_state <= GPU_Info.START_PIXEL_CALC;
                 end if;
 
-                --Prepare to read the next line
-                model_mem_addr <= model_mem_addr + 1;
                 --Toggle between reading start or end vectors
                 if model_mem_state = '1' then
                     set_start_or_end <= not set_start_or_end;
+                else
+                    --Prepare to read the next line
+                    model_mem_addr <= model_mem_addr + 1;
                 end if;
                 model_mem_state <= not model_mem_state;
 
