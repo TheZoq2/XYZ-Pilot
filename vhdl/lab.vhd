@@ -50,8 +50,6 @@ component gpu is
             pixel_data: out std_logic;
             pixel_write_enable: out std_logic;
 
-            pixel_out: out Vector.Elements_t;
-
             dbg_draw_start: in Vector.Elements_t;
             dbg_draw_end: in Vector.Elements_t
         );

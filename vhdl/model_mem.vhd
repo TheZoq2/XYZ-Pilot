@@ -59,12 +59,17 @@ type ram_t is array (0 to 511) of Vector.InMemory_t;
 
     -- Nollställ alla bitar på alla adresser
     signal ram : ram_t := (
+        --y 90 - 120
         0  => x"00aa007800000000",
         1  => x"00aa005A00000000",
-        2  => x"00aa007800000000",
-        3  => x"00aa009600000000",
+
+        --y 120 - 150
+        --2  => x"00aa007800000000",
+        --3  => x"00aa009600000000",
+
         4  => x"00aa007800000000",
         5  => x"008C007800000000",
+
         6  => x"00aa007800000000",
         7  => x"00C8007800000000",
         8  => x"ffffffffffffffff",
