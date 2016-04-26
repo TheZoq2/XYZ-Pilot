@@ -5,11 +5,13 @@ use IEEE.STD_LOGIC_1164.ALL;            -- basic IEEE library
 use IEEE.NUMERIC_STD.ALL;   			-- IEEE library for the unsigned type
 
 entity lab is
-	port(clk,rx 	: in std_logic;						-- System clock,rx
-		h_sync		: out std_logic;					-- Horizontal sync
-	 	v_sync		: out std_logic;					-- Vertical sync
-		pixel_data	: out std_logic_vector(7 downto 0);	-- Data to be sent to the screen
-		rst			: in std_logic);					-- Reset
+	port(clk,rx 	 : in std_logic;						-- System clock,rx
+		h_sync		 : out std_logic;					-- Horizontal sync
+	 	v_sync		 : out std_logic;					-- Vertical sync
+		pixel_data	 : out std_logic_vector(7 downto 0);	-- Data to be sent to the screen
+        ps2_kbd_clk	 : in std_logic; 		-- USB keyboard PS2 clock
+        ps2_kbd_data : in std_logic;         -- USB keyboard PS2 data
+		rst			 : in std_logic);					-- Reset
 end lab;
 
 architecture Behavioral of lab is
@@ -20,6 +22,15 @@ component uart is
 			cpu_clk,we	: out std_logic;
 			mem_instr	: out std_logic_vector(63 downto 0) := (others => '0');
 			mem_pos		: out std_logic_vector(15 downto 0) := (others => '0'));
+end component;
+
+-- KEYBOARD ENCODER
+component kbd_enc is
+  port ( clk	                : in std_logic;			-- system clock
+         ps2_kbd_clk	        : in std_logic; 		-- USB keyboard PS2 clock
+         ps2_kbd_data	        : in std_logic;         -- USB keyboard PS2 data
+         kbd_reg                : out std_logic_vector(0 to 8) := (others => '0')); 
+        -- [SPACE,LEFT,RIGHT,UP,DOWN,W,A,S,D] 1 means key is pushed down, 0 means key is up	
 end component;
 
 -- VGA Motor
@@ -60,9 +71,6 @@ port (clk : in std_logic;
     read_data : out std_logic);							-- Read data
 end component;
 
--- Signals 
-signal cpu_clk					: std_logic := '0';
-
 -- "Fake" signals for writin to pixel_mem
 signal pixel_mem_write_data	:	std_logic;
 signal pixel_mem_write_addr	: 	std_logic_vector(16 downto 0);
@@ -72,6 +80,10 @@ signal pixel_mem_we			:	std_logic;
 signal program_mem_read_instruction	:	std_logic_vector(63 downto 0);
 signal program_mem_read_adress	: 	std_logic_vector(15 downto 0);
 signal program_mem_re			:	std_logic;
+
+-- Signals to CPU
+signal cpu_clk					: std_logic := '0';
+signal kbd_reg                  : std_logic_vector(0 to 8);
 
 -- Signals between vga_motor and pixel_mem
 signal pixel_mem_read_data	:	std_logic;
@@ -108,6 +120,9 @@ program_mem_read_instruction <= (others => '0');
 -- UART component connection
 	U3: uart port map(clk=>clk,rx=>rx,cpu_clk=>cpu_clk,we=>program_mem_we,
 	mem_instr=>program_mem_write_instruction,mem_pos=>program_mem_write_adress);
+-- Keyboard Encoder component connection
+	U4: kbd_enc port map(clk=>clk,ps2_kbd_clk=>ps2_kbd_clk,ps2_kbd_data=>ps2_kbd_data,
+    kbd_reg=>kbd_reg);
 
 
 end Behavioral;
