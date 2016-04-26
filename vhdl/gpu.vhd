@@ -149,7 +149,7 @@ begin
                 --Toggle between reading start or end vectors
                 if model_mem_state = '1' then
                     set_start_or_end <= not set_start_or_end;
-                else
+
                     --Prepare to read the next line
                     model_mem_addr <= model_mem_addr + 1;
                 end if;
@@ -170,7 +170,12 @@ begin
                 end if;
             else
                 if current_pixel(0) > draw_end(0) then
-                    gpu_state <= GPU_Info.READ_OBJECT_STATE;
+                    gpu_state <= GPU_Info.FETCH_LINE_STATE;
+
+                    --Prepare to read next line
+                    model_mem_state <= '0';
+                    set_start_or_end <= '0';
+                    model_mem_addr <= model_mem_addr + 1;
                 else
                     current_pixel(0) <= current_pixel(0) + 1;
                     if draw_d_var >= 0 then
