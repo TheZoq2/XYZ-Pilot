@@ -33,8 +33,7 @@ XILINX_INIT = source /sw/xilinx/ise_12.4i/ISE_DS/settings64.sh;
 PART=xc6slx16-3-csg324
 
 
-lab.%: S=lab.vhd vector.vhd vector_splitter.vhd vector.vhd vga_motor.vhd pixel_mem.vhd
- 
+lab.%: S=lab.vhd vector.vhd vector_splitter.vhd vector.vhd vga_motor.vhd pixel_mem.vhd cpu.vhd uart.vhd program_mem.vhd kbd_enc.vhd
 lab.%: T=lab_tb.vhd
 lab.%: U=Nexys3.ucf
 
