@@ -50,6 +50,12 @@ architecture Behavioral of GPU is
                         );
     signal gpu_state: gpu_state_type := PREPARE_READ_PROJ_MATRIX;
 
+    signal proj_read_state_type is (
+                        SET_ADDR,
+                        STORE_DATA
+                    );
+    signal proj_read_state: proj_read_state_type := SET_ADDR
+
     --The mux which decides if we want to start reading a new model or read more lines in the  current  one
     signal line_mux_in: std_logic_vector(1 downto 0);
     signal line_mux_out: std_logic_vector(GPU_Info.MODEL_ADDR_SIZE - 1  downto 0);
@@ -66,6 +72,9 @@ architecture Behavioral of GPU is
 
     signal start_vector: work.Vector.InMemory_t;
     signal end_vector: work.Vector.InMemory_t;
+
+    signal screen_start: Vector.Elements_t;
+    signal screene_end: Vector.Elements_t;
 
     --The coordinate that is being drawn
     signal current_pixel: Vector.Elements_t;
@@ -144,6 +153,17 @@ begin
 
     obj_mem_addr <= current_obj_start + current_obj_offset;
 
+    screen_start(0) <= raw_start(0);
+    screen_start(1) <= raw_start(1);
+    screen_start(2) <= raw_start(2);
+    screen_start(3) <= raw_start(3) * 2;
+
+    screen_end(0) <= raw_end(0);
+    screen_end(1) <= raw_end(1);
+    screen_end(2) <= raw_end(2);
+    screen_end(3) <= raw_end(3) * 2;
+
+
     with fetch_line_state select
         model_mem_addr <= line_start_addr when Line_Fetch_State.SET_START,
                           line_start_addr when Line_Fetch_State.STORE_START,
@@ -156,10 +176,17 @@ begin
         if rising_edge(clk) then
             if gpu_state = PREPARE_READ_PROJ_MATRIX then
                 --Reset the object memory to point to the projection matrix
-                --current_obj_start <= unsigned(0);
-                --current_obj_offset <= unsigned(0);
+                current_obj_start <= (others => '0');
+                current_obj_offset <= (others => '0');
+                proj_read_state <= SET_ADDR;
+
                 gpu_state <= READ_PROJ_MATRIX;
 			elsif gpu_state = READ_PROJ_MATRIX then
+                if proj_read_state = SET_ADDR then
+                    proj_read_state <= STORE_DATA;
+                else
+                    
+                end if;
 
                 gpu_state <= READ_OBJECT;
             elsif gpu_state = READ_OBJECT then
