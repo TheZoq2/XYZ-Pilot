@@ -153,14 +153,19 @@ begin
                     current_obj_offset <= current_obj_offset + 1;
                 end if;
             elsif gpu_state = GPU_Info.FETCH_LINE_STATE then
+                --Wait for model memory to update the data
                 if fetch_line_state = Line_Fetch_State.SET_START then
                     fetch_line_state <= Line_Fetch_State.STORE_START;
+                --Store the result in the start vector
                 elsif fetch_line_state = Line_Fetch_State.STORE_START then
                     start_vector  <= model_mem_data;
 
                     fetch_line_state <= Line_Fetch_State.SET_END;
+                --Wait for model memory  to update again
                 elsif fetch_line_state = Line_Fetch_State.SET_END then
                     fetch_line_state <= Line_Fetch_State.STORE_END;
+
+                --Store in end vector and start drawing
                 else
                     end_vector <= model_mem_data;
 
