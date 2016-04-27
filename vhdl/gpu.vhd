@@ -226,7 +226,7 @@ begin
     with octant select
         draw_end   <= (x"0000", x"0000", draw_diff(1), draw_diff(0)) when "000",
                       (x"0000", x"0000", draw_diff(0), draw_diff(1)) when "001",
-                      (x"0000", x"0000",-draw_diff(0), draw_diff(0)) when "010",
+                      (x"0000", x"0000",-draw_diff(0), draw_diff(1)) when "010",
                       (x"0000", x"0000", draw_diff(1),-draw_diff(0)) when "011",
                       (x"0000", x"0000",-draw_diff(1),-draw_diff(0)) when "100",
                       (x"0000", x"0000",-draw_diff(0),-draw_diff(1)) when "101",
