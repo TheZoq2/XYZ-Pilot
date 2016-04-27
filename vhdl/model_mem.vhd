@@ -23,6 +23,7 @@ package GPU_Info is
     subtype gpu_state_type is std_logic_vector(2 downto 0);
 
     --'Enums' for the states of the GPU
+	constant READ_PROJ_MATRIX_STATE: gpu_state_type := "101";
     constant READ_OBJECT_STATE: gpu_state_type := "000";
     constant FETCH_LINE_STATE: gpu_state_type := "001";
     constant START_PIXEL_CALC: gpu_state_type := "010";

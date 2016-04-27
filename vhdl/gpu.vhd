@@ -39,13 +39,23 @@ entity GPU is
 end entity;
 
 architecture Behavioral of GPU is
+	type gpu_state_type is (
+							PREPARE_READ_PROJ_MATRIX,
+							READ_PROJ_MATRIX,
+ 							READ_OBJECT,
+                            FETCH_LINE,
+                            START_PIXEL_CALC,
+                            CALC_PIXELS,
+                            PREPARE_NEXT_LINE
+                        );
+    signal gpu_state: gpu_state_type := PREPARE_READ_PROJ_MATRIX;
+
     --The mux which decides if we want to start reading a new model or read more lines in the  current  one
     signal line_mux_in: std_logic_vector(1 downto 0);
     signal line_mux_out: std_logic_vector(GPU_Info.MODEL_ADDR_SIZE - 1  downto 0);
 
     signal next_line_reg: std_logic_vector(GPU_Info.MODEL_ADDR_SIZE -1 downto 0);
 
-    signal gpu_state: GPU_Info.gpu_state_type := GPU_Info.READ_OBJECT_STATE;
 
     --The offset from the start of the current object pointer in memory to the current 'line' in the memory
     signal current_obj_start: unsigned(15 downto 0) := x"0000";
@@ -144,15 +154,23 @@ begin
     --###########################################################################
     process(clk) begin
         if rising_edge(clk) then
-            if gpu_state = GPU_Info.READ_OBJECT_STATE then
-                gpu_state <= GPU_Info.FETCH_LINE_STATE;
+            if gpu_state = PREPARE_READ_PROJ_MATRIX then
+                --Reset the object memory to point to the projection matrix
+                --current_obj_start <= unsigned(0);
+                --current_obj_offset <= unsigned(0);
+                gpu_state <= READ_PROJ_MATRIX;
+			elsif gpu_state = READ_PROJ_MATRIX then
+
+                gpu_state <= READ_OBJECT;
+            elsif gpu_state = READ_OBJECT then
+                gpu_state <= FETCH_LINE;
 
                 if current_obj_offset = 4 then
                     line_start_addr <= unsigned(obj_mem_data(15 downto 0));
                 else
                     current_obj_offset <= current_obj_offset + 1;
                 end if;
-            elsif gpu_state = GPU_Info.FETCH_LINE_STATE then
+            elsif gpu_state = FETCH_LINE then
                 --Wait for model memory to update the data
                 if fetch_line_state = Line_Fetch_State.SET_START then
                     fetch_line_state <= Line_Fetch_State.STORE_START;
@@ -170,24 +188,24 @@ begin
                     end_vector <= model_mem_data;
 
                     fetch_line_state <= Line_Fetch_State.SET_START;
-                    gpu_state <= GPU_Info.START_PIXEL_CALC;
+                    gpu_state <= START_PIXEL_CALC;
                 end if;
                 
-            elsif gpu_state = GPU_Info.START_PIXEL_CALC then
+            elsif gpu_state = START_PIXEL_CALC then
                 --Set up the pixel drawing calculation
                 --Since start.x = 0, dx = end.x in bresenham's algorithm
                 if end_vector = x"ffffffffffffffff" then
-                    gpu_state <= GPU_Info.READ_OBJECT_STATE;
+                    gpu_state <= READ_OBJECT;
                 else
                     draw_d_var <= draw_end(1) - draw_end(0);
                     current_pixel(0) <= draw_start(0);
                     current_pixel(1) <= draw_start(1);
 
-                    gpu_state <= GPU_Info.CALCULATE_PIXELS_STATE;
+                    gpu_state <= CALC_PIXELS;
                 end if;
-            elsif gpu_state = GPU_Info.CALCULATE_PIXELS_STATE then
+            elsif gpu_state = CALC_PIXELS then
                 if current_pixel(0) > draw_end(0) then
-                    gpu_state <= GPU_Info.NEXT_LINE_STATE;
+                    gpu_state <= PREPARE_NEXT_LINE;
                 else
                     current_pixel(0) <= current_pixel(0) + 1;
                     if draw_d_var >= 0 then
@@ -197,10 +215,10 @@ begin
                         draw_d_var <= draw_d_var + draw_end(1);
                     end if;
                 end if;
-            elsif gpu_state = GPU_Info.NEXT_LINE_STATE then
+            elsif gpu_state = PREPARE_NEXT_LINE then
                 line_start_addr <= line_start_addr + 2;
 
-                gpu_state <= GPU_Info.FETCH_LINE_STATE;
+                gpu_state <= FETCH_LINE;
             end if;
         end if;
     end process;
@@ -248,6 +266,6 @@ begin
     pixel_address(7 downto 0) <= std_logic_vector(pixel_out(1)(7 downto 0));
     pixel_data <= '1';
     with gpu_state select
-        pixel_write_enable <= '1' when GPU_Info.CALCULATE_PIXELS_STATE,
+        pixel_write_enable <= '1' when CALC_PIXELS,
                               '0' when others;
 end Behavioral;
