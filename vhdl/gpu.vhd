@@ -31,9 +31,7 @@ entity GPU is
 
             pixel_address: out std_logic_vector(16 downto 0);
             pixel_data: out std_logic;
-            pixel_write_enable: out std_logic;
-
-            pixel_clear: out std_logic
+            pixel_write_enable: out std_logic
         );
 end entity;
 
@@ -215,10 +213,6 @@ begin
         model_mem_addr <= line_start_addr when Line_Fetch_State.SET_START,
                           line_start_addr when Line_Fetch_State.STORE_START,
                           line_start_addr + 1 when others;
-
-    with gpu_state select
-        pixel_clear <= '1' when READ_OBJECT,
-                 '0' when others;
 
     --###########################################################################
     --      Main GPU state machine

@@ -11,9 +11,7 @@ port (clk : in std_logic;
         -- port OUT
         read_adress: in std_logic_vector(16 downto 0);
         re : in std_logic;
-        read_data : out std_logic;
-
-        clear: in std_logic
+        read_data : out std_logic
     );
 
 end pixel_mem;
@@ -24,6 +22,9 @@ signal write_x :std_logic_vector(8 downto 0); -- X pos for input
 signal write_y :std_logic_vector(7 downto 0); -- Y pos for input
 signal read_x :std_logic_vector(8 downto 0); -- X pos for output
 signal read_y :std_logic_vector(7 downto 0); -- Y pos for output
+
+signal last_read_x: std_logic_vector(8 downto 0);
+signal last_read_y: std_logic_vector(8 downto 0);
 
 
 
@@ -45,15 +46,18 @@ begin
     process(clk)
     begin
         if (rising_edge(clk)) then
-            if clear = '1' then
-                ram <= (others => '0');
             -- WRITE
-            elsif (we = '1') then
+            if (we = '1') then
                 ram(320*conv_integer(write_y)+conv_integer(write_x)) <= write_data;
             end if;
             -- READ
             if (re = '1') then
                 read_data <= ram(320*conv_integer(read_y)+conv_integer(read_x));
+
+                last_read_x <= read_x;
+                last_read_y <= read_y;
+            else
+                ram(320 * conv_integer(last_read_y) + conv_integer(last_read_x)) <= '0';
             end if;
         end if;
     end process;
