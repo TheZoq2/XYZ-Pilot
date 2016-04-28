@@ -13,7 +13,7 @@ end entity;
 architecture Behavioral of gpu_tb is
     component gpu is
         port(
-            clk: in std_logic;
+            clk: in std_logic
 
             ----The address of the current object in the  object memory
             --obj_ptr: out unsigned(GPU_Info.OBJ_ADDR_SIZE - 1 downto 0);
@@ -28,8 +28,6 @@ architecture Behavioral of gpu_tb is
             --pixel_data: out std_logic;
             --pixel_write_enable: out std_logic;
 
-            dbg_draw_start: in Vector.Elements_t;
-            dbg_draw_end: in Vector.Elements_t
         );
     end component;
 
@@ -41,9 +39,7 @@ architecture Behavioral of gpu_tb is
     signal pixel_out: Vector.Elements_t;
 begin
     uut_len: gpu PORT MAP(
-            clk => clk,
-            dbg_draw_start => draw_start,
-            dbg_draw_end => draw_end
+            clk => clk
         );
 
     clk <= not clk after 5 ns;

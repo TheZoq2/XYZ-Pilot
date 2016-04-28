@@ -38,7 +38,11 @@ port (clk : in std_logic;
     -- port OUT
     read_adress: in std_logic_vector(16 downto 0);		-- Read adress
     re : in std_logic;									-- Read Enable
-    read_data : out std_logic);							-- Read data
+    read_data : out std_logic;
+
+    clear: in std_logic
+);							-- Read data
+
 end component;
 
 --GPU
@@ -50,8 +54,7 @@ component gpu is
             pixel_data: out std_logic;
             pixel_write_enable: out std_logic;
 
-            dbg_draw_start: in Vector.Elements_t;
-            dbg_draw_end: in Vector.Elements_t
+            pixel_clear: out std_logic
         );
 end component;
 --signals for the gpu
