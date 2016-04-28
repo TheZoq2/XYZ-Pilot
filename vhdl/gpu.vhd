@@ -20,6 +20,7 @@ use IEEE.numeric_std.all;
 use work.GPU_Info;
 use work.Vector;
 use work.Line_Fetch_State;
+use work.datatypes;
 
 entity GPU is
     port(
@@ -66,7 +67,7 @@ architecture Behavioral of GPU is
     signal end_vector: work.Vector.InMemory_t;
 
     signal screen_start: Vector.Elements_t;
-    signal screene_end: Vector.Elements_t;
+    signal screen_end: Vector.Elements_t;
 
     --The coordinate that is being drawn
     signal current_pixel: Vector.Elements_t;
@@ -80,6 +81,8 @@ architecture Behavioral of GPU is
     --octant
     signal raw_start: Vector.Elements_t;
     signal raw_end: Vector.Elements_t; 
+    signal rotated_start: Vector.Elements_t;
+    signal rotated_end: Vector.Elements_t;
 
     signal octant: unsigned(2 downto 0) := "000";
     signal octant_selector: std_logic_vector(2 downto 0);
@@ -94,6 +97,15 @@ architecture Behavioral of GPU is
     signal line_start_addr: GPU_Info.ModelAddr_t := x"0000";
 
     signal fetch_line_state: Line_Fetch_State.type_t := Line_Fetch_State.SET_START;
+
+    signal angle: unsigned(7 downto 0) := x"0f";
+    signal cos_val: datatypes.small_number_t;
+    signal sin_val: datatypes.small_number_t;
+
+    signal y_cos: datatypes.std_number_t;
+    signal z_sin: datatypes.std_number_t;
+    signal y_cos_end: datatypes.std_number_t;
+    signal z_sin_end: datatypes.std_number_t;
 
     component VectorSubtractor is
         port(
@@ -119,10 +131,31 @@ architecture Behavioral of GPU is
         );
     end component;
             
+    component cos_table is
+        port(
+                angle: in unsigned (7 downto 0);
+                result: out datatypes.small_number_t
+            );
+    end component;
+    component sin_table is
+        port(
+                angle: in unsigned (7 downto 0);
+                result: out datatypes.small_number_t
+            );
+    end component;
+
+    component FractionalMultiplyer is
+        port(
+                big_num: in Datatypes.std_number_t;
+                small_num: in Datatypes.small_number_t;
+                result: out Datatypes.std_number_t
+            );
+    end component;
+    
 begin
     draw_diff_calculator: VectorSubtractor port map(
-                vec2 => raw_start,
-                vec1 => raw_end,
+                vec2 => screen_start,
+                vec1 => screen_end,
                 result => draw_diff
             );
     model_mem_map: ModelMem port map(
@@ -139,8 +172,46 @@ begin
                 memory => end_vector,
                 vec => raw_end
             );
+    sin_calculator: sin_table port map(
+                        angle => angle,
+                        result => sin_val
+                  );
+    cos_calculator: cos_table port map(
+                        angle => angle,
+                        result => cos_val
+                  );
+    y_cos_calculator: FractionalMultiplyer port map(
+                big_num => raw_start(1),
+                small_num => cos_val,
+                result => y_cos
+            );
+    z_sin_calculator: FractionalMultiplyer port map(
+                big_num => raw_start(2),
+                small_num => sin_val,
+                result => z_sin
+            );
+
+    y_cos_end_calculator: FractionalMultiplyer port map(
+                big_num => raw_end(1),
+                small_num => cos_val,
+                result => y_cos_end
+            );
+    z_sin_end_calculator: FractionalMultiplyer port map(
+                big_num => raw_end(2),
+                small_num => sin_val,
+                result => z_sin_end
+            );
 
     obj_mem_addr <= current_obj_start + current_obj_offset;
+
+    screen_start(0) <= raw_start(0);
+    screen_start(1) <= y_cos - z_sin;
+    screen_start(2) <= x"0000";
+    screen_start(3) <= x"0000";
+    screen_end(0) <= raw_end(0);
+    screen_end(1) <= y_cos_end - z_sin_end;
+    screen_end(2) <= x"0000";
+    screen_end(3) <= x"0000";
 
     with fetch_line_state select
         model_mem_addr <= line_start_addr when Line_Fetch_State.SET_START,
@@ -243,14 +314,14 @@ begin
 
 
     with octant select
-        pixel_out <=  (x"0000", x"0000", raw_start(1) + current_pixel(1),  raw_start(0) + current_pixel(0)) when "000",
-                      (x"0000", x"0000", raw_start(1) + current_pixel(0),  raw_start(0) + current_pixel(1)) when "001",
-                      (x"0000", x"0000", raw_start(1) + current_pixel(0),  raw_start(0) - current_pixel(1)) when "010",
-                      (x"0000", x"0000", raw_start(1) + current_pixel(1),  raw_start(0) - current_pixel(0)) when "011",
-                      (x"0000", x"0000", raw_start(1) - current_pixel(1),  raw_start(0) - current_pixel(0)) when "100",
-                      (x"0000", x"0000", raw_start(1) - current_pixel(0),  raw_start(0) - current_pixel(1)) when "101",
-                      (x"0000", x"0000", raw_start(1) - current_pixel(0),  raw_start(0) + current_pixel(1)) when "110",
-                      (x"0000", x"0000", raw_start(1) - current_pixel(1),  raw_start(0) + current_pixel(0)) when others;
+        pixel_out <=  (x"0000", x"0000", screen_start(1) + current_pixel(1),  screen_end(0) + current_pixel(0)) when "000",
+                      (x"0000", x"0000", screen_start(1) + current_pixel(0),  screen_end(0) + current_pixel(1)) when "001",
+                      (x"0000", x"0000", screen_start(1) + current_pixel(0),  screen_end(0) - current_pixel(1)) when "010",
+                      (x"0000", x"0000", screen_start(1) + current_pixel(1),  screen_end(0) - current_pixel(0)) when "011",
+                      (x"0000", x"0000", screen_start(1) - current_pixel(1),  screen_end(0) - current_pixel(0)) when "100",
+                      (x"0000", x"0000", screen_start(1) - current_pixel(0),  screen_end(0) - current_pixel(1)) when "101",
+                      (x"0000", x"0000", screen_start(1) - current_pixel(0),  screen_end(0) + current_pixel(1)) when "110",
+                      (x"0000", x"0000", screen_start(1) - current_pixel(1),  screen_end(0) + current_pixel(0)) when others;
 
     pixel_address(16 downto 8) <= std_logic_vector(pixel_out(0)(8 downto 0));
     pixel_address(7 downto 0) <= std_logic_vector(pixel_out(1)(7 downto 0));
