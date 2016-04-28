@@ -75,6 +75,8 @@ signal pixel_mem_re			:	std_logic;
 signal current_line: unsigned(7 downto 0) := to_unsigned(0, 8);
 signal time_at_current: unsigned(31 downto 0) := to_unsigned(0, 32);
 
+signal pixel_clear: std_logic;
+
 begin
 
     process(clk) begin
@@ -127,8 +129,7 @@ begin
                              pixel_address => pixel_mem_write_addr,
                              pixel_data => pixel_mem_write_data,
                              pixel_write_enable =>pixel_mem_we,
-                             dbg_draw_start => draw_start,
-                             dbg_draw_end => draw_end
+                             pixel_clear => pixel_clear
                          );
 
 -- VGA motor component connection
@@ -138,6 +139,6 @@ begin
 -- Pixel memory component connection
 	U1 : pixel_mem port map(clk=>clk, write_adress=>pixel_mem_write_addr, we=>pixel_mem_we, 
 	write_data=>pixel_mem_write_data, read_adress=>pixel_mem_read_addr, re=>pixel_mem_re,
-	read_data=>pixel_mem_read_data);
+	read_data=>pixel_mem_read_data, clear => pixel_clear);
 
 end Behavioral;
