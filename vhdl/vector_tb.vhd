@@ -114,20 +114,18 @@ begin
         memory <= (x"0001000100010001");
 
         big_test_num <= to_signed(1000, big_test_num'length);
-        small_num1 <= "00000000" & "10000000"; --0.5
+        small_num1 <= "00000001" & "00000000"; --1
         small_num2 <= "00000000" & "10000000"; --0.5
 
-        --wait for 5 ns;
-        --memory <= (x"000f000f000f000f");
+        wait for  5 ns;
+        big_test_num <= to_signed(1000, big_test_num'length);
+        small_num1 <= "00000001" & "00000000"; --1
+        small_num2 <= "00000001" & "00000000"; --0.5
 
-        --wait for 5 ns;
-        --memory <= (x"000f000f000f000f");
-
-        --wait for 5 ns;
-        --memory <= (x"0000000000000000");
-
-        --wait for 5 ns;
-        --memory <= (x"f00f000100050002");
+        wait for  5 ns;
+        big_test_num <= to_signed(1000, big_test_num'length);
+        small_num1 <= "00000001" & "10000000"; --1.5
+        small_num2 <= "00000000" & "10000000"; --0.5
 
         wait for 100 ns;
     end process;

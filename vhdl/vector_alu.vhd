@@ -59,13 +59,13 @@ entity SmallNumberMultiplyer is
 end entity;
 
 architecture Behavioral of SmallNumberMultiplyer is
-    signal big_num: unsigned(15 downto 0);
+    signal big_num: unsigned(17 downto 0);
 
     signal sign: std_logic;
 begin
-    big_num <= (num1(7 downto 0) * num2(7 downto 0));
+    big_num <= (num1(8 downto 0) * num2(8 downto 0));
 
-    result <= (num1(15) xor num2(15)) & "0000000" & SHIFT_RIGHT(big_num, 8)(7 downto 0);
+    result <= (num1(15) xor num2(15)) & "000000" & SHIFT_RIGHT(big_num, 8)(8 downto 0);
 end Behavioral;
 
 -----------------------------------------------------------
@@ -89,7 +89,7 @@ end entity;
 architecture Behavioral of FractionalMultiplyer is
     signal padded_big: unsigned(23 downto 0);
 
-    signal small_cut: unsigned(7 downto 0);
+    signal small_cut: unsigned(8 downto 0);
 
     signal sign: std_logic;
 
@@ -97,7 +97,7 @@ architecture Behavioral of FractionalMultiplyer is
 begin
     --padded_big(7 downto 0) <= "00000000";
     padded_big(23 downto 0) <= unsigned(abs big_num) & x"00";
-    small_cut <= small_num(7 downto 0);
+    small_cut <= small_num(8 downto 0);
 
     sign <= big_num(15) xor small_num(15);
 
