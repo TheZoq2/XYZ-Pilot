@@ -40,78 +40,75 @@ package body sqrt_pkg is
     end sqrt;
 end sqrt_pkg;
 
-
-
 -----------------------------------------------------------
---                  Division algoritm
---Code taken from http://vhdlguru.blogspot.se/2010/03/vhdl-function-for-division-two-signed.html 
+--              Small  number multiplyer
 -----------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
-use ieee.numeric_std.all;    -- for UNSIGNED
+use IEEE.numeric_std.all;
 
-package div_pkg is 
-    function  divide  (a : UNSIGNED; b : UNSIGNED) return UNSIGNED;
-    
-end div_pkg;
+use work.Vector;
+use work.Datatypes;
 
-package body div_pkg is
-    function  divide  (a : UNSIGNED; b : UNSIGNED) return UNSIGNED is
-        variable a1 : unsigned(a'length-1 downto 0):=a;
-        variable b1 : unsigned(b'length-1 downto 0):=b;
-        variable p1 : unsigned(b'length downto 0):= (others => '0');
-        variable i : integer:=0;
-
-    begin
-        for i in 0 to b'length-1 loop
-            p1(b'length-1 downto 1) := p1(b'length-2 downto 0);
-            p1(0) := a1(a'length-1);
-            a1(a'length-1 downto 1) := a1(a'length-2 downto 0);
-            p1 := p1-b1;
-            if(p1(b'length-1) ='1') then
-                a1(0) :='0';
-                p1 := p1+b1;
-            else
-                a1(0) :='1';
-            end if;
-        end loop;
-        return a1;
-
-    end divide;
-end div_pkg;
-
------------------------------------------------------------
---                  Signed division
------------------------------------------------------------
-library IEEE;
-use IEEE.std_logic_1164.all;
-use ieee.numeric_std.all;    -- for UNSIGNED
-
-use work.div_pkg.all;
-
-entity signed_divide is
+entity SmallNumberMultiplyer is
     port(
-        val: in signed(31 downto 0);
-        div: in signed(31 downto 0);
-        result: out signed(31 downto 0)
-    );
+            num1: in Datatypes.small_number_t;
+            num2: in Datatypes.small_number_t;
+            result: out Datatypes.small_number_t
+        );
 end entity;
 
-architecture Behaviour of signed_divide is
-    signal unsigned_val: unsigned(31 downto 0);
-    signal unsigned_div: unsigned(31 downto 0);
+architecture Behavioral of SmallNumberMultiplyer is
+    signal big_num: unsigned(15 downto 0);
 
-    signal div_result: unsigned(31 downto 0);
+    signal sign: std_logic;
 begin
-    unsigned_val <= unsigned(abs(val));
-    unsigned_div <= unsigned(abs(div));
+    big_num <= (num1(7 downto 0) * num2(7 downto 0));
 
-    div_result <= divide(unsigned_val, unsigned_div);
+    result <= (num1(15) xor num2(15)) & "0000000" & SHIFT_RIGHT(big_num, 8)(7 downto 0);
+end Behavioral;
 
-    with (val(31) xor div(31)) select
-        result <= signed(div_result) when '0',
-                  -signed(div_result) when others;
-end architecture;
+-----------------------------------------------------------
+--              Decimal number multiplyer
+-----------------------------------------------------------
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
+
+use work.Vector;
+use work.Datatypes;
+
+entity FractionalMultiplyer is
+    port(
+            big_num: in Datatypes.std_number_t;
+            small_num: in Datatypes.small_number_t;
+            result: out Datatypes.std_number_t
+        );
+end entity;
+
+architecture Behavioral of FractionalMultiplyer is
+    signal padded_big: unsigned(23 downto 0);
+
+    signal small_cut: unsigned(7 downto 0);
+
+    signal sign: std_logic;
+
+    signal unsigned_result: unsigned(15 downto 0);
+begin
+    --padded_big(7 downto 0) <= "00000000";
+    padded_big(23 downto 0) <= unsigned(abs big_num) & x"00";
+    small_cut <= small_num(7 downto 0);
+
+    sign <= big_num(15) xor small_num(15);
+
+    unsigned_result <= SHIFT_RIGHT((padded_big * small_cut), 16)(15 downto 0);
+
+    with sign select
+        result <= signed(unsigned_result) when '0',
+                  -signed(unsigned_result) when others;
+end Behavioral;
+
+
 -----------------------------------------------------------
 --              Vector adder
 -----------------------------------------------------------
@@ -189,63 +186,6 @@ begin
     result <= sqrt(unsigned(sum));
 end Behavioral;
 
---########################################################
---               Normal calculator
---########################################################
-library IEEE;
-use IEEE.numeric_std.all;
-use IEEE.std_logic_1164.all;
-
-use work.Vector;
-use work.div_pkg.all;
-use work.signed_divide;
-
-entity VectorNormal is
-    port(
-            --The two vectors that should be added together
-            vec1: in Vector.Elements_t;
-            len: in unsigned(15 downto 0);
-
-            result: out Vector.Elements_Big_t
-        );
-end VectorNormal;
-
-architecture Behavioral of VectorNormal is
-    signal long_version: Vector.Elements_Big_t;
-    signal long_len: signed(31 downto 0);
-
-    component signed_divide is
-        port(
-            val: in signed(31 downto 0);
-            div: in signed(31 downto 0);
-            result: out signed(31 downto 0)
-        );
-    end component;
-begin
-    divider0: signed_divide port  map(
-                    val => long_version(0),
-                    div => long_len,
-                    result => result(0)
-                );
-    divider1: signed_divide port  map(
-                    val => long_version(1),
-                    div => long_len,
-                    result => result(1)
-                );
-
-    long_len(31 downto 16) <= (others => '0');
-    long_len(15 downto 0) <= signed(len);
-
-    long_version(0)(15 downto 0) <= (others => '0');
-    long_version(1)(15 downto 0) <= (others => '0');
-    long_version(2)(15 downto 0) <= (others => '0');
-    long_version(3)(15 downto 0) <= (others => '0');
-
-    long_version(0)(31 downto 16) <= vec1(0);
-    long_version(1)(31 downto 16) <= vec1(1);
-    long_version(2)(31 downto 16) <= vec1(2);
-    long_version(3)(31 downto 16) <= vec1(3);
-end Behavioral;
 
 --########################################################
 --             Vector splitter / merger
