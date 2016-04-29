@@ -17,8 +17,8 @@ end component;
 
 type mem_t is array (0 to 31) of std_logic_vector(63 downto 0);
 signal memory: mem_t := (0 => X"04_0_1_0_12345678_000",
-                         3 => X"03_1_0_0_00000000_000",
-                         6 => X"07_1_0_0_00000000_000", others => (others => '0'));
+                         3 => X"",
+                         others => (others => '0'));
 	
 signal clk : std_logic := '0';
 signal pm_instruction : std_logic_vector(63 downto 0) := (others => '0');

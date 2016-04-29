@@ -11,7 +11,7 @@ port (clk : in std_logic;
     -- port OUT
     read_adress: in std_logic_vector(15 downto 0);
     re : in std_logic;
-    read_instruction : out std_logic_vector(63 downto 0));
+    read_instruction : out std_logic_vector(63 downto 0) := (others => '0'));
 end program_mem;
 
 architecture Behavioral of program_mem is
