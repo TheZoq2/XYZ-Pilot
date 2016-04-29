@@ -11,7 +11,9 @@ entity lab is
 		pixel_data	 : out std_logic_vector(7 downto 0);	-- Data to be sent to the screen
         ps2_kbd_clk	 : in std_logic; 		-- USB keyboard PS2 clock
         ps2_kbd_data : in std_logic;         -- USB keyboard PS2 data
-		rst			 : in std_logic);					-- Reset
+		rst			 : in std_logic;					-- Reset
+                seg : out std_logic_vector(7 downto 0);
+                an : out std_logic_vector(3 downto 0));
 end lab;
 
 architecture Behavioral of lab is
@@ -71,6 +73,14 @@ port (clk : in std_logic;
     read_data : out std_logic);							-- Read data
 end component;
 
+component dbg_segment
+  port (
+    clk : in std_logic;
+    debug_value : in std_logic_vector(15 downto 0);
+    segment_out : out std_logic_vector(7 downto 0);
+    segment_n : out std_logic_vector(3 downto 0));
+end component;
+
 -- "Fake" signals for writin to pixel_mem
 signal pixel_mem_write_data	:	std_logic;
 signal pixel_mem_write_addr	: 	std_logic_vector(16 downto 0);
@@ -95,6 +105,9 @@ signal program_mem_write_instruction: std_logic_vector(63 downto 0);
 signal program_mem_write_adress: std_logic_vector(15 downto 0);
 signal program_mem_we : std_logic;
 
+-- Debug signals
+signal debug_data : std_logic_vector(15 downto 0);
+
 
 begin
 
@@ -105,6 +118,9 @@ pixel_mem_write_addr <= (others => '0');
 program_mem_re <= '0';
 program_mem_read_adress <= (others => '0');
 program_mem_read_instruction <= (others => '0');
+
+-- Debug
+debug_data <= program_mem_write_adress;
 
 -- VGA motor component connection
 	U0 : vga_motor port map(clk=>clk, data=>pixel_mem_read_data, addr=>pixel_mem_read_addr,
@@ -123,6 +139,12 @@ program_mem_read_instruction <= (others => '0');
 -- Keyboard Encoder component connection
 	U4: kbd_enc port map(clk=>clk,ps2_kbd_clk=>ps2_kbd_clk,ps2_kbd_data=>ps2_kbd_data,
     kbd_reg=>kbd_reg);
+-- Debug
+        U5 : dbg_segment port map (
+          clk         => clk,
+          debug_value => debug_data,
+          segment_out => seg,
+          segment_n   => an);
 
 
 end Behavioral;
