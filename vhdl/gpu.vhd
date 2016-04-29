@@ -204,10 +204,13 @@ begin
     obj_mem_addr <= current_obj_start + current_obj_offset;
 
     screen_start(0) <= raw_start(0);
+    --screen_start(1) <= raw_start(1);
     screen_start(1) <= y_cos - z_sin;
+
     screen_start(2) <= x"0000";
     screen_start(3) <= x"0000";
     screen_end(0) <= raw_end(0);
+    --screen_end(1) <= raw_end(1);
     screen_end(1) <= y_cos_end - z_sin_end;
     screen_end(2) <= x"0000";
     screen_end(3) <= x"0000";
@@ -319,14 +322,14 @@ begin
 
 
     with octant select
-        pixel_out <=  (x"0000", x"0000", screen_start(1) + current_pixel(1),  screen_end(0) + current_pixel(0)) when "000",
-                      (x"0000", x"0000", screen_start(1) + current_pixel(0),  screen_end(0) + current_pixel(1)) when "001",
-                      (x"0000", x"0000", screen_start(1) + current_pixel(0),  screen_end(0) - current_pixel(1)) when "010",
-                      (x"0000", x"0000", screen_start(1) + current_pixel(1),  screen_end(0) - current_pixel(0)) when "011",
-                      (x"0000", x"0000", screen_start(1) - current_pixel(1),  screen_end(0) - current_pixel(0)) when "100",
-                      (x"0000", x"0000", screen_start(1) - current_pixel(0),  screen_end(0) - current_pixel(1)) when "101",
-                      (x"0000", x"0000", screen_start(1) - current_pixel(0),  screen_end(0) + current_pixel(1)) when "110",
-                      (x"0000", x"0000", screen_start(1) - current_pixel(1),  screen_end(0) + current_pixel(0)) when others;
+        pixel_out <=  (x"0000", x"0000", screen_start(1) + current_pixel(1),  screen_start(0) + current_pixel(0)) when "000",
+                      (x"0000", x"0000", screen_start(1) + current_pixel(0),  screen_start(0) + current_pixel(1)) when "001",
+                      (x"0000", x"0000", screen_start(1) + current_pixel(0),  screen_start(0) - current_pixel(1)) when "010",
+                      (x"0000", x"0000", screen_start(1) + current_pixel(1),  screen_start(0) - current_pixel(0)) when "011",
+                      (x"0000", x"0000", screen_start(1) - current_pixel(1),  screen_start(0) - current_pixel(0)) when "100",
+                      (x"0000", x"0000", screen_start(1) - current_pixel(0),  screen_start(0) - current_pixel(1)) when "101",
+                      (x"0000", x"0000", screen_start(1) - current_pixel(0),  screen_start(0) + current_pixel(1)) when "110",
+                      (x"0000", x"0000", screen_start(1) - current_pixel(1),  screen_start(0) + current_pixel(0)) when others;
 
     pixel_address(16 downto 8) <= std_logic_vector(pixel_out(0)(8 downto 0));
     pixel_address(7 downto 0) <= std_logic_vector(pixel_out(1)(7 downto 0));

@@ -146,8 +146,13 @@ begin
                 ram2(320*conv_integer(r2_write_y)+conv_integer(r2_write_x)) <= r2_write_data;
             end if;
             -- READ
+<<<<<<< HEAD
             if (r2_re = '1') then
                 r2_read_data <= ram2(320*conv_integer(r2_read_y)+conv_integer(r2_read_x));
+=======
+            if (re = '1') then
+                read_data <= ram(320*conv_integer(read_y)+conv_integer(read_x));
+>>>>>>> 5981ccd026fe5746a51ee15367f889e0e4292cac
             end if;
         end if;
     end process;
