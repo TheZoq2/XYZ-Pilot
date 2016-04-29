@@ -26,21 +26,25 @@ architecture Behavioral of vga_motor is
 	signal 	x_mem_pos	: std_logic_vector(8 downto 0); 	-- X memory position
 	signal 	y_mem_pos	: std_logic_vector(7 downto 0);		-- Y memory position
 
-  	signal	x_pixel	   	: std_logic_vector(9 downto 0) := "0000000000";   	-- Horizontal pixel counter
-	signal	y_pixel	  	: std_logic_vector(9 downto 0) := "0000000000";		-- Vertical pixel counter
+  	signal	x_pixel	   	: std_logic_vector(9 downto 0) := (others => '0');   	-- Horizontal pixel counter
+	signal	y_pixel	  	: std_logic_vector(9 downto 0) := (others => '0');		-- Vertical pixel counter
+
+	signal	x_next	   	: std_logic_vector(9 downto 0) := (others => '0');
+	signal	y_next	  	: std_logic_vector(9 downto 0) := (others => '0');	
+
   	signal	clk_div	   	: std_logic_vector(1 downto 0) := "00";		-- Clock divisor, to generate 25 MHz signal
   	signal	clk_25		: std_logic;						-- One pulse width 25 MHz signal
 
   	signal  blank		: std_logic;                   		-- blanking signal
 
 	constant x_max 			: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(799,10));
-	constant x_blank		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(641,10));
+	constant x_blank		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(640,10));
 	constant x_sync_start	: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(656,10));
-	constant x_sync_end		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(753,10));
+	constant x_sync_end		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(751,10));
 	constant y_max			: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(520,10));
 	constant y_blank		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(480,10));
 	constant y_sync_start	: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(490,10));
-	constant y_sync_end		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(490,10));
+	constant y_sync_end		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(491,10));
 
 
 begin
@@ -102,8 +106,12 @@ begin
 	re <= clk_25;
 
 	-- Conversion from pixel count to position in memory
-	x_mem_pos <= x_pixel(9 downto 1) when (blank = '0') else (others => '0'); -- "x_pixel / 2"
-	y_mem_pos <= y_pixel(8 downto 1) when (blank = '0') else (others => '0'); -- "y_pixel / 2"
+	x_next <= (others => '0') when x_pixel = x_max else x_pixel + 1;
+	y_next <= (others => '0') when x_pixel = x_max and y_pixel = y_max else
+				y_pixel + 1 when x_pixel = x_max else 
+				y_pixel;
+	x_mem_pos <= x_next(9 downto 1); -- "x_pixel / 2"
+	y_mem_pos <= y_next(8 downto 1); -- "y_pixel / 2"
 	addr <= (x_mem_pos & y_mem_pos);
 
 	-- MUX

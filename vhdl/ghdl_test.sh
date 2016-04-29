@@ -2,7 +2,7 @@
 
 WAVE_PATH=wave.ghw
 
-ghdl -m $1
+ghdl -m  --ieee=synopsys -fexplicit $1 
 
 ANAL_STATUS=$?
 echo "Exit with code: $?"

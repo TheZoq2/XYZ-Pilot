@@ -23,9 +23,6 @@ signal write_y :std_logic_vector(7 downto 0); -- Y pos for input
 signal read_x :std_logic_vector(8 downto 0); -- X pos for output
 signal read_y :std_logic_vector(7 downto 0); -- Y pos for output
 
-signal last_read_x: std_logic_vector(8 downto 0);
-signal last_read_y: std_logic_vector(8 downto 0);
-
 
 
 -- Declaration of pixel memory of 131072 adresses
@@ -53,9 +50,6 @@ begin
             -- READ
             if (re = '1') then
                 read_data <= ram(320*conv_integer(read_y)+conv_integer(read_x));
-
-                last_read_x <= read_x;
-                last_read_y <= read_y;
             else
                 ram(320 * conv_integer(last_read_y) + conv_integer(last_read_x)) <= '0';
             end if;
