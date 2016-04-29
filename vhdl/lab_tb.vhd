@@ -12,7 +12,10 @@ architecture Behavioral of lab_tb is
 			h_sync		: out std_logic;					-- Horizontal sync
 	 		v_sync		: out std_logic;					-- Vertical sync
 			pixel_data	: out std_logic_vector(7 downto 0);	-- Data to be sent to the screen
-			rst			: in std_logic);					-- Reset
+			rst			: in std_logic;					-- Reset
+            ps2_kbd_clk	 : in std_logic; 		-- USB keyboard PS2 clock
+            ps2_kbd_data : in std_logic         -- USB keyboard PS2 data
+        );
 	end component;
 	
 	signal clk						:	std_logic	:= '0';
@@ -25,12 +28,15 @@ architecture Behavioral of lab_tb is
 
 begin
 	uut: lab port map(
-	clk=>clk,
-	rx=>rx,
-	h_sync=>h_sync,
-	v_sync=>v_sync,
-	pixel_data=>pixel_data,
-	rst=>rst);
+                clk=>clk,
+                rx=>rx,
+                h_sync=>h_sync,
+                v_sync=>v_sync,
+                pixel_data=>pixel_data,
+                ps2_kbd_clk => '0',
+                ps2_kbd_data => '0',
+                rst=>rst
+            );
 
 	stimuli_generator : process
     variable i : integer;

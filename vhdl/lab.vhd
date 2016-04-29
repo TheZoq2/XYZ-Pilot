@@ -44,6 +44,7 @@ component vga_motor is
 	 	rst				: in std_logic;							-- Reset
 	 	h_sync		    : out std_logic;						-- Horizontal sync
 	 	v_sync		    : out std_logic;						-- Vertical sync
+        vga_done        : out std_logic;                        
 		pixel_data		: out std_logic_vector(7 downto 0));	-- Data to be sent to the screen
 end component;
 
@@ -82,8 +83,9 @@ component gpu is
 
             pixel_address: out std_logic_vector(16 downto 0);
             pixel_data: out std_logic;
-            pixel_write_enable: out std_logic
+            pixel_write_enable: out std_logic;
 
+            vga_done: in std_logic
         );
 end component;
 
@@ -114,6 +116,8 @@ signal program_mem_write_instruction: std_logic_vector(63 downto 0);
 signal program_mem_write_adress: std_logic_vector(15 downto 0);
 signal program_mem_we : std_logic;
 
+signal vga_done: std_logic;
+
 begin
     -- PLS IGNORE
     pixel_mem_we <= '0';
@@ -127,12 +131,14 @@ begin
                              clk => clk, 
                              pixel_address => pixel_mem_write_addr,
                              pixel_data => pixel_mem_write_data,
-                             pixel_write_enable =>pixel_mem_we
+                             pixel_write_enable =>pixel_mem_we,
+                             vga_done => vga_done
                          );
 
 -- VGA motor component connection
 	U0 : vga_motor port map(clk=>clk, data=>pixel_mem_read_data, addr=>pixel_mem_read_addr,
-	re=>pixel_mem_re, rst=>rst, h_sync=>h_sync, v_sync=>v_sync, pixel_data=>pixel_data);
+	re=>pixel_mem_re, rst=>rst, h_sync=>h_sync, v_sync=>v_sync, pixel_data=>pixel_data, 
+    vga_done=>vga_done);
 -- Pixel memory component connection
 	U1 : pixel_mem port map(clk=>clk, write_adress=>pixel_mem_write_addr, we=>pixel_mem_we, 
 	write_data=>pixel_mem_write_data, read_adress=>pixel_mem_read_addr, re=>pixel_mem_re,

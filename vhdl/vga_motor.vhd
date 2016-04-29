@@ -8,15 +8,16 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 -- entity
 entity vga_motor is
-	port (clk		: in std_logic;								-- System clock
-		data		: in std_logic;								-- Data from pixel memory
-		addr		: out std_logic_vector(16 downto 0);		-- Adress for pixel memory
-		re			: out std_logic;							-- Read enable for pixel memory
-	 	rst			: in std_logic;								-- Reset
-	 	h_sync	  	: out std_logic;							-- Horizontal sync
-	 	v_sync		: out std_logic;							-- Vertical sync
-		pixel_data	: out std_logic_vector(7 downto 0));		-- Data to be sent to the screen
-		
+	port (clk		: in std_logic;							-- System clock
+		data		: in std_logic;							-- Data from pixel memory
+		addr		: out std_logic_vector(16 downto 0);	-- Adress for pixel memory
+		re			: out std_logic;						-- Read enable for pixel memory
+	 	rst			: in std_logic;							-- Reset
+	 	h_sync	  	: out std_logic;						-- Horizontal sync
+	 	v_sync		: out std_logic;						-- Vertical sync
+		pixel_data	: out std_logic_vector(7 downto 0);     -- Data to be sent to the screen
+        vga_done : out std_logic                      -- 1 when gpu and vga should switch buffers
+    );				
 end vga_motor;
 
 
@@ -89,6 +90,10 @@ begin
 			end if;
     	end if;
   	end process;
+
+    with x_pixel = x_max and y_pixel = y_max  select
+        vga_done <= '1' when true,
+                    '0' when others;
 		
   	-- 25 MHz clock (one system clock pulse width)
   	clk_25 <= '1' when (clk_div = 1) else '0';
