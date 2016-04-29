@@ -4,14 +4,16 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 entity pixel_mem is
 port (clk : in std_logic;
-    -- port IN
-    write_adress: in std_logic_vector(16 downto 0);
-    we : in std_logic;
-    write_data : in std_logic;
-    -- port OUT
-    read_adress: in std_logic_vector(16 downto 0);
-    re : in std_logic;
-    read_data : out std_logic);
+        -- port IN
+        write_adress: in std_logic_vector(16 downto 0);
+        we : in std_logic;
+        write_data : in std_logic;
+        -- port OUT
+        read_adress: in std_logic_vector(16 downto 0);
+        re : in std_logic;
+        read_data : out std_logic
+    );
+
 end pixel_mem;
 
 architecture Behavioral of pixel_mem is
@@ -20,6 +22,7 @@ signal write_x :std_logic_vector(8 downto 0); -- X pos for input
 signal write_y :std_logic_vector(7 downto 0); -- Y pos for input
 signal read_x :std_logic_vector(8 downto 0); -- X pos for output
 signal read_y :std_logic_vector(7 downto 0); -- Y pos for output
+
 
 
 -- Declaration of pixel memory of 131072 adresses
