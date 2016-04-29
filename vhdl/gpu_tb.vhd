@@ -28,7 +28,7 @@ architecture Behavioral of gpu_tb is
             --pixel_data: out std_logic;
             --pixel_write_enable: out std_logic;
 
-            switch_buffers: in std_logic
+            vga_done: in std_logic
         );
     end component;
 
@@ -41,7 +41,7 @@ architecture Behavioral of gpu_tb is
 begin
     uut_len: gpu PORT MAP(
             clk => clk,
-            switch_buffers => '0'
+            vga_done => '1'
         );
 
     clk <= not clk after 5 ns;

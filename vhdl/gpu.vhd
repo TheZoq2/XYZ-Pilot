@@ -97,7 +97,7 @@ architecture Behavioral of GPU is
 
     signal fetch_line_state: Line_Fetch_State.type_t := Line_Fetch_State.SET_START;
 
-    signal angle: unsigned(7 downto 0) := x"0f";
+    signal angle: unsigned(7 downto 0) := x"4f";
     signal cos_val: datatypes.small_number_t;
     signal sin_val: datatypes.small_number_t;
 
