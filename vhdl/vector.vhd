@@ -9,9 +9,7 @@ package  Vector is
     subtype InMemory_t is std_logic_vector(MEMORY_SIZE - 1 downto 0);
 
     type Elements_t is array(3 downto 0) of signed(MEMORY_SIZE / 4 - 1 downto 0);
-    type Elements_Big_t is array(3 downto 0) of signed(MEMORY_SIZE / 2 - 1 downto 0);
 
-    type Elements_2D_t is array(1 downto 0) of signed(MEMORY_SIZE / 2 - 1 downto 0); 
 end package;
 
 
