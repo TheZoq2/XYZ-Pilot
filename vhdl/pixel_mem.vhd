@@ -50,8 +50,6 @@ begin
             -- READ
             if (re = '1') then
                 read_data <= ram(320*conv_integer(read_y)+conv_integer(read_x));
-            else
-                ram(320 * conv_integer(last_read_y) + conv_integer(last_read_x)) <= '0';
             end if;
         end if;
     end process;
