@@ -16,8 +16,11 @@ component cpu is
 end component;
 
 type mem_t is array (0 to 31) of std_logic_vector(63 downto 0);
-signal memory: mem_t := (0 => X"04_0_1_0_12345678_000",
-                         3 => X"",
+signal memory: mem_t := (0 => X"05_0_0_0_00010002_000",  -- addhi to reg(0)
+                         3 => X"06_0_0_0_00030004_000",  -- addlo to reg(0)
+                         6 => X"05_1_0_0_00050006_000",  -- addhi to reg(1)
+                         9 => X"06_1_0_0_00070008_000",  -- addlo to reg(1)
+                         12 => X"0E_2_1_0_00000000_000", -- vec reg(2)=reg(0)+reg(1)
                          others => (others => '0'));
 	
 signal clk : std_logic := '0';

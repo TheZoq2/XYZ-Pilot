@@ -170,7 +170,6 @@ use work.sqrt_pkg.all;
 
 entity VectorLength is
     port(
-            --The two vectors that should be added together
             vec1: in Vector.Elements_t;
 
             result: out unsigned(15 downto 0)
@@ -226,10 +225,10 @@ end VectorMerger;
 
 architecture Behavioral of VectorMerger is
 begin
-     memory(Vector.MEMORY_SIZE / 4 * 1 - 1 downto Vector.MEMORY_SIZE / 4 * 0) <= std_logic_vector(vec(0));
-     memory(Vector.MEMORY_SIZE / 4 * 2 - 1 downto Vector.MEMORY_SIZE / 4 * 1) <= std_logic_vector(vec(1));
-     memory(Vector.MEMORY_SIZE / 4 * 3 - 1 downto Vector.MEMORY_SIZE / 4 * 2) <= std_logic_vector(vec(2));
-     memory(Vector.MEMORY_SIZE / 4 * 4 - 1 downto Vector.MEMORY_SIZE / 4 * 3) <= std_logic_vector(vec(3));
+     memory(Vector.MEMORY_SIZE / 4 * 1 - 1 downto Vector.MEMORY_SIZE / 4 * 0) <= std_logic_vector(vec(3));
+     memory(Vector.MEMORY_SIZE / 4 * 2 - 1 downto Vector.MEMORY_SIZE / 4 * 1) <= std_logic_vector(vec(2));
+     memory(Vector.MEMORY_SIZE / 4 * 3 - 1 downto Vector.MEMORY_SIZE / 4 * 2) <= std_logic_vector(vec(1));
+     memory(Vector.MEMORY_SIZE / 4 * 4 - 1 downto Vector.MEMORY_SIZE / 4 * 3) <= std_logic_vector(vec(0));
 end Behavioral;
 
 
