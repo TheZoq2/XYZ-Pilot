@@ -32,6 +32,23 @@ architecture Behavioral of gpu_tb is
         );
     end component;
 
+    component vga_motor is
+        port(
+            clk : in std_logic;
+            data		: in std_logic;							-- Data from pixel memory
+            addr		: out std_logic_vector(16 downto 0);	-- Adress for pixel memory
+            re			: out std_logic;						-- Read enable for pixel memory
+            rst			: in std_logic;							-- Reset
+            h_sync	  	: out std_logic;						-- Horizontal sync
+            v_sync		: out std_logic;						-- Vertical sync
+            pixel_data	: out std_logic_vector(7 downto 0);     -- Data to be sent to the screen
+
+            write_addr  : out std_logic_vector(16 downto 0);
+            write_data  : out std_logic;
+            vga_done : out std_logic                      -- 1 when gpu and vga should switch buffers
+        );
+    end component;
+
     signal clk: std_logic := '0';
 
     signal draw_start: Vector.Elements_t;
@@ -42,6 +59,12 @@ begin
     uut_len: gpu PORT MAP(
             clk => clk,
             vga_done => '1'
+        );
+
+    uut_vga_motor : vga_motor port map (
+            clk => clk,
+            data => '1',
+            rst => '0'
         );
 
     clk <= not clk after 5 ns;
