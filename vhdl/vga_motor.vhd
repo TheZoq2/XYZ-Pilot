@@ -36,7 +36,7 @@ architecture Behavioral of vga_motor is
   	signal	x_pixel	   	: std_logic_vector(9 downto 0) := (others => '0');   	-- Horizontal pixel counter
 	signal	y_pixel	  	: std_logic_vector(9 downto 0) := (others => '0');		-- Vertical pixel counter
     signal old_x_pixel  : std_logic_vector(9 downto 0) := (others => '1');
-    signal old_y_pixel  : std_logic_vector(9 downto 0) := (others => '1');
+    signal old_y_pixel  : std_logic_vector(9 downto 0) := (others => '0');
 
 	signal	x_next	   	: std_logic_vector(9 downto 0) := (others => '0');
 	signal	y_next	  	: std_logic_vector(9 downto 0) := (others => '0');	
@@ -131,7 +131,7 @@ begin
 	y_mem_pos <= y_next(8 downto 1); -- "y_pixel / 2"
 	addr <= (x_mem_pos & y_mem_pos);
 
-    write_addr <= (old_x_pixel(9 downto 1) * old_y_pixel(8 downto 1));
+    write_addr <= ((old_x_pixel(9 downto 1)) & (old_y_pixel(8 downto 1)));
     write_data <= '0';
     write_enable <= clk_25;
 

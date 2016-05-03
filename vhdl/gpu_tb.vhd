@@ -15,19 +15,13 @@ architecture Behavioral of gpu_tb is
         port(
             clk: in std_logic;
 
-            ----The address of the current object in the  object memory
-            --obj_ptr: out unsigned(GPU_Info.OBJ_ADDR_SIZE - 1 downto 0);
-            ----The output of the object memory
-            --obj_data: in std_logic_vector(GPU_Info.OBJ_DATA_SIZE - 1 downto 0);
+            obj_mem_addr: out GPU_Info.ObjAddr_t;
+            obj_mem_data: in GPU_Info.ObjData_t := x"0000000000000000";
 
-            ----Data from the  model memory
-            --line_register: inout std_logic_vector(GPU_Info.MODEL_ADDR_SIZE - 1 downto 0);
-            --line_data: in std_logic_vector(GPU_Info.MODEL_DATA_SIZE - 1 downto 0);
-
-            --pixel_address: out std_logic_vector(16 downto 0);
-            --pixel_data: out std_logic;
-            --pixel_write_enable: out std_logic;
-
+            pixel_address: out std_logic_vector(16 downto 0);
+            pixel_data: out std_logic;
+            pixel_write_enable: out std_logic;
+        
             vga_done: in std_logic
         );
     end component;
@@ -45,7 +39,29 @@ architecture Behavioral of gpu_tb is
 
             write_addr  : out std_logic_vector(16 downto 0);
             write_data  : out std_logic;
+            write_enable: out std_logic;
             vga_done : out std_logic                      -- 1 when gpu and vga should switch buffers
+        );
+    end component;
+
+    component pixel_mem is
+        port(
+            clk : in std_logic;
+            switch_buffer: in std_logic;
+
+            -- port IN
+            gpu_write_adress: in std_logic_vector(16 downto 0);
+            gpu_we : in std_logic;
+            gpu_write_data : in std_logic;
+
+            -- port IN
+            vga_write_adress: in std_logic_vector(16 downto 0);
+            vga_we : in std_logic;
+            vga_write_data : in std_logic;
+            -- port OUT
+            vga_read_adress: in std_logic_vector(16 downto 0);
+            vga_re : in std_logic;
+            vga_read_data : out std_logic
         );
     end component;
 
@@ -55,16 +71,58 @@ architecture Behavioral of gpu_tb is
     signal draw_end: Vector.Elements_t;
 
     signal pixel_out: Vector.Elements_t;
+    
+    signal gpu_write_address : std_logic_vector(16 downto 0);
+    signal gpu_we: std_logic;
+    signal gpu_write_data : std_logic;
+
+    signal gpu_write_enable : std_logic;
+    signal vga_done : std_logic;
+
+    signal vga_write_address : std_logic_vector(16 downto 0);
+    signal vga_write_data : std_logic;
+    signal vga_we: std_logic;
+    signal vga_read_address: std_logic_vector(16 downto 0);
+    signal vga_read_data: std_logic;
+    signal vga_re : std_logic;
 begin
     uut_len: gpu PORT MAP(
             clk => clk,
-            vga_done => '1'
+            obj_mem_data  => x"0000000000000000",
+            vga_done => vga_done,
+            
+            pixel_address => gpu_write_address,
+            pixel_data => gpu_write_data,
+            pixel_write_enable => gpu_write_enable
         );
 
     uut_vga_motor : vga_motor port map (
             clk => clk,
-            data => '1',
-            rst => '0'
+            vga_done => vga_done,
+            rst => '0',
+
+            addr => vga_read_address,
+            data => vga_read_data,
+            re => vga_re,
+
+            write_addr => vga_write_address,
+            write_data => vga_write_data,
+            write_enable => vga_we
+        );
+
+    uut_pix_mem : pixel_mem port map (
+            clk => clk,
+            switch_buffer => vga_done,
+            gpu_write_data => gpu_write_data,
+            gpu_write_adress => gpu_write_address,
+            gpu_we => gpu_we,
+            
+            vga_write_adress => vga_write_address,
+            vga_write_data => vga_write_data,
+            vga_we => vga_we,
+            vga_read_adress => vga_read_address,
+            vga_read_data => vga_read_data,
+            vga_re => vga_re
         );
 
     clk <= not clk after 5 ns;
