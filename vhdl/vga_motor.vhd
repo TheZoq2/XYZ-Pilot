@@ -8,15 +8,22 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 -- entity
 entity vga_motor is
-	port (clk		: in std_logic;								-- System clock
-		data		: in std_logic;								-- Data from pixel memory
-		addr		: out std_logic_vector(16 downto 0);		-- Adress for pixel memory
-		re			: out std_logic;							-- Read enable for pixel memory
-	 	rst			: in std_logic;								-- Reset
-	 	h_sync	  	: out std_logic;							-- Horizontal sync
-	 	v_sync		: out std_logic;							-- Vertical sync
-		pixel_data	: out std_logic_vector(7 downto 0));		-- Data to be sent to the screen
-		
+	port (
+        clk		: in std_logic;							-- System clock
+		data		: in std_logic;							-- Data from pixel memory
+		addr		: out std_logic_vector(16 downto 0);	-- Adress for pixel memory
+		re			: out std_logic;						-- Read enable for pixel memory
+	 	rst			: in std_logic;							-- Reset
+	 	h_sync	  	: out std_logic;						-- Horizontal sync
+	 	v_sync		: out std_logic;						-- Vertical sync
+		pixel_data	: out std_logic_vector(7 downto 0);     -- Data to be sent to the screen
+
+        write_addr  : out std_logic_vector(16 downto 0);
+        write_data  : out std_logic;
+        write_enable: out std_logic;
+        vga_done : out std_logic                      -- 1 when gpu and vga should switch buffers
+
+    );				
 end vga_motor;
 
 
@@ -28,6 +35,8 @@ architecture Behavioral of vga_motor is
 
   	signal	x_pixel	   	: std_logic_vector(9 downto 0) := (others => '0');   	-- Horizontal pixel counter
 	signal	y_pixel	  	: std_logic_vector(9 downto 0) := (others => '0');		-- Vertical pixel counter
+    signal old_x_pixel  : std_logic_vector(9 downto 0) := (others => '1');
+    signal old_y_pixel  : std_logic_vector(9 downto 0) := (others => '1');
 
 	signal	x_next	   	: std_logic_vector(9 downto 0) := (others => '0');
 	signal	y_next	  	: std_logic_vector(9 downto 0) := (others => '0');	
@@ -67,6 +76,8 @@ begin
   	begin
   		if rising_edge(clk) then
       		if(clk_25 = '1') then
+                old_x_pixel <= x_pixel;
+
 				if(x_pixel = x_max) then
 					x_pixel <= "0000000000";
 				else
@@ -81,6 +92,8 @@ begin
   	begin
     	if rising_edge(clk) then
       		if(clk_25 = '1') and (x_pixel = x_max)then
+                old_y_pixel <= y_pixel;
+
 				if(y_pixel = y_max) then
 					y_pixel <= "0000000000";
 				else
@@ -89,6 +102,10 @@ begin
 			end if;
     	end if;
   	end process;
+
+    with x_pixel = x_max and y_pixel = y_max  select
+        vga_done <= '1' when true,
+                    '0' when others;
 		
   	-- 25 MHz clock (one system clock pulse width)
   	clk_25 <= '1' when (clk_div = 1) else '0';
@@ -113,6 +130,10 @@ begin
 	x_mem_pos <= x_next(9 downto 1); -- "x_pixel / 2"
 	y_mem_pos <= y_next(8 downto 1); -- "y_pixel / 2"
 	addr <= (x_mem_pos & y_mem_pos);
+
+    write_addr <= (old_x_pixel(9 downto 1) * old_y_pixel(8 downto 1));
+    write_data <= '0';
+    write_enable <= clk_25;
 
 	-- MUX
 	-- data = 1 represent white pixel, data = 0 represent black pixel

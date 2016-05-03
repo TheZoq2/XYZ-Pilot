@@ -31,7 +31,9 @@ entity GPU is
 
             pixel_address: out std_logic_vector(16 downto 0);
             pixel_data: out std_logic;
-            pixel_write_enable: out std_logic
+            pixel_write_enable: out std_logic;
+        
+            vga_done: in std_logic
         );
 end entity;
 
@@ -41,7 +43,8 @@ architecture Behavioral of GPU is
                             FETCH_LINE,
                             START_PIXEL_CALC,
                             CALC_PIXELS,
-                            PREPARE_NEXT_LINE
+                            PREPARE_NEXT_LINE,
+                            WAIT_FOR_VGA
                         );
     signal gpu_state: gpu_state_type := READ_OBJECT;
 
@@ -94,7 +97,7 @@ architecture Behavioral of GPU is
 
     signal fetch_line_state: Line_Fetch_State.type_t := Line_Fetch_State.SET_START;
 
-    signal angle: unsigned(7 downto 0) := x"0f";
+    signal angle: unsigned(7 downto 0) := x"4f";
     signal cos_val: datatypes.small_number_t;
     signal sin_val: datatypes.small_number_t;
 
@@ -225,10 +228,12 @@ begin
             if gpu_state = READ_OBJECT then
                 gpu_state <= FETCH_LINE;
 
+                line_start_addr <= x"0000";
+
                 if current_obj_offset = 4 then
-                    line_start_addr <= unsigned(obj_mem_data(15 downto 0));
+                    --line_start_addr <= unsigned(obj_mem_data(15 downto 0));
                 else
-                    current_obj_offset <= current_obj_offset + 1;
+                    --current_obj_offset <= current_obj_offset + 1;
                 end if;
             elsif gpu_state = FETCH_LINE then
                 --Wait for model memory to update the data
@@ -255,7 +260,7 @@ begin
                 --Set up the pixel drawing calculation
                 --Since start.x = 0, dx = end.x in bresenham's algorithm
                 if end_vector = x"ffffffffffffffff" then
-                    gpu_state <= READ_OBJECT;
+                    gpu_state <= WAIT_FOR_VGA;
                 else
                     draw_d_var <= draw_end(1) - draw_end(0);
                     current_pixel(0) <= draw_start(0);
@@ -279,6 +284,10 @@ begin
                 line_start_addr <= line_start_addr + 2;
 
                 gpu_state <= FETCH_LINE;
+            elsif gpu_state = WAIT_FOR_VGA then
+                if vga_done = '1' then
+                    gpu_state <= READ_OBJECT;
+                end if;
             end if;
         end if;
     end process;

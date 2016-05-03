@@ -13,7 +13,7 @@ entity kbd_enc is
          test                   : out std_logic_vector(3 downto 0) := "0000";
          testbit                : out std_logic := '0';
          kbd_reg                : out std_logic_vector(0 to 8) := (others => '0')); 
-        -- [W,A,S,D,SPACE,O,K,L,Ö] 1 means key is pushed down, 0 means key is up	
+        -- [W,A,S,D,SPACE,O,K,L,0_] 1 means key is pushed down, 0 means key is up	
 end kbd_enc;
 
 -- architecture
@@ -108,7 +108,7 @@ begin
             when X"44" => kbd_reg(5) <= '1'; ps2_state <= IDLE; -- SET O
             when X"42" => kbd_reg(6) <= '1'; ps2_state <= IDLE; -- SET K
             when X"4B" => kbd_reg(7) <= '1'; ps2_state <= IDLE; -- SET L
-            when X"4C" => kbd_reg(8) <= '1'; ps2_state <= IDLE; -- SET Ö
+            when X"4C" => kbd_reg(8) <= '1'; ps2_state <= IDLE; -- SET O_
             when others => ps2_state <= IDLE;
         end case;
       elsif ps2_state = BREAK then
@@ -121,7 +121,7 @@ begin
             when X"44" => kbd_reg(5) <= '0'; ps2_state <= IDLE; -- UNSET O
             when X"42" => kbd_reg(6) <= '0'; ps2_state <= IDLE; -- UNSET K
             when X"4B" => kbd_reg(7) <= '0'; ps2_state <= IDLE; -- UNSET L
-            when X"4C" => kbd_reg(8) <= '0'; ps2_state <= IDLE; -- UNSET Ö
+            when X"4C" => kbd_reg(8) <= '0'; ps2_state <= IDLE; -- UNSET O:
             when others => ps2_state <= IDLE;
         end case;
       end if;
