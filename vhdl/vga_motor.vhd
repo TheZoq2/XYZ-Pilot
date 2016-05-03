@@ -103,7 +103,7 @@ begin
     	end if;
   	end process;
 
-    with x_pixel = x_max and y_pixel = y_max  select
+    with x_pixel = x_max and y_pixel = y_max and clk_25 = '1' select
         vga_done <= '1' when true,
                     '0' when others;
 		

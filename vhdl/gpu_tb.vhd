@@ -73,7 +73,6 @@ architecture Behavioral of gpu_tb is
     signal pixel_out: Vector.Elements_t;
     
     signal gpu_write_address : std_logic_vector(16 downto 0);
-    signal gpu_we: std_logic;
     signal gpu_write_data : std_logic;
 
     signal gpu_write_enable : std_logic;
@@ -115,7 +114,7 @@ begin
             switch_buffer => vga_done,
             gpu_write_data => gpu_write_data,
             gpu_write_adress => gpu_write_address,
-            gpu_we => gpu_we,
+            gpu_we => gpu_write_enable,
             
             vga_write_adress => vga_write_address,
             vga_write_data => vga_write_data,
