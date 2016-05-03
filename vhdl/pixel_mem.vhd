@@ -35,7 +35,7 @@ architecture Behavioral of pixel_mem is
     signal ram2 : ram_t := (0 => '1', 2 => '1', 4 => '1', others => '0');
 
 
-    signal current_memory: std_logic;
+    signal current_memory: std_logic := '1';
 
     --The outputs from the two RAMs
     signal r1_read_data :std_logic;
