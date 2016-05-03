@@ -20,6 +20,7 @@ entity vga_motor is
 
         write_addr  : out std_logic_vector(16 downto 0);
         write_data  : out std_logic;
+        write_enable: out std_logic;
         vga_done : out std_logic                      -- 1 when gpu and vga should switch buffers
 
     );				
@@ -131,6 +132,8 @@ begin
 	addr <= (x_mem_pos & y_mem_pos);
 
     write_addr <= (old_x_pixel(9 downto 1) * old_y_pixel(8 downto 1));
+    write_data <= '0';
+    write_enable <= clk_25;
 
 	-- MUX
 	-- data = 1 represent white pixel, data = 0 represent black pixel

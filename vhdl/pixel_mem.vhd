@@ -3,7 +3,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 entity pixel_mem is
-port (clk : in std_logic;
+port (
+        clk : in std_logic;
         switch_buffer: in std_logic;
 
         -- port IN
@@ -31,7 +32,7 @@ architecture Behavioral of pixel_mem is
     signal ram1 : ram_t := (others => '0');
 
     -- Clears all adresses
-    signal ram2 : ram_t := (others => '0');
+    signal ram2 : ram_t := (0 => '1', 2 => '1', 4 => '1', others => '0');
 
 
     signal current_memory: std_logic;
@@ -76,51 +77,30 @@ begin
 	vga_write_x <= vga_write_adress(16 downto 8);
 	vga_write_y <= vga_write_adress(7 downto 0);
 
-    --Selecting which output goes where
-    process(current_memory) begin
-        if current_memory = '1' then --GPU writes to 1, vga to 2
-            r1_read_data <= r1_read_data;
-            r1_read_x <= r1_read_x;
-            r1_read_y <= r1_read_y;
-            r1_re <= '0';
+    --Read pins
+    r1_read_x <= vga_read_x;
+    r1_read_y <= vga_read_y;
+    r2_read_x <= vga_read_x;
+    r2_read_y <= vga_read_y;
 
-            r1_write_data <= gpu_write_data;
-            r1_write_x <= gpu_write_x;
-            r1_write_y <= gpu_write_y;
-            r1_we <= gpu_we;
+    vga_read_data <= r2_read_data when current_memory = '1' else r1_read_data;
 
-            vga_read_data <= r2_read_data;
-            r2_read_x <= vga_read_x;
-            r2_read_y <= vga_read_y;
-            r2_re <= '0';
+    --Read enable pins
+    r1_re <= '0'                when current_memory = '1' else vga_re;
+    r2_re <= vga_re             when current_memory = '1' else '0';
 
-            r2_write_data <= vga_write_data;
-            r2_write_x <= vga_write_x;
-            r2_write_y <= vga_write_y;
-            r2_we <= vga_we;
-        else
-            r2_read_data <= r1_read_data;
-            r2_read_x <= r1_read_x;
-            r2_read_y <= r1_read_y;
-            r2_re <= '0';
+    --write pins
+    r1_write_data <= gpu_write_data when current_memory = '1' else vga_write_data;
+    r2_write_data <= gpu_write_data when current_memory = '0' else vga_write_data;
 
-            r2_write_data <= gpu_write_data;
-            r2_write_x <= gpu_write_x;
-            r2_write_y <= gpu_write_y;
-            r2_we <= gpu_we;
+    r1_write_x <= gpu_write_x       when current_memory = '1' else vga_write_x;
+    r1_write_y <= gpu_write_y       when current_memory = '1' else vga_write_y;
+    r2_write_x <= gpu_write_x       when current_memory = '0' else vga_write_x;
+    r2_write_y <= gpu_write_y       when current_memory = '0' else vga_write_y;
 
-            vga_read_data <= r1_read_data;
-            r1_read_x <= vga_read_x;
-            r1_read_y <= vga_read_y;
-            r1_re <= '0';
+    r1_we      <= gpu_we            when current_memory = '1' else vga_we;
+    r2_we      <= gpu_we            when current_memory = '0' else vga_we;
 
-            r1_write_data <= vga_write_data;
-            r1_write_x <= vga_write_x;
-            r1_write_y <= vga_write_y;
-            r1_we <= vga_we;
-        end if;
-    end process;
-    
     process(clk) begin
         if rising_edge(clk) then
             if switch_buffer = '1' then
