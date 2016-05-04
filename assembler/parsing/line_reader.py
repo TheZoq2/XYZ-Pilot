@@ -3,6 +3,7 @@ from parsing.parsers.CommentParser import CommentParser
 from parsing.parsers.InstructionParser import InstructionParser
 from parsing.parsers.LabelParser import LabelParser
 from parsing.parsers.NoOpParser import NoOpParser
+from parsing.parsers.VariableParser import VariableParser
 
 
 class LineReader:
@@ -17,6 +18,7 @@ class LineReader:
         parsers = [
             CommentParser(),
             InstructionParser(),
+            VariableParser(),
             LabelParser(),
             NoOpParser()
         ]

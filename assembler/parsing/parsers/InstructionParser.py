@@ -37,7 +37,7 @@ class InstructionParser(Parser):
         return None
 
     def build(self):
-        return Instruction()
+        return Instruction(self.instruction_def, self.args, self.data)
 
     def handle_token(self, c):
         if not self.found_instruction:
