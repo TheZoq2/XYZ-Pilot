@@ -1,5 +1,5 @@
 # Assembler för processor i TSEA83
-----------------------------------
+
 #### Innehåll
 Det här dokumentet behandlar hur man använder assemblern skriven i Python för att kompilera assembly-kod till den arkitekturen som specificeras i vhdl-delen av detta repo.
 
