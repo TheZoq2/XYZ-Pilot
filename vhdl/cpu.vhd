@@ -5,6 +5,9 @@ use IEEE.STD_LOGIC_1164.ALL;            -- basic IEEE library
 use IEEE.NUMERIC_STD.ALL;               -- IEEE library for the unsigned type
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
+use work.Vector;                        -- Vector package
+
+
 -- entity
 entity cpu is
 	port (clk		: in std_logic;								-- System clock
@@ -15,6 +18,41 @@ entity cpu is
 end cpu;
 
 architecture Behavioral of cpu is
+
+component VectorSplitter is
+    port(
+            memory: in Vector.InMemory_t;
+            vec: out Vector.Elements_t
+        );
+end component VectorSplitter;
+
+component VectorMerger is
+    port(
+            memory: out Vector.InMemory_t;
+            vec: in Vector.Elements_t
+        );
+end component;
+
+component VectorAdder is
+    port(
+            --The two vectors that should be added together
+            vec1: in Vector.Elements_t;
+            vec2: in Vector.Elements_t;
+
+            result: out Vector.Elements_t
+        );
+end component;
+
+component VectorSubtractor is
+    port(
+            --The two vectors that should be added together
+            vec1: in Vector.Elements_t;
+            vec2: in Vector.Elements_t;
+
+            result: out Vector.Elements_t
+        );
+end component;
+
 signal sr               : std_logic_vector(1 downto 0)  := (others => '0'); --  [Z,N]
 signal ir1,ir2,ir3,ir4	: std_logic_vector(63 downto 0) := (others => '0'); --  NOP at start
 
@@ -36,11 +74,33 @@ signal z_4              : std_logic_vector(63 downto 0)	:= (others => '0');	--	Z
 signal write_reg        : std_logic_vector(63 downto 0)	:= (others => '0');	--	Register to be written to Register File
 
 
+-- Signals connecting to Vector Splitters
+signal vec_split_in1 : std_logic_vector(63 downto 0);
+signal vec_split_out1 : Vector.Elements_t;
+signal vec_split_in2 : std_logic_vector(63 downto 0);
+signal vec_split_out2 : Vector.Elements_t;
+
+-- Signals connecting to Vector Merger
+signal vec_merge_in : Vector.Elements_t;
+signal vec_merge_out : std_logic_vector(63 downto 0);
+
+-- Signals connecting to Vector Adder
+signal vec_add_in1 : Vector.Elements_t;
+signal vec_add_in2 : Vector.Elements_t;
+signal vec_add_res : Vector.Elements_t;
+
+-- Signals connecting to Vector Subtractor
+signal vec_sub_in1 : Vector.Elements_t;
+signal vec_sub_in2 : Vector.Elements_t;
+signal vec_sub_res : Vector.Elements_t;
+
 type register_t is array (0 to 15) of std_logic_vector(63 downto 0);
 signal reg_file : register_t := (others =>(others=>'0'));   
 
 type data_mem_t is array (0 to 1023) of std_logic_vector(63 downto 0);
 signal data_mem : data_mem_t := (others =>(others=>'0'));   
+
+signal mult_result : std_logic_vector(127 downto 0);
 
 constant nop_op_code       : std_logic_vector(7 downto 0)  := X"00";
 constant bra_op_code       : std_logic_vector(7 downto 0)  := X"01";
@@ -56,6 +116,8 @@ constant subi_op_code       : std_logic_vector(7 downto 0)  := X"0A";
 constant cmp_op_code       : std_logic_vector(7 downto 0)  := X"0B";
 constant mult_op_code       : std_logic_vector(7 downto 0)  := X"0C";
 constant multi_op_code       : std_logic_vector(7 downto 0)  := X"0D";
+constant vecadd_op_code       : std_logic_vector(7 downto 0)  := X"0E";
+constant vecsub_op_code       : std_logic_vector(7 downto 0)  := X"0F";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
@@ -72,6 +134,12 @@ alias ir4_op 				: std_logic_vector(7 downto 0) is ir4(63 downto 56);
 alias ir4_reg1 				: std_logic_vector(3 downto 0) is ir4(55 downto 52);
 
 begin
+
+  vec_split1 : VectorSplitter port map(memory=>vec_split_in1, vec=>vec_split_out1);
+  vec_split2 : VectorSplitter port map(memory=>vec_split_in2, vec=>vec_split_out2);
+  vec_add : VectorAdder port map(vec1=>vec_add_in1,vec2=>vec_add_in2,result=>vec_add_res);
+  vec_sub : VectorSubtractor port map(vec1=>vec_sub_in1,vec2=>vec_sub_in2,result=>vec_sub_res);
+  vec_merge : VectorMerger port map(memory=>vec_merge_out,vec=>vec_merge_in);
 
   pc_out <= pc;
   pc_we <= we;
@@ -134,6 +202,29 @@ begin
            d_1;
 
   -- ALU --
+
+  -- Multiplication
+  mult_result <= alu_1 * alu_2;
+
+  -- Splitting the two vectors
+  vec_split_in1 <= alu_1;
+  vec_split_in2 <= alu_2;
+
+  -- Adding two vectors
+  vec_add_in1 <= vec_split_out1;
+  vec_add_in2 <= vec_split_out2;
+
+  -- Subtracting two vectors
+  vec_sub_in1 <= vec_split_out1;
+  vec_sub_in2 <= vec_split_out2;
+
+  -- Choosing what to be merged
+  with ir2_op select
+    vec_merge_in <= vec_add_res when vecadd_op_code,
+                    vec_sub_res when vecsub_op_code,
+                    vec_sub_res when others;
+
+ 
   with ir2_op select
     alu_res <= alu_1 + alu_2 when add_op_code,
                alu_1 + alu_2 when addi_op_code,
@@ -143,8 +234,10 @@ begin
                alu_1 when load_op_code,
                alu_2 - alu_1 when sub_op_code,
                alu_2 - alu_1 when subi_op_code,
-               alu_1 * alu_2 when mult_op_code,
-               alu_1 * alu_2 when multi_op_code,
+               mult_result(63 downto 0) when mult_op_code,
+               mult_result(63 downto 0) when multi_op_code,
+               vec_merge_out when vecadd_op_code,
+               vec_merge_out when vecsub_op_code,
                X"0000000000000000" when others;
   sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) else
         "01" when (ir2_op=cmp_op_code and alu_1<alu_2) else
@@ -183,11 +276,10 @@ begin
       ir4_op = sub_op_code or
       ir4_op = subi_op_code or
       ir4_op = mult_op_code or
-      ir4_op = multi_op_code else
+      ir4_op = multi_op_code or
+      ir4_op = vecadd_op_code or
+      ir4_op = vecsub_op_code else
       reg_file(conv_integer(ir4_reg1));
-
-
-
 
 
 end Behavioral;
