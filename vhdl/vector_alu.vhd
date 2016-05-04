@@ -155,10 +155,10 @@ end VectorSubtractor;
 
 architecture Behavioral of VectorSubtractor is
 begin
-    result(0) <= vec1(0) - vec2(0);
-    result(1) <= vec1(1) - vec2(1);
-    result(2) <= vec1(2) - vec2(2);
-    result(3) <= vec1(3) - vec2(3);
+    result(0) <= vec2(0) - vec1(0);
+    result(1) <= vec2(1) - vec1(1);
+    result(2) <= vec2(2) - vec1(2);
+    result(3) <= vec2(3) - vec1(3);
 end Behavioral;
 ----------------------------------------------------------
 

@@ -13,8 +13,8 @@ entity cpu is
 	port (clk		: in std_logic;								-- System clock
 			pm_instruction : in std_logic_vector(63 downto 0);	-- Instruction from program memory
 			pc_out		: out std_logic_vector(15 downto 0) := (others => '0'); -- Program Counter
-            pc_we       : out std_logic); -- Write Enable to be sent to program mem
-		
+            pc_re       : out std_logic := '1'; -- Read Enable to be sent to program mem
+            debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); 
 end cpu;
 
 architecture Behavioral of cpu is
@@ -53,11 +53,15 @@ component VectorSubtractor is
         );
 end component;
 
+--COUNTER--
+signal nop_counter : std_logic_vector(1 downto 0) := "00";
+
 signal sr               : std_logic_vector(1 downto 0)  := (others => '0'); --  [Z,N]
+signal sr_last          : std_logic_vector(1 downto 0)  := (others => '0'); --  Store last SR
 signal ir1,ir2,ir3,ir4	: std_logic_vector(63 downto 0) := (others => '0'); --  NOP at start
 
 -- Registers --
-signal we               : std_logic := '1';
+signal re               : std_logic := '1';
 signal pc		        : std_logic_vector(15 downto 0)	:= (others => '0');	--	PC
 signal pc_next		    : std_logic_vector(15 downto 0)	:= (others => '0');	--	PC+4
 signal pc_2		        : std_logic_vector(15 downto 0)	:= (others => '0');	--	PC2
@@ -142,10 +146,19 @@ begin
   vec_merge : VectorMerger port map(memory=>vec_merge_out,vec=>vec_merge_in);
 
   pc_out <= pc;
-  pc_we <= we;
+
+  debuginfo <= ir1(47 downto 32);
+  --debuginfo <= pc;
+
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      nop_counter <= nop_counter + 1;
+    end if;
+  end process;
 
   -- IR SWITCHES --
-  ir1 <= pm_instruction;
+  ir1 <= pm_instruction when nop_counter = 0 else (others => '0');
   process(clk)
   begin
 	if rising_edge(clk) then
@@ -159,9 +172,13 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      pc_next <= pc + 1;
+      if nop_counter = 3 then
+        pc_next <= pc + 1;
+      end if;
     end if;
   end process;
+
+  pc_2 <= ir1_data(15 downto 0);
   
   pc <= pc_2 when (ir1_op = bra_op_code) or 
         (ir1_op = bne_op_code and sr(1) = '0') else
@@ -172,7 +189,6 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      pc_2 <= ir1_data(15 downto 0);
       im_2 <= ir1_data;
 
       case ir1_op is
@@ -241,13 +257,15 @@ begin
                X"0000000000000000" when others;
   sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) else
         "01" when (ir2_op=cmp_op_code and alu_1<alu_2) else
-        "00";
+        "00" when (ir2_op=cmp_op_code) else
+        sr_last;
   
   process(clk)
   begin
     if rising_edge(clk) then
       d_3 <= alu_res;
       z_3 <= d_1;
+      sr_last <= sr;
     end if;
   end process;
 
@@ -264,22 +282,29 @@ begin
     end if;
   end process;
 
+
   ---- 5. WB ----
   write_reg <= z_4 when ir4_op = load_op_code else
                d_4;
 
-  reg_file(conv_integer(ir4_reg1)) <= write_reg when (ir4_op = load_op_code or 
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if ir4_op = load_op_code or 
       ir4_op = movhi_op_code or 
       ir4_op = movlo_op_code or 
       ir4_op = add_op_code or 
-      ir4_op = addi_op_code) or
+      ir4_op = addi_op_code or
       ir4_op = sub_op_code or
       ir4_op = subi_op_code or
       ir4_op = mult_op_code or
       ir4_op = multi_op_code or
       ir4_op = vecadd_op_code or
-      ir4_op = vecsub_op_code else
-      reg_file(conv_integer(ir4_reg1));
+      ir4_op = vecsub_op_code then
+        reg_file(conv_integer(ir4_reg1)) <= write_reg;
+      end if;
+    end if;
+  end process;
 
 
 end Behavioral;
