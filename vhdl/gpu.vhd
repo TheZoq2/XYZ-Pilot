@@ -42,6 +42,7 @@ architecture Behavioral of GPU is
  							READ_OBJECT,
                             FETCH_LINE,
                             START_PIXEL_CALC,
+                            WAIT_FOR_COMB,
                             CALC_PIXELS,
                             PREPARE_NEXT_LINE,
                             WAIT_FOR_VGA
@@ -54,6 +55,7 @@ architecture Behavioral of GPU is
 
     signal next_line_reg: std_logic_vector(GPU_Info.MODEL_ADDR_SIZE -1 downto 0);
 
+    signal delay_counter: unsigned(2 downto 0) := "000";
 
     --The offset from the start of the current object pointer in memory to the current 'line' in the memory
     signal current_obj_start: unsigned(15 downto 0) := x"0000";
@@ -97,7 +99,7 @@ architecture Behavioral of GPU is
 
     signal fetch_line_state: Line_Fetch_State.type_t := Line_Fetch_State.SET_START;
 
-    signal angle: unsigned(7 downto 0) := x"4f";
+    signal angle: unsigned(7 downto 0) := x"00";
     signal cos_val: datatypes.small_number_t;
     signal sin_val: datatypes.small_number_t;
 
@@ -267,7 +269,14 @@ begin
                     current_pixel(0) <= draw_start(0);
                     current_pixel(1) <= draw_start(1);
 
+                    gpu_state <= WAIT_FOR_COMB;
+                    delay_counter <= "000";
+                end if;
+            elsif gpu_state = WAIT_FOR_COMB then
+                if delay_counter = "111" then
                     gpu_state <= CALC_PIXELS;
+                else
+                    delay_counter <= delay_counter + 1;
                 end if;
             elsif gpu_state = CALC_PIXELS then
                 if current_pixel(0) > draw_end(0) then
