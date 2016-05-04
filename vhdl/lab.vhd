@@ -159,7 +159,7 @@ begin
 
     --GPU port map
     gpu_map: gpu port map(
-                             clk => clk, 
+                             clk => clk_50, 
                              pixel_address => gpu_pixel_write_addr,
                              pixel_data => gpu_pixel_write_data,
                              pixel_write_enable => gpu_pixel_we,
@@ -178,7 +178,7 @@ begin
    		end if;
   	end process;
 
-    clk_50 <= '1' when clk_div = 0 or clk_div = 2 else '0';
+    clk_50 <= '1' when clk_div = "11" else '0';
 
 -- VGA motor component connection
 	U0 : vga_motor port map(

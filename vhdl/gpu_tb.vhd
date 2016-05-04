@@ -66,6 +66,8 @@ architecture Behavioral of gpu_tb is
     end component;
 
     signal clk: std_logic := '0';
+    signal gpu_clk: std_logic := '0';
+    signal clk_div: unsigned(1 downto 0) := "00";
 
     signal draw_start: Vector.Elements_t;
     signal draw_end: Vector.Elements_t;
@@ -86,7 +88,7 @@ architecture Behavioral of gpu_tb is
     signal vga_re : std_logic;
 begin
     uut_len: gpu PORT MAP(
-            clk => clk,
+            clk => gpu_clk,
             obj_mem_data  => x"0000000000000000",
             vga_done => vga_done,
             
@@ -125,6 +127,12 @@ begin
         );
 
     clk <= not clk after 5 ns;
+
+    process(clk) begin
+        clk_div <= clk_div + 1;
+    end process;
+
+    gpu_clk <= '1' when (clk_div = "11") else '0';
     
     process begin
         draw_start(0) <= to_signed(170, 16);
