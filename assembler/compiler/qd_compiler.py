@@ -4,10 +4,8 @@ from parts.Label import Label
 from parts.Variable import Variable
 
 
-class QuickAndDirtyCompiler:
+class QuickAndDirtyCompiler(object):
     def __init__(self, filename):
-        super().__init__()
-
         self.filename = filename
         self.parts = []
         self.labels = {}

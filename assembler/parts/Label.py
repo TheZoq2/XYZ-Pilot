@@ -6,8 +6,6 @@ class Label(Part):
         return True
 
     def __init__(self, label):
-        super().__init__()
-
         self.label = label
 
     def get_bytes(self):

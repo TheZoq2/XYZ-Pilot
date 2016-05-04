@@ -6,8 +6,6 @@ class Instruction(Part):
         return True
 
     def __init__(self, instruction_def, args, data):
-        super().__init__()
-
         self.instruction_def = instruction_def
         self.args = args
         self.data = data

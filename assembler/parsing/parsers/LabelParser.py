@@ -7,8 +7,6 @@ class LabelParser(Parser):
     LABEL_END_TOKEN = ':'
 
     def __init__(self):
-        super().__init__()
-
         self.label = ""
         self.was_opened = False
         self.was_closed = False

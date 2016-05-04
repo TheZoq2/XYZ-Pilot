@@ -6,10 +6,8 @@ from parsing.parsers.NoOpParser import NoOpParser
 from parsing.parsers.VariableParser import VariableParser
 
 
-class LineReader:
+class LineReader(object):
     def __init__(self, line, line_no):
-        super().__init__()
-
         self.line = line
         self.line_no = line_no
 

@@ -6,8 +6,6 @@ from parts.Instruction import Instruction
 
 class InstructionParser(Parser):
     def __init__(self):
-        super().__init__()
-
         self.instruction = ''
         self.instruction_def = None
         self.found_instruction = False

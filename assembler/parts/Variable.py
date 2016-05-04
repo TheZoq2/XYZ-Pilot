@@ -3,8 +3,6 @@ from parts.Part import Part
 
 class Variable(Part):
     def __init__(self, name, value):
-        super().__init__()
-
         self.label = name
         self.value = value
 

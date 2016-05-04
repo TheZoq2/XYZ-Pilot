@@ -7,8 +7,6 @@ class VariableParser(Parser):
     LABEL_END_TOKEN = ':'
 
     def __init__(self):
-        super().__init__()
-
         self.name = ""
         self.value = ""
         self.was_declared = False

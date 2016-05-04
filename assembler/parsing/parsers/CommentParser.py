@@ -5,8 +5,6 @@ from parts.Comment import Comment
 
 class CommentParser(Parser):
     def __init__(self):
-        super().__init__()
-
         self.has_read_start = False
 
     def get_error(self):
