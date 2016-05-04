@@ -171,6 +171,7 @@ begin
                 memory => end_vector,
                 vec => raw_end
             );
+
     sin_calculator: sin_table port map(
                         angle => angle,
                         result => sin_val
@@ -287,6 +288,7 @@ begin
             elsif gpu_state = WAIT_FOR_VGA then
                 if vga_done = '1' then
                     gpu_state <= READ_OBJECT;
+                    angle <= angle + 1;
                 end if;
             end if;
         end if;
@@ -334,7 +336,9 @@ begin
     pixel_address(16 downto 8) <= std_logic_vector(pixel_out(0)(8 downto 0));
     pixel_address(7 downto 0) <= std_logic_vector(pixel_out(1)(7 downto 0));
     pixel_data <= '1';
-    with gpu_state select
-        pixel_write_enable <= '1' when CALC_PIXELS,
-                              '0' when others;
+
+    pixel_write_enable <= '1' when gpu_state = CALC_PIXELS and pixel_out(0) > 0 and pixel_out(1) > 0 else '0';
+    --with gpu_state select
+    --    pixel_write_enable <= '1' when CALC_PIXELS,
+    --                          '0' when others;
 end Behavioral;

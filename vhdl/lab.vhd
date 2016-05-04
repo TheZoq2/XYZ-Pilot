@@ -127,6 +127,9 @@ signal program_mem_re			:	std_logic;
 signal cpu_clk					: std_logic := '0';
 signal kbd_reg                  : std_logic_vector(0 to 8);
 
+signal clk_50                   : std_logic := '0';
+signal clk_div                  : unsigned(1 downto 0) := "00";
+
 -- Signals between vga_motor and pixel_mem
 signal vga_pixel_read_data	:	std_logic;
 signal vga_pixel_read_addr	: 	std_logic_vector(16 downto 0);
@@ -163,8 +166,19 @@ begin
                              vga_done => vga_done
                          );
 
--- Debug
-debug_data <= program_mem_write_adress;
+    -- Debug
+    debug_data <= program_mem_write_adress;
+
+  	-- Clock divisor
+  	-- Divide system clock (100 MHz) by 4
+	process(clk)
+  	begin
+    	if rising_edge(clk) then
+			clk_div <= clk_div + 1;
+   		end if;
+  	end process;
+
+    clk_50 <= '1' when clk_div = 0 or clk_div = 2 else '0';
 
 -- VGA motor component connection
 	U0 : vga_motor port map(
