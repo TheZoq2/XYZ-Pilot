@@ -16,7 +16,8 @@ entity lab is
         ps2_kbd_data : in std_logic;         -- USB keyboard PS2 data
 		rst			 : in std_logic;					-- Reset
         seg : out std_logic_vector(7 downto 0);
-        an : out std_logic_vector(3 downto 0));
+        an : out std_logic_vector(3 downto 0);
+        Led :  out  std_logic_vector(7 downto 0) := (others => '0'));
 end lab;
 
 architecture Behavioral of lab is
@@ -118,7 +119,7 @@ signal pixel_mem_we			:	std_logic;
 
 -- Signals between cpu and program_mem
 signal program_mem_read_instruction	:	std_logic_vector(63 downto 0);
-signal program_mem_read_adress	: 	std_logic_vector(15 downto 0);
+signal program_mem_read_adress	: 	std_logic_vector(15 downto 0) := (others => '0');
 signal program_mem_re			:	std_logic;
 
 -- Signals to CPU
@@ -141,18 +142,39 @@ signal program_mem_we : std_logic;
 -- Debug signals
 signal debug_data : std_logic_vector(15 downto 0);
 signal cpu_debug_data : std_logic_vector(15 downto 0);
+signal pm_debug_data : std_logic_vector(15 downto 0);
 
-signal slow_clk_counter : std_logic_vector(24 downto 0) := (others => '0');
+signal slow_clk_counter : std_logic_vector(21 downto 0) := (0 => '1',others => '0');
 signal slow_clk         : std_logic := '0';
 
+signal debug_mem_pos    : std_logic_vector(15 downto 0) := (others => '0'); 
+signal debug_mem_instr  : std_logic_vector(63 downto 0) := (others => '0'); 
+
+
 begin
+
+  -- DEBUG PROCESSES --
   process(clk)
   begin
   if rising_edge(clk) then
     slow_clk_counter <= slow_clk_counter + 1;
   end if;
   end process;
-
+  
+  --process(clk)
+  --begin
+    --if rising_edge(clk) then
+      --if slow_clk_counter = 0 then
+        --if program_mem_read_adress = 15 then
+          --program_mem_read_adress <= (others => '0');
+        --else
+          --program_mem_read_adress <= program_mem_read_adress + 1;
+        --end if;
+        --program_mem_re <= '1';
+      --end if;
+    --end if;
+  --end process;
+  Led <=  program_mem_read_adress(7 downto 0);
   slow_clk <= cpu_clk when slow_clk_counter = 0 else '0';
     -- PLS IGNORE
 
@@ -168,7 +190,9 @@ debug_data <= cpu_debug_data;
 
 -- CPU component connection
     CPUCOMP : cpu port map(clk=>slow_clk,pm_instruction=>program_mem_read_instruction,
-    pc_out=>program_mem_read_adress,pc_re=>program_mem_re,debuginfo=>cpu_debug_data);
+    pc_out=>program_mem_read_adress,
+pc_re=>program_mem_re,
+debuginfo=>cpu_debug_data);
 -- VGA motor component connection
 	VGAMOTOR : vga_motor port map(clk=>clk, data=>pixel_mem_read_data, addr=>pixel_mem_read_addr,
 	re=>pixel_mem_re, rst=>rst, h_sync=>h_sync, v_sync=>v_sync, pixel_data=>pixel_data);
@@ -178,7 +202,7 @@ debug_data <= cpu_debug_data;
 	read_data=>pixel_mem_read_data);
 -- Program memory component connection
 	PROGRAMMEM: program_mem port map(clk=>clk, write_adress=>program_mem_write_adress, we=>program_mem_we,
-	write_instruction=>program_mem_write_instruction, read_adress=>program_mem_write_adress,
+	write_instruction=>program_mem_write_instruction, read_adress=>program_mem_read_adress,
 	re=>program_mem_re, read_instruction=>program_mem_read_instruction);
 -- UART component connection
 	UARTCOMP: uart port map(clk=>clk,rx=>rx,cpu_clk=>cpu_clk,we=>program_mem_we,

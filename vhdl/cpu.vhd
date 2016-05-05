@@ -63,7 +63,6 @@ signal ir1,ir2,ir3,ir4	: std_logic_vector(63 downto 0) := (others => '0'); --  N
 -- Registers --
 signal re               : std_logic := '1';
 signal pc		        : std_logic_vector(15 downto 0)	:= (others => '0');	--	PC
-signal pc_next		    : std_logic_vector(15 downto 0)	:= (others => '0');	--	PC+4
 signal pc_2		        : std_logic_vector(15 downto 0)	:= (others => '0');	--	PC2
 signal im_2             : std_logic_vector(31 downto 0)	:= (others => '0');	--	IM2
 signal d_1              : std_logic_vector(63 downto 0)	:= (others => '0');	--	D1
@@ -147,7 +146,7 @@ begin
 
   pc_out <= pc;
 
-  debuginfo <= ir1(47 downto 32);
+  debuginfo <= reg_file(1)(15 downto 0);
   --debuginfo <= pc;
 
   process(clk)
@@ -172,17 +171,17 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      if nop_counter = 3 then
-        pc_next <= pc + 1;
+      if nop_counter = 0 then
+        if (ir1_op = bra_op_code) or (ir1_op = bne_op_code and sr(1) = '0') then
+          pc <= pc_2;
+        else
+          pc <= pc + 1;
+        end if;
       end if;
     end if;
   end process;
 
   pc_2 <= ir1_data(15 downto 0);
-  
-  pc <= pc_2 when (ir1_op = bra_op_code) or 
-        (ir1_op = bne_op_code and sr(1) = '0') else
-        pc_next;
 
   ---- 2. RR ----
   -- Register File --
