@@ -159,7 +159,7 @@ begin
 
     --GPU port map
     gpu_map: gpu port map(
-                             clk => clk_50, 
+                             clk => clk, 
                              pixel_address => gpu_pixel_write_addr,
                              pixel_data => gpu_pixel_write_data,
                              pixel_write_enable => gpu_pixel_we,
