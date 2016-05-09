@@ -306,7 +306,7 @@ begin
             elsif gpu_state = WAIT_FOR_VGA then
                 if vga_done = '1' then
                     gpu_state <= READ_OBJECT;
-                    angle <= angle + 1;
+                    --angle <= angle + 1;
                 end if;
             end if;
         end if;
