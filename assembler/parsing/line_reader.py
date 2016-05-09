@@ -1,14 +1,6 @@
 from log import syntax_error
-from parsing.parsers.CommentParser import CommentParser
-from parsing.parsers.InstructionParser import InstructionParser
-from parsing.parsers.LabelParser import LabelParser
-from parsing.parsers.NoOpParser import NoOpParser
-from parsing.parsers.VariableParser import VariableParser
 from parsing.regex_parser.RegexParser import RegexParser
 from parsing.regex_parser.regex_definitions import REGEX_TOKENS
-from parsing.token_parser.TokenParser import TokenParser
-from parsing.token_parser.token_definitions import TOKENS
-
 
 class LineReader(object):
     def __init__(self, line, line_no):
