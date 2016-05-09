@@ -1,14 +1,33 @@
+from instructions.instruction_set import INSTRUCTIONS
+from parsing.parsers.ParseException import ParseException
 from parts.Part import Part
 
 
 class Instruction(Part):
+    def occupied_addresses(self):
+        return 1
+
     def in_output(self):
         return True
 
-    def __init__(self, instruction_def, args, data):
-        self.instruction_def = instruction_def
-        self.args = args
-        self.data = data
+    def __init__(self, instruction_identifier, *arguments):
+        self.instruction_def = INSTRUCTIONS.get(instruction_identifier)
+        if self.instruction_def is None:
+            raise ParseException('Invalid instruction')
+
+        self.args = list(arguments)
+        if len(self.args) > self.instruction_def['num_registers']:
+            self.data = self.args.pop()
+        else:
+            self.data = None
+
+        if self.instruction_def['num_registers'] != len(self.args):
+            raise ParseException(
+                    'Invalid number of registers. Expected ' + str(self.instruction_def['num_registers']) + ', found ' + str(len(
+                            self.args)))
+
+        if self.instruction_def['has_data'] == (self.data is None):
+            raise ParseException('Expected data, found nothing')
 
     def get_bytes(self):
         if len(self.args) > 0:

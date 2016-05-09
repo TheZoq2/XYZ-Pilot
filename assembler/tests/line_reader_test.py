@@ -4,6 +4,8 @@ from parsing.line_reader import LineReader
 from parts.Comment import Comment
 from parts.Instruction import Instruction
 from parts.Label import Label
+from parts.LoopEnd import LoopEnd
+from parts.LoopStart import LoopStart
 from parts.NoOp import NoOp
 from parts.Variable import Variable
 
@@ -106,3 +108,22 @@ class VariableTest(unittest.TestCase):
     def test_parse_invalid_variable_empty(self):
         part = LineReader('=', 1).parse()
         self.failIf(part is not None)
+
+
+class WhileLoopTest(unittest.TestCase):
+    def test_loop_start(self):
+        part = LineReader('WHILE A==B', 1).parse()
+        self.failUnless(isinstance(part, LoopStart))
+
+    def test_loop_start_extra_space(self):
+        part = LineReader('WHILE A   ==    B  ', 1).parse()
+        self.failUnless(isinstance(part, LoopStart))
+
+    def test_loop_end(self):
+        part = LineReader('ENDWHILE', 1).parse()
+        self.failUnless(isinstance(part, LoopEnd))
+
+    def test_loop_end_extra_space(self):
+        part = LineReader('    ENDWHILE   ', 1).parse()
+        self.failUnless(isinstance(part, LoopEnd))
+

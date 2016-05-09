@@ -4,6 +4,10 @@ from parsing.parsers.InstructionParser import InstructionParser
 from parsing.parsers.LabelParser import LabelParser
 from parsing.parsers.NoOpParser import NoOpParser
 from parsing.parsers.VariableParser import VariableParser
+from parsing.regex_parser.RegexParser import RegexParser
+from parsing.regex_parser.regex_definitions import REGEX_TOKENS
+from parsing.token_parser.TokenParser import TokenParser
+from parsing.token_parser.token_definitions import TOKENS
 
 
 class LineReader(object):
@@ -13,12 +17,15 @@ class LineReader(object):
 
     def parse(self):
         # Available parsers ordered by priority
+        """
         parsers = [
-            CommentParser(),
-            InstructionParser(),
-            VariableParser(),
-            LabelParser(),
-            NoOpParser()
+            TokenParser(x['class'], x['definition'])
+            for x in TOKENS
+        ]
+        """
+        parsers = [
+            RegexParser(x['class'], x['definition'])
+            for x in REGEX_TOKENS
         ]
 
         errors = []
@@ -37,4 +44,15 @@ class LineReader(object):
             syntax_error.log(self.line_no, errors.pop())
             return None
 
-        return parsers[0].build()
+        errors = []
+        for parser in parsers:
+            try:
+                part = parser.build()
+                return part
+            except Exception as e:
+                errors.append(e)
+
+        if errors:
+            syntax_error.log(self.line_no, errors.pop())
+
+        return None

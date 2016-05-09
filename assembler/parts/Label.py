@@ -2,6 +2,9 @@ from parts.Part import Part
 
 
 class Label(Part):
+    def occupied_addresses(self):
+        return 1
+
     def in_output(self):
         return True
 

@@ -7,7 +7,7 @@ NOP
 # Variable test
 X = FF
 Y = 1337
-Z = Y
+Z = 0123456789ABCDEF
 
 # Finite loop with excessive memory access
 i = 0
@@ -24,6 +24,16 @@ ITER:
 
     # Continue iterating if i != len
     BNE ITER
+
+WHILE i != len
+    LOAD 0 i
+    ADDI 0 0 1
+    STORE 0 i
+
+    IF X == Y
+        Z = 10
+    ENDIF
+ENDWHILE
 
 # Infinite loop
 LOOP:

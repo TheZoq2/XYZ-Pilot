@@ -1,6 +1,10 @@
 from parsing.line_reader import LineReader
+from parts.IfEnd import IfEnd
+from parts.IfStart import IfStart
+from parts.LoopStart import LoopStart
 from parts.Instruction import Instruction
 from parts.Label import Label
+from parts.LoopEnd import LoopEnd
 from parts.Variable import Variable
 
 
@@ -9,9 +13,12 @@ class QuickAndDirtyCompiler(object):
         self.filename = filename
         self.parts = []
         self.labels = {}
+        self.variables = {}
+        self.while_constructs = []
+        self.if_constructs = []
 
     def compile(self):
-        if self.parse() and self.map_labels():
+        if self.parse() and self.map_labels() and self.map_loops() and self.map_ifs():
             self.output()
             print('Compilation success')
         else:
@@ -36,28 +43,81 @@ class QuickAndDirtyCompiler(object):
         address = 0
         error = False
         for part in self.parts:
-            if isinstance(part, Label) or isinstance(part, Variable):
+            if isinstance(part, Label):
                 if part.label in self.labels:
                     error = True
                     print('Error: Multiple definitions of label \'' + part.label + '\'')
+                else:
+                    self.labels[part.label] = address
+            if isinstance(part, Variable):
+                if part.label not in self.variables:
+                    self.variables[part.label] = len(self.variables)
 
-                self.labels[part.label] = address
+                part.address = self.variables[part.label]
 
             if part.in_output():
-                address += 1
+                address += part.occupied_addresses()
 
         if not error:
             for part in self.parts:
                 if isinstance(part, Instruction):
-                    for i in range(len(part.args)):
-                        if part.args[i] in self.labels:
-                            part.args[i] = hex(self.labels[part.args[i]])[2:]
-
                     if part.data in self.labels:
                         part.data = hex(self.labels[part.data])[2:]
-                if isinstance(part, Variable):
-                    if part.value in self.labels:
-                        part.value = hex(self.labels[part.value])[2:]
+                    elif part.data in self.variables:
+                        part.data = hex(self.variables[part.data])[2:]
+                if isinstance(part, LoopStart) or isinstance(part, IfStart):
+                    if part.lhs in self.variables:
+                        part.lhs = hex(self.variables[part.lhs])[2:]
+                    if part.rhs in self.variables:
+                        part.rhs = hex(self.variables[part.rhs])[2:]
+
+        return not error
+
+    def map_loops(self):
+        address = 0
+        error = False
+        for part in self.parts:
+            if isinstance(part, LoopStart):
+                part.address = address
+                self.while_constructs.append(part)
+            if isinstance(part, LoopEnd):
+                if len(self.while_constructs) == 0:
+                    error = True
+                    print('Error: Unexpected ENDWHILE. Loop was never opened')
+                else:
+                    loop_start = self.while_constructs.pop()
+                    loop_start.end_address = address + 1  # TODO: Verify if this is needed. Same situation as NOPs
+                    part.start_address = loop_start.address
+
+            if part.in_output():
+                address += part.occupied_addresses()
+
+        if len(self.while_constructs) > 0:
+            error = True
+            print('Error: Expected ENDWHILE, but found nothing')
+
+        return not error
+
+    def map_ifs(self):
+        address = 0
+        error = False
+        for part in self.parts:
+            if isinstance(part, IfStart):
+                self.if_constructs.append(part)
+            if isinstance(part, IfEnd):
+                if len(self.if_constructs) == 0:
+                    error = True
+                    print('Error: Unexpected ENDIF. If statement was never opened')
+                else:
+                    if_start = self.if_constructs.pop()
+                    if_start.end_address = address + 1  # TODO: Verify if this is needed. Same situation as NOPs
+
+            if part.in_output():
+                address += part.occupied_addresses()
+
+        if len(self.if_constructs) > 0:
+            error = True
+            print('Error: Expected ENDIF, but found nothing')
 
         return not error
 
