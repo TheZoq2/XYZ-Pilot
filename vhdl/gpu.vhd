@@ -54,6 +54,7 @@ architecture Behavioral of GPU is
     --The offset from the start of the current object pointer in memory to the current 'line' in the memory
     signal current_obj_start: unsigned(15 downto 0) := x"0000";
     signal current_obj_offset: unsigned(2 downto 0) := "000";
+    signal obj_mem_vec: vector.Elements_t;
 
     signal start_vector: work.Vector.InMemory_t;
     signal end_vector: work.Vector.InMemory_t;
@@ -69,6 +70,10 @@ architecture Behavioral of GPU is
     signal draw_diff: Vector.Elements_t := (to_signed(0, 16), to_signed(0, 16), to_signed(0, 16), to_signed(0, 16)); --The vector between draw_start and  draw_end
     signal pixel_out: Vector.Elements_t;
     signal draw_d_var: signed(15 downto 0);
+
+    signal obj_position: Vector.Elements_t;
+    signal obj_angle: Vector.Elements_t;
+    signal obj_scale: Vector.Elements_t;
 
     --Versions of draw_start and end that have not been corrected for the line to be in the first
     --octant
@@ -162,6 +167,11 @@ begin
                 vec => raw_end
             );
 
+    obj_mem_vec_splitter: VectorSplitter port map(
+                memory => obj_mem_data,
+                vec => obj_mem_vec
+            );
+
     sin_calculator: sin_table port map(
                         angle => angle,
                         result => sin_val
@@ -217,14 +227,25 @@ begin
     process(clk) begin
         if rising_edge(clk) then
             if gpu_state = READ_OBJECT then
-                gpu_state <= FETCH_LINE;
-
                 line_start_addr <= x"0000";
 
-                if current_obj_offset = 4 then
-                    line_start_addr <= unsigned(obj_mem_data(15 downto 0));
+                --Incrememnt the current offset and switch states
+                if current_obj_offset = 3 then
+                    current_obj_offset <= "000";
+                    gpu_state <= FETCH_LINE;
                 else
-                    --current_obj_offset <= current_obj_offset + 1;
+                    current_obj_offset <= current_obj_offset + 1;
+                end if;
+
+
+                if current_obj_offset = 3 then
+                    line_start_addr <= unsigned(obj_mem_data(15 downto 0));
+                elsif current_obj_offset = 2 then --If this is the position value
+                    obj_scale <=  obj_mem_vec;
+                elsif current_obj_offset = 1 then
+                    obj_angle <=  obj_mem_vec;
+                elsif current_obj_offset = 0 then
+                    obj_position <=  obj_mem_vec;
                 end if;
             elsif gpu_state = FETCH_LINE then
                 --Wait for model memory to update the data
@@ -321,14 +342,14 @@ begin
 
 
     with octant select
-        pixel_out <=  (x"0000", x"0000", screen_start(1) + current_pixel(1),  screen_start(0) + current_pixel(0)) when "000",
-                      (x"0000", x"0000", screen_start(1) + current_pixel(0),  screen_start(0) + current_pixel(1)) when "001",
-                      (x"0000", x"0000", screen_start(1) + current_pixel(0),  screen_start(0) - current_pixel(1)) when "010",
-                      (x"0000", x"0000", screen_start(1) + current_pixel(1),  screen_start(0) - current_pixel(0)) when "011",
-                      (x"0000", x"0000", screen_start(1) - current_pixel(1),  screen_start(0) - current_pixel(0)) when "100",
-                      (x"0000", x"0000", screen_start(1) - current_pixel(0),  screen_start(0) - current_pixel(1)) when "101",
-                      (x"0000", x"0000", screen_start(1) - current_pixel(0),  screen_start(0) + current_pixel(1)) when "110",
-                      (x"0000", x"0000", screen_start(1) - current_pixel(1),  screen_start(0) + current_pixel(0)) when others;
+        pixel_out <=  (x"0000", x"0000", screen_start(1) + current_pixel(1) + obj_position(1),  screen_start(0) + current_pixel(0) + obj_position(0)) when "000",
+                      (x"0000", x"0000", screen_start(1) + current_pixel(0) + obj_position(1),  screen_start(0) + current_pixel(1) + obj_position(0)) when "001",
+                      (x"0000", x"0000", screen_start(1) + current_pixel(0) + obj_position(1),  screen_start(0) - current_pixel(1) + obj_position(0)) when "010",
+                      (x"0000", x"0000", screen_start(1) + current_pixel(1) + obj_position(1),  screen_start(0) - current_pixel(0) + obj_position(0)) when "011",
+                      (x"0000", x"0000", screen_start(1) - current_pixel(1) + obj_position(1),  screen_start(0) - current_pixel(0) + obj_position(0)) when "100",
+                      (x"0000", x"0000", screen_start(1) - current_pixel(0) + obj_position(1),  screen_start(0) - current_pixel(1) + obj_position(0)) when "101",
+                      (x"0000", x"0000", screen_start(1) - current_pixel(0) + obj_position(1),  screen_start(0) + current_pixel(1) + obj_position(0)) when "110",
+                      (x"0000", x"0000", screen_start(1) - current_pixel(1) + obj_position(1),  screen_start(0) + current_pixel(0) + obj_position(0)) when others;
 
     pixel_address(16 downto 8) <= std_logic_vector(pixel_out(0)(8 downto 0));
     pixel_address(7 downto 0) <= std_logic_vector(pixel_out(1)(7 downto 0));
