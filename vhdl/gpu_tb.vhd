@@ -65,6 +65,15 @@ architecture Behavioral of gpu_tb is
         );
     end component;
 
+    component ObjMem is
+    port (
+            clk : in std_logic;
+            -- port 1
+            read_addr : in GPU_Info.ModelAddr_t;
+            read_data : out GPU_Info.ModelData_t
+        );
+    end component;
+
     signal clk: std_logic := '0';
     signal gpu_clk: std_logic := '0';
     signal clk_div: unsigned(1 downto 0) := "00";
@@ -86,10 +95,14 @@ architecture Behavioral of gpu_tb is
     signal vga_read_address: std_logic_vector(16 downto 0);
     signal vga_read_data: std_logic;
     signal vga_re : std_logic;
+
+    signal obj_mem_addr: GPU_Info.ObjAddr_t;
+    signal obj_mem_data: GPU_Info.ObjData_t;
 begin
     uut_len: gpu PORT MAP(
             clk => gpu_clk,
-            obj_mem_data  => x"0000000000000000",
+            obj_mem_data  => obj_mem_data,
+            obj_mem_addr => obj_mem_addr,
             vga_done => vga_done,
             
             pixel_address => gpu_write_address,
@@ -124,6 +137,12 @@ begin
             vga_read_adress => vga_read_address,
             vga_read_data => vga_read_data,
             vga_re => vga_re
+        );
+
+    uut_obj_mem : ObjMem port map (
+            clk => clk,
+            read_addr => obj_mem_addr,
+            read_data => obj_mem_data
         );
 
     clk <= not clk after 5 ns;
