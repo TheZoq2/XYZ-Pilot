@@ -144,7 +144,7 @@ signal debug_data : std_logic_vector(15 downto 0);
 signal cpu_debug_data : std_logic_vector(15 downto 0);
 signal pm_debug_data : std_logic_vector(15 downto 0);
 
-signal slow_clk_counter : std_logic_vector(21 downto 0) := (0 => '1',others => '0');
+signal slow_clk_counter : std_logic_vector(19 downto 0) := (0 => '1',others => '0');
 signal slow_clk         : std_logic := '0';
 
 signal debug_mem_pos    : std_logic_vector(15 downto 0) := (others => '0'); 

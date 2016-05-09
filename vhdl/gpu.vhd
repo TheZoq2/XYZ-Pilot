@@ -53,8 +53,8 @@ architecture Behavioral of GPU is
 
 
     --The offset from the start of the current object pointer in memory to the current 'line' in the memory
-    signal current_obj_start: unsigned(15 downto 0) := x"0000";
-    signal current_obj_offset: unsigned(2 downto 0) := "000";
+    signal current_obj_start: GPU_Info.ObjAddr_t := (others => '0');
+    signal current_obj_offset: unsigned(2 downto 0) := (others => '0');
 
     --Decides which vector register in the gpu to write the current line in the model memory  to
     signal set_start_or_end: std_logic := '0';
