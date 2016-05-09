@@ -9,7 +9,7 @@ use work.Vector;
 package GPU_Info is
     --TODO: Optimse the size of obj addr and model addr
     --The length of the addresses and data in the object memory
-    constant OBJ_ADDR_SIZE: positive := 16;
+    constant OBJ_ADDR_SIZE: positive := 9;
     constant OBJ_DATA_SIZE: positive := Vector.MEMORY_SIZE;
 
     subtype ObjAddr_t is unsigned(OBJ_ADDR_SIZE - 1 downto 0);

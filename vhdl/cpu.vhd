@@ -13,8 +13,11 @@ entity cpu is
 	port (clk		: in std_logic;								-- System clock
 			pm_instruction : in std_logic_vector(63 downto 0);	-- Instruction from program memory
 			pc_out		: out std_logic_vector(15 downto 0) := (others => '0'); -- Program Counter
-            pc_we       : out std_logic); -- Write Enable to be sent to program mem
-		
+            pc_re       : out std_logic := '1'; -- Read Enable to be sent to program mem
+            obj_mem_data : out std_logic_vector(63 downto 0);
+            obj_mem_adress : out std_logic_vector(8 downto 0);
+            obj_mem_we  : out std_logic;
+            debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); 
 end cpu;
 
 architecture Behavioral of cpu is
@@ -53,13 +56,16 @@ component VectorSubtractor is
         );
 end component;
 
+--COUNTER--
+signal nop_counter : std_logic_vector(1 downto 0) := "00";
+
 signal sr               : std_logic_vector(1 downto 0)  := (others => '0'); --  [Z,N]
+signal sr_last          : std_logic_vector(1 downto 0)  := (others => '0'); --  Store last SR
 signal ir1,ir2,ir3,ir4	: std_logic_vector(63 downto 0) := (others => '0'); --  NOP at start
 
 -- Registers --
-signal we               : std_logic := '1';
+signal re               : std_logic := '1';
 signal pc		        : std_logic_vector(15 downto 0)	:= (others => '0');	--	PC
-signal pc_next		    : std_logic_vector(15 downto 0)	:= (others => '0');	--	PC+4
 signal pc_2		        : std_logic_vector(15 downto 0)	:= (others => '0');	--	PC2
 signal im_2             : std_logic_vector(31 downto 0)	:= (others => '0');	--	IM2
 signal d_1              : std_logic_vector(63 downto 0)	:= (others => '0');	--	D1
@@ -118,6 +124,10 @@ constant mult_op_code       : std_logic_vector(7 downto 0)  := X"0C";
 constant multi_op_code       : std_logic_vector(7 downto 0)  := X"0D";
 constant vecadd_op_code       : std_logic_vector(7 downto 0)  := X"0E";
 constant vecsub_op_code       : std_logic_vector(7 downto 0)  := X"0F";
+constant beq_op_code       : std_logic_vector(7 downto 0)  := X"10";
+constant bge_op_code       : std_logic_vector(7 downto 0)  := X"11";
+constant ble_op_code       : std_logic_vector(7 downto 0)  := X"12";
+constant storeobj_op_code       : std_logic_vector(7 downto 0)  := X"13";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
@@ -132,6 +142,7 @@ alias ir3_op 				: std_logic_vector(7 downto 0) is ir3(63 downto 56);
 
 alias ir4_op 				: std_logic_vector(7 downto 0) is ir4(63 downto 56);
 alias ir4_reg1 				: std_logic_vector(3 downto 0) is ir4(55 downto 52);
+alias ir4_data				: std_logic_vector(31 downto 0) is ir4(43 downto 12);
 
 begin
 
@@ -142,10 +153,22 @@ begin
   vec_merge : VectorMerger port map(memory=>vec_merge_out,vec=>vec_merge_in);
 
   pc_out <= pc;
-  pc_we <= we;
+  debuginfo <= reg_file(0)(51 downto 48) & 
+               reg_file(0)(35 downto 32) & 
+               reg_file(0)(19 downto 16) & 
+               reg_file(0)(3 downto 0);
+  
+  --debuginfo <= pc;
+
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      nop_counter <= nop_counter + 1;
+    end if;
+  end process;
 
   -- IR SWITCHES --
-  ir1 <= pm_instruction;
+  ir1 <= pm_instruction when nop_counter = 0 else (others => '0');
   process(clk)
   begin
 	if rising_edge(clk) then
@@ -159,24 +182,32 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      pc_next <= pc + 1;
+      if nop_counter = 0 then
+        if (ir1_op = bra_op_code) or 
+           (ir1_op = bne_op_code and sr(1) = '0') or
+           (ir1_op = beq_op_code and sr(1) = '1') or 
+           (ir1_op = bge_op_code and sr(0) = '1') or
+           (ir1_op = ble_op_code and sr(1) = '0' and sr(0) = '0') then
+          pc <= pc_2;
+        else
+          pc <= pc + 1;
+        end if;
+      end if;
     end if;
   end process;
-  
-  pc <= pc_2 when (ir1_op = bra_op_code) or 
-        (ir1_op = bne_op_code and sr(1) = '0') else
-        pc_next;
+
+  pc_2 <= ir1_data(15 downto 0);
 
   ---- 2. RR ----
   -- Register File --
   process(clk)
   begin
     if rising_edge(clk) then
-      pc_2 <= ir1_data(15 downto 0);
       im_2 <= ir1_data;
 
       case ir1_op is
         when store_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
+        when storeobj_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
         when load_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
         when cmp_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
         when others => d_1 <= reg_file(conv_integer(ir1_reg3));
@@ -238,16 +269,19 @@ begin
                mult_result(63 downto 0) when multi_op_code,
                vec_merge_out when vecadd_op_code,
                vec_merge_out when vecsub_op_code,
+               alu_1 when storeobj_op_code,
                X"0000000000000000" when others;
   sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) else
         "01" when (ir2_op=cmp_op_code and alu_1<alu_2) else
-        "00";
+        "00" when (ir2_op=cmp_op_code) else
+        sr_last;
   
   process(clk)
   begin
     if rising_edge(clk) then
       d_3 <= alu_res;
       z_3 <= d_1;
+      sr_last <= sr;
     end if;
   end process;
 
@@ -264,22 +298,33 @@ begin
     end if;
   end process;
 
+
   ---- 5. WB ----
   write_reg <= z_4 when ir4_op = load_op_code else
                d_4;
-
-  reg_file(conv_integer(ir4_reg1)) <= write_reg when (ir4_op = load_op_code or 
+  -- Writing back to register file
+  process(clk)
+  begin
+    if rising_edge(clk) then
+      if ir4_op = load_op_code or 
       ir4_op = movhi_op_code or 
       ir4_op = movlo_op_code or 
       ir4_op = add_op_code or 
-      ir4_op = addi_op_code) or
+      ir4_op = addi_op_code or
       ir4_op = sub_op_code or
       ir4_op = subi_op_code or
       ir4_op = mult_op_code or
       ir4_op = multi_op_code or
       ir4_op = vecadd_op_code or
-      ir4_op = vecsub_op_code else
-      reg_file(conv_integer(ir4_reg1));
+      ir4_op = vecsub_op_code then
+        reg_file(conv_integer(ir4_reg1)) <= write_reg;
+      end if;
+    end if;
+  end process;
+  -- Writing to object memory
+  obj_mem_data <= d_4;
+  obj_mem_adress <= ir4_data(8 downto 0);
+  obj_mem_we <= '1' when ir4_op = storeobj_op_code else '0';
 
 
 end Behavioral;

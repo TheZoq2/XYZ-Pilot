@@ -1,24 +1,23 @@
 from log import syntax_error
-from parsing.parsers.CommentParser import CommentParser
-from parsing.parsers.InstructionParser import InstructionParser
-from parsing.parsers.LabelParser import LabelParser
-from parsing.parsers.NoOpParser import NoOpParser
+from parsing.regex_parser.RegexParser import RegexParser
+from parsing.regex_parser.regex_definitions import REGEX_TOKENS
 
-
-class LineReader:
+class LineReader(object):
     def __init__(self, line, line_no):
-        super().__init__()
-
         self.line = line
         self.line_no = line_no
 
     def parse(self):
         # Available parsers ordered by priority
+        """
         parsers = [
-            CommentParser(),
-            InstructionParser(),
-            LabelParser(),
-            NoOpParser()
+            TokenParser(x['class'], x['definition'])
+            for x in TOKENS
+        ]
+        """
+        parsers = [
+            RegexParser(x['class'], x['definition'])
+            for x in REGEX_TOKENS
         ]
 
         errors = []
@@ -37,4 +36,15 @@ class LineReader:
             syntax_error.log(self.line_no, errors.pop())
             return None
 
-        return parsers[0].build()
+        errors = []
+        for parser in parsers:
+            try:
+                part = parser.build()
+                return part
+            except Exception as e:
+                errors.append(e)
+
+        if errors:
+            syntax_error.log(self.line_no, errors.pop())
+
+        return None
