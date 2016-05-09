@@ -1,6 +1,7 @@
 from instructions.instruction_set import INSTRUCTIONS
 from parsing.parsers.ParseException import ParseException
 from parts.Part import Part
+from specification.instruction_spec import generate_instruction_bytes
 
 
 class Instruction(Part):
@@ -48,15 +49,4 @@ class Instruction(Part):
         else:
             data = 0
 
-        instruction = [
-            self.instruction_def['identifier'],
-            reg1 << 4 | (reg2 & 0x0F),
-            reg3 << 4 | ((data & 0xF0000000) >> 28),
-            (data & 0x0FF00000) >> 20,
-            (data & 0x000FF000) >> 12,
-            (data & 0x00000FF0) >> 4,
-            (data & 0x0000000F) << 4,
-            0
-        ]
-
-        return instruction
+        return generate_instruction_bytes(self.instruction_def['identifier'], reg1, reg2, reg3, data)
