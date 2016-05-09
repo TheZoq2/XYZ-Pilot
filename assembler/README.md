@@ -53,6 +53,29 @@ En kommentar skrivs på formatet
 ```
 Kommentarer måste skrivas på en egen rad.
 
+##### Loopar
+En loop skrivs på formatet
+```
+WHILE X == Y
+  # Upprepad funktionalitet
+ENDWHILE
+
+WHILE X != Y
+  # Annan upprepad funktionalitet
+ENDWHILE
+```
+X och Y är variabler alternativt hårdkodad minnesadress till variabler. Noterbart är att denna sats genererar kod för att läsa in variablerna i register 0xE och 0xF vid varje upprepning och utökar också programmet med 6 st instruktioner.
+
+##### IF-satser
+En IF-sats skrivs på formatet
+```
+IF X == Y
+  # Villkorlig funktionalitet
+ENDIF
+```
+X och Y är variabler alternativt hårdkodad minnesadress till variabler. Noterbart är att denna sats genererar kod för att läsa in variablerna i register 0xE och 0xF och utökar därför programmet med 6 st instruktioner. Eftersom denna inläsning sker i början av loopar respektive IF-satser kan dessa samexistera utan några oönskade sidoeffekter.
+
 #### Planerad funktionalitet
-- IF-satser
-- Loopar
+- ELSE
+- Fler villkor för loopar och IF-satser
+- FOR-satser
