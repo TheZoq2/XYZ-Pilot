@@ -9,7 +9,7 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 -- entity
 entity vga_motor is
 	port (
-        clk		: in std_logic;							-- System clock
+        clk		    : in std_logic;							-- System clock
 		data		: in std_logic;							-- Data from pixel memory
 		addr		: out std_logic_vector(16 downto 0);	-- Adress for pixel memory
 		re			: out std_logic;						-- Read enable for pixel memory
@@ -133,7 +133,8 @@ begin
 
     write_addr <= ((old_x_pixel(9 downto 1)) & (old_y_pixel(8 downto 1)));
     write_data <= '0';
-    write_enable <= clk_25;
+    write_enable <= '1' when clk_25 = '1' and blank = '0' else '0';
+    --write_enable <= '0';
 
 	-- MUX
 	-- data = 1 represent white pixel, data = 0 represent black pixel

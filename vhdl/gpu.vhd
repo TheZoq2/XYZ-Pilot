@@ -239,7 +239,7 @@ begin
 
 
                 if current_obj_offset = 3 then
-                    line_start_addr <= unsigned(obj_mem_data(15 downto 0));
+                    --line_start_addr <= unsigned(obj_mem_data(15 downto 0));
                 elsif current_obj_offset = 2 then --If this is the position value
                     obj_scale <=  obj_mem_vec;
                 elsif current_obj_offset = 1 then
@@ -342,21 +342,24 @@ begin
 
 
     with octant select
-        pixel_out <=  (x"0000", x"0000", screen_start(1) + current_pixel(1) + obj_position(1),  screen_start(0) + current_pixel(0) + obj_position(0)) when "000",
-                      (x"0000", x"0000", screen_start(1) + current_pixel(0) + obj_position(1),  screen_start(0) + current_pixel(1) + obj_position(0)) when "001",
-                      (x"0000", x"0000", screen_start(1) + current_pixel(0) + obj_position(1),  screen_start(0) - current_pixel(1) + obj_position(0)) when "010",
-                      (x"0000", x"0000", screen_start(1) + current_pixel(1) + obj_position(1),  screen_start(0) - current_pixel(0) + obj_position(0)) when "011",
-                      (x"0000", x"0000", screen_start(1) - current_pixel(1) + obj_position(1),  screen_start(0) - current_pixel(0) + obj_position(0)) when "100",
-                      (x"0000", x"0000", screen_start(1) - current_pixel(0) + obj_position(1),  screen_start(0) - current_pixel(1) + obj_position(0)) when "101",
-                      (x"0000", x"0000", screen_start(1) - current_pixel(0) + obj_position(1),  screen_start(0) + current_pixel(1) + obj_position(0)) when "110",
-                      (x"0000", x"0000", screen_start(1) - current_pixel(1) + obj_position(1),  screen_start(0) + current_pixel(0) + obj_position(0)) when others;
+        pixel_out <=  (x"0000", x"0000", obj_position(1) + screen_start(1) + current_pixel(1), obj_position(0) + screen_start(0) + current_pixel(0)) when "000",
+                      (x"0000", x"0000", obj_position(1) + screen_start(1) + current_pixel(0), obj_position(0) + screen_start(0) + current_pixel(1)) when "001",
+                      (x"0000", x"0000", obj_position(1) + screen_start(1) + current_pixel(0), obj_position(0) + screen_start(0) - current_pixel(1)) when "010",
+                      (x"0000", x"0000", obj_position(1) + screen_start(1) + current_pixel(1), obj_position(0) + screen_start(0) - current_pixel(0)) when "011",
+                      (x"0000", x"0000", obj_position(1) + screen_start(1) - current_pixel(1), obj_position(0) + screen_start(0) - current_pixel(0)) when "100",
+                      (x"0000", x"0000", obj_position(1) + screen_start(1) - current_pixel(0), obj_position(0) + screen_start(0) - current_pixel(1)) when "101",
+                      (x"0000", x"0000", obj_position(1) + screen_start(1) - current_pixel(0), obj_position(0) + screen_start(0) + current_pixel(1)) when "110",
+                      (x"0000", x"0000", obj_position(1) + screen_start(1) - current_pixel(1), obj_position(0) + screen_start(0) + current_pixel(0)) when others;
 
     pixel_address(16 downto 8) <= std_logic_vector(pixel_out(0)(8 downto 0));
     pixel_address(7 downto 0) <= std_logic_vector(pixel_out(1)(7 downto 0));
     pixel_data <= '1';
 
-    pixel_write_enable <= '1' when gpu_state = CALC_PIXELS and pixel_out(0) > 0 and pixel_out(1) > 0 else '0';
-    --with gpu_state select
-    --    pixel_write_enable <= '1' when CALC_PIXELS,
-    --                          '0' when others;
+    pixel_write_enable <= '1' when gpu_state = CALC_PIXELS and 
+                          pixel_out(0) > 0 and
+                          pixel_out(1) > 0 and
+                          pixel_out(0) < 321 and
+                          pixel_out(1) < 241
+                    else '0';
+
 end Behavioral;

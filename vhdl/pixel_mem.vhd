@@ -95,6 +95,7 @@ begin
 
     r1_write_x <= gpu_write_x       when current_memory = '1' else vga_write_x;
     r1_write_y <= gpu_write_y       when current_memory = '1' else vga_write_y;
+
     r2_write_x <= gpu_write_x       when current_memory = '0' else vga_write_x;
     r2_write_y <= gpu_write_y       when current_memory = '0' else vga_write_y;
 
