@@ -42,25 +42,18 @@ architecture Behavioral of GPU is
  							READ_OBJECT,
                             FETCH_LINE,
                             START_PIXEL_CALC,
+                            WAIT_FOR_COMB,
                             CALC_PIXELS,
                             PREPARE_NEXT_LINE,
                             WAIT_FOR_VGA
                         );
     signal gpu_state: gpu_state_type := READ_OBJECT;
 
-    --The mux which decides if we want to start reading a new model or read more lines in the  current  one
-    signal line_mux_in: std_logic_vector(1 downto 0);
-    signal line_mux_out: std_logic_vector(GPU_Info.MODEL_ADDR_SIZE - 1  downto 0);
-
-    signal next_line_reg: std_logic_vector(GPU_Info.MODEL_ADDR_SIZE -1 downto 0);
-
+    signal delay_counter: unsigned(2 downto 0) := "000";
 
     --The offset from the start of the current object pointer in memory to the current 'line' in the memory
     signal current_obj_start: unsigned(15 downto 0) := x"0000";
     signal current_obj_offset: unsigned(2 downto 0) := "000";
-
-    --Decides which vector register in the gpu to write the current line in the model memory  to
-    signal set_start_or_end: std_logic := '0';
 
     signal start_vector: work.Vector.InMemory_t;
     signal end_vector: work.Vector.InMemory_t;
@@ -75,18 +68,15 @@ architecture Behavioral of GPU is
     signal draw_end: Vector.Elements_t; --The end of ^^
     signal draw_diff: Vector.Elements_t := (to_signed(0, 16), to_signed(0, 16), to_signed(0, 16), to_signed(0, 16)); --The vector between draw_start and  draw_end
     signal pixel_out: Vector.Elements_t;
+    signal draw_d_var: signed(15 downto 0);
 
     --Versions of draw_start and end that have not been corrected for the line to be in the first
     --octant
     signal raw_start: Vector.Elements_t;
     signal raw_end: Vector.Elements_t; 
-    signal rotated_start: Vector.Elements_t;
-    signal rotated_end: Vector.Elements_t;
 
     signal octant: unsigned(2 downto 0) := "000";
     signal octant_selector: std_logic_vector(2 downto 0);
-
-    signal draw_d_var: signed(15 downto 0);
 
     --Model data signals
     signal model_mem_addr: GPU_Info.ModelAddr_t;
@@ -97,7 +87,7 @@ architecture Behavioral of GPU is
 
     signal fetch_line_state: Line_Fetch_State.type_t := Line_Fetch_State.SET_START;
 
-    signal angle: unsigned(7 downto 0) := x"4f";
+    signal angle: unsigned(7 downto 0) := x"00";
     signal cos_val: datatypes.small_number_t;
     signal sin_val: datatypes.small_number_t;
 
@@ -232,7 +222,7 @@ begin
                 line_start_addr <= x"0000";
 
                 if current_obj_offset = 4 then
-                    --line_start_addr <= unsigned(obj_mem_data(15 downto 0));
+                    line_start_addr <= unsigned(obj_mem_data(15 downto 0));
                 else
                     --current_obj_offset <= current_obj_offset + 1;
                 end if;
@@ -267,7 +257,14 @@ begin
                     current_pixel(0) <= draw_start(0);
                     current_pixel(1) <= draw_start(1);
 
+                    gpu_state <= WAIT_FOR_COMB;
+                    delay_counter <= "000";
+                end if;
+            elsif gpu_state = WAIT_FOR_COMB then
+                if delay_counter = "111" then
                     gpu_state <= CALC_PIXELS;
+                else
+                    delay_counter <= delay_counter + 1;
                 end if;
             elsif gpu_state = CALC_PIXELS then
                 if current_pixel(0) > draw_end(0) then
