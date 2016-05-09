@@ -21,7 +21,7 @@ architecture Behavioral of uart is
 constant eof 		: std_logic_vector(63 downto 0) := (others => '1'); -- EOF
 
  ------ DISABLE UART------
-signal is_eof		: std_logic := '1';									-- Boolean to be set to 1 when finished
+signal is_eof		: std_logic := '0';									-- Boolean to be set to 1 when finished
  -------------------------
 
 signal bitn			: std_logic_vector(3 downto 0) := (others => '0');  -- Counter for bit number in a single byte
