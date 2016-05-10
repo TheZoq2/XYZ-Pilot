@@ -200,9 +200,9 @@ begin
     process(clk) begin
         if rising_edge(clk) then
             if gpu_state = READ_OBJECT then
-                line_start_addr <= (others => '0');
+                --line_start_addr <= (others => '0');
 
-                    report("Reading new line");
+                    --report("Reading new line");
                 --Incrememnt the current offset and switch states
                 if current_obj_offset = 3 then
                     current_obj_offset <= "000";
@@ -286,7 +286,7 @@ begin
             elsif gpu_state = WAIT_FOR_VGA then
                 if vga_done = '1' then
                     gpu_state <= READ_OBJECT;
-                    angle <= angle + 1;
+                    --angle <= angle + 1;
 
                     current_obj_start <= (others => '0');
                 end if;
