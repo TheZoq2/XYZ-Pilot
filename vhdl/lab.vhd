@@ -194,9 +194,6 @@ signal debug_data : std_logic_vector(15 downto 0);
 signal cpu_debug_data : std_logic_vector(15 downto 0);
 signal pm_debug_data : std_logic_vector(15 downto 0);
 
-signal slow_clk_counter : std_logic_vector(16 downto 0) := (0 => '1',others => '0');
-signal slow_clk         : std_logic := '0';
-
 signal debug_mem_pos    : std_logic_vector(15 downto 0) := (others => '0'); 
 signal debug_mem_instr  : std_logic_vector(63 downto 0) := (others => '0'); 
 
@@ -206,13 +203,6 @@ begin
 object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
 
   -- DEBUG PROCESSES --
-  process(clk)
-  begin
-  if rising_edge(clk) then
-    slow_clk_counter <= slow_clk_counter + 1;
-    null;
-  end if;
-  end process;
   
   --process(clk)
   --begin
@@ -228,7 +218,6 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
     --end if;
   --end process;
   Led <=  program_mem_read_adress(7 downto 0);
-  slow_clk <= cpu_clk when slow_clk_counter = 0 else '0';
     -- PLS IGNORE
 
     --GPU port map
@@ -246,7 +235,7 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
     debug_data <= program_mem_write_adress;
 
 -- CPU component connection
-    CPUCOMP : cpu port map(clk=>slow_clk,pm_instruction=>program_mem_read_instruction,
+    CPUCOMP : cpu port map(clk=>clk,pm_instruction=>program_mem_read_instruction,
             pc_out=>program_mem_read_adress,
             pc_re=>program_mem_re,
             obj_mem_data=>object_mem_write_data,
