@@ -18,6 +18,7 @@ entity cpu is
             obj_mem_adress : out std_logic_vector(8 downto 0);
             obj_mem_we  : out std_logic;
             frame_done  : in std_logic;
+            kbd_reg     : in std_logic_vector(3 downto 0) := (others => '0');
             debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); 
 end cpu;
 
@@ -130,6 +131,7 @@ constant bge_op_code       : std_logic_vector(7 downto 0)  := X"11";
 constant ble_op_code       : std_logic_vector(7 downto 0)  := X"12";
 constant storeobj_op_code       : std_logic_vector(7 downto 0)  := X"13";
 constant waitframe_op_code       : std_logic_vector(7 downto 0)  := X"14";
+constant btst_op_code       : std_logic_vector(7 downto 0)  := X"15";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
@@ -159,10 +161,11 @@ begin
   vec_merge : VectorMerger port map(memory=>vec_merge_out,vec=>vec_merge_in);
 
   pc_out <= pc;
-  debuginfo <= reg_file(0)(51 downto 48) & 
-               reg_file(0)(35 downto 32) & 
-               reg_file(0)(19 downto 16) & 
-               reg_file(0)(3 downto 0);
+  --debuginfo <= reg_file(0)(51 downto 48) & 
+    --           reg_file(0)(35 downto 32) & 
+      --         reg_file(0)(19 downto 16) & 
+        --       reg_file(0)(3 downto 0);
+  --debuginfo <= reg_file(15)(15 downto 0);
   
   --debuginfo <= pc;
 
@@ -230,6 +233,7 @@ begin
       case ir1_op is
         when movhi_op_code => d_2 <= reg_file(conv_integer(ir1_reg1));
         when movlo_op_code => d_2 <= reg_file(conv_integer(ir1_reg1));
+        when btst_op_code => d_2 <= reg_file(conv_integer(ir1_reg1));
         when others => d_2 <= reg_file(conv_integer(ir1_reg2));
       end case;
 
@@ -243,13 +247,14 @@ begin
                      ir2_op = movhi_op_code or 
                      ir2_op = movlo_op_code or
                      ir2_op = store_op_code or
-                     ir2_op = load_op_code else
+                     ir2_op = load_op_code or 
+                     ir2_op = btst_op_code else
            d_1;
 
   -- ALU --
 
   -- Multiplication
-  mult_result <= alu_1 * alu_2;
+  --mult_result <= alu_1 * alu_2;
 
   -- Splitting the two vectors
   vec_split_in1 <= alu_1;
@@ -279,15 +284,21 @@ begin
                alu_1 when load_op_code,
                alu_2 - alu_1 when sub_op_code,
                alu_2 - alu_1 when subi_op_code,
-               mult_result(63 downto 0) when mult_op_code,
-               mult_result(63 downto 0) when multi_op_code,
+               --mult_result(63 downto 0) when mult_op_code,
+               --mult_result(63 downto 0) when multi_op_code,
                vec_merge_out when vecadd_op_code,
                vec_merge_out when vecsub_op_code,
                alu_1 when storeobj_op_code,
                X"0000000000000000" when others;
-  sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) else
+  sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) or 
+                  (ir2_op=btst_op_code and alu_2(conv_integer(alu_1)) = '1') else
         "01" when (ir2_op=cmp_op_code and alu_1<alu_2) else
-        "00" when (ir2_op=cmp_op_code) else
+        "00" when (ir2_op=cmp_op_code or -- Clears sr when jumping
+                  ir2_op=beq_op_code or
+                  ir2_op=bne_op_code or
+                  ir2_op=bge_op_code or
+                  ir2_op=ble_op_code or
+                  ir2_op=bra_op_code) else
         sr_last;
   
   process(clk)
@@ -332,6 +343,8 @@ begin
       ir4_op = vecadd_op_code or
       ir4_op = vecsub_op_code then
         reg_file(conv_integer(ir4_reg1)) <= write_reg;
+      elsif frame_done = '1' then
+        reg_file(15) <= X"000000000000000" & kbd_reg;
       end if;
     end if;
   end process;

@@ -32,6 +32,7 @@ component cpu is
             obj_mem_adress : out std_logic_vector(8 downto 0);
             obj_mem_we  : out std_logic;
             frame_done  : in std_logic;
+            kbd_reg     : in std_logic_vector(3 downto 0) := (others => '0');
             debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); 
 end component;
 
@@ -48,8 +49,8 @@ component kbd_enc is
   port ( clk	                : in std_logic;			-- system clock
          ps2_kbd_clk	        : in std_logic; 		-- USB keyboard PS2 clock
          ps2_kbd_data	        : in std_logic;         -- USB keyboard PS2 data
-         kbd_reg                : out std_logic_vector(0 to 8) := (others => '0')); 
-        -- [SPACE,LEFT,RIGHT,UP,DOWN,W,A,S,D] 1 means key is pushed down, 0 means key is up	
+         kbd_reg                : out std_logic_vector(0 to 3) := (others => '0')); 
+        -- [W,A,D,SPACE] 1 means key is pushed down, 0 means key is up
 end component;
 
 -- VGA Motor
@@ -170,7 +171,7 @@ signal object_mem_read_data :   GPU_Info.ObjData_t;
 
 -- Signals to CPU
 signal cpu_clk					: std_logic := '0';
-signal kbd_reg                  : std_logic_vector(0 to 8);
+signal kbd_reg                  : std_logic_vector(3 downto 0);
 
 -- Signals between vga_motor and pixel_mem
 signal vga_pixel_read_data	:	std_logic;
@@ -244,6 +245,7 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
             obj_mem_adress=>object_mem_write_adress,
             obj_mem_we=>object_mem_we,
             frame_done=>vga_done,
+            kbd_reg=>kbd_reg,
             debuginfo=>cpu_debug_data);
 -- VGA motor component connection
 	VGAMOTOR : vga_motor port map(
