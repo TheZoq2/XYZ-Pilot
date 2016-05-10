@@ -5,7 +5,7 @@ use IEEE.STD_LOGIC_1164.ALL;            -- basic IEEE library
 use IEEE.NUMERIC_STD.ALL;   			-- IEEE library for the unsigned type
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use work.Vector;
---use work.GPU_Info;
+use work.GPU_Info;
 
 entity lab is
 	port(clk,rx 	 : in std_logic;						-- System clock,rx
@@ -27,8 +27,11 @@ component cpu is
 	port (clk		: in std_logic;								-- System clock
 			pm_instruction : in std_logic_vector(63 downto 0);	-- Instruction from program memory
 			pc_out		: out std_logic_vector(15 downto 0) := (others => '0'); -- Program Counter
-            pc_re       : out std_logic; -- Write Enable to be sent to program mem
-            debuginfo   : out std_logic_vector(15 downto 0));
+            pc_re       : out std_logic := '1'; -- Read Enable to be sent to program mem
+            obj_mem_data : out std_logic_vector(63 downto 0); -- Data to be sent to Object Memory
+            obj_mem_adress : out std_logic_vector(8 downto 0); -- Adress to be sent to Object Memory
+            obj_mem_we  : out std_logic; -- Write Enable to be sent to Object Memory
+            debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); 
 end component;
 
 -- UART
@@ -80,6 +83,20 @@ port (clk : in std_logic;
     read_instruction : out std_logic_vector(63 downto 0));
 end component;
 
+component ObjMem is
+port (
+        clk : in std_logic;
+        -- port 1
+        read_addr : in GPU_Info.ObjAddr_t;
+        read_data : out GPU_Info.ObjData_t;
+        -- port 2
+        write_addr : in GPU_Info.ObjAddr_t;
+        write_data : in GPU_Info.ObjData_t;
+        we         : in std_logic := '0';
+        debug_info : out std_logic_vector(15 downto 0)
+    );
+end component;
+
 -- Pixel Memory
 component pixel_mem is
 port (
@@ -104,14 +121,17 @@ port (
 end component;
 
 --GPU
-component gpu is 
+component GPU is
     port(
             clk: in std_logic;
+
+            obj_mem_addr: out GPU_Info.ObjAddr_t;
+            obj_mem_data: in GPU_Info.ObjData_t := x"0000000000000000";
 
             pixel_address: out std_logic_vector(16 downto 0);
             pixel_data: out std_logic;
             pixel_write_enable: out std_logic;
-
+        
             vga_done: in std_logic
         );
 end component;
@@ -137,6 +157,15 @@ signal gpu_pixel_we			:	std_logic;
 signal program_mem_read_instruction	:	std_logic_vector(63 downto 0);
 signal program_mem_read_adress	: 	std_logic_vector(15 downto 0) := (others => '0');
 signal program_mem_re			:	std_logic;
+
+-- Signals between cpu and object_mem
+signal object_mem_write_adress : GPU_Info.ObjAddr_t;
+signal object_mem_write_data   : GPU_Info.ObjData_t;
+signal object_mem_we           : std_logic;
+
+-- Signals between object_mem and gpu
+signal object_mem_read_adress : GPU_Info.ObjAddr_t;
+signal object_mem_read_data   : GPU_Info.ObjData_t;
 
 -- Signals to CPU
 signal cpu_clk					: std_logic := '0';
@@ -164,6 +193,7 @@ signal vga_done: std_logic;
 signal debug_data : std_logic_vector(15 downto 0);
 signal cpu_debug_data : std_logic_vector(15 downto 0);
 signal pm_debug_data : std_logic_vector(15 downto 0);
+signal objm_debug_data : std_logic_vector(15 downto 0);
 
 signal slow_clk_counter : std_logic_vector(19 downto 0) := (0 => '1',others => '0');
 signal slow_clk         : std_logic := '0';
@@ -197,11 +227,12 @@ begin
   --end process;
   Led <=  program_mem_read_adress(7 downto 0);
   slow_clk <= cpu_clk when slow_clk_counter = 0 else '0';
-    -- PLS IGNORE
 
     --GPU port map
     gpu_map: gpu port map(
                              clk => clk, 
+                             obj_mem_addr=>object_mem_read_adress,
+                             obj_mem_data=>object_mem_read_data,
                              pixel_address => gpu_pixel_write_addr,
                              pixel_data => gpu_pixel_write_data,
                              pixel_write_enable => gpu_pixel_we,
@@ -209,7 +240,7 @@ begin
                          );
 
     -- Debug
-    debug_data <= program_mem_write_adress;
+    debug_data <= objm_debug_data;
 
 -- CPU component connection
     CPUCOMP : cpu port map(clk=>slow_clk,pm_instruction=>program_mem_read_instruction,
@@ -217,7 +248,7 @@ begin
             pc_re=>program_mem_re,
             debuginfo=>cpu_debug_data);
 -- VGA motor component connection
-	U0 : vga_motor port map(
+	VGAMOTOR : vga_motor port map(
                             clk=>clk,
                             data=>vga_pixel_read_data,
                             addr=>vga_pixel_read_addr, 
@@ -233,7 +264,7 @@ begin
                             write_enable => vga_pixel_we
                         );
 -- Pixel memory component connection
-	U1 : pixel_mem port map(
+	PIXELMEM : pixel_mem port map(
                         clk=>clk,
                         gpu_write_adress => gpu_pixel_write_addr,
                         gpu_write_data => gpu_pixel_write_data,
@@ -248,6 +279,15 @@ begin
 
                         switch_buffer => vga_done
                     );
+
+-- Object memory component connection
+   OBJECTMEM : ObjMem port map(clk=>clk,
+                            read_addr=>object_mem_read_adress,
+                            read_data=>object_mem_read_data,
+                            write_addr=>object_mem_write_adress,
+                            write_data=>object_mem_write_data,
+                            we=>object_mem_we,
+                            debug_info=>objm_debug_data);
 
 -- Program memory component connection
 	PROGRAMMEM: program_mem port map(clk=>clk, write_adress=>program_mem_write_adress, we=>program_mem_we,
