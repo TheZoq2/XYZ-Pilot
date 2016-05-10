@@ -159,7 +159,7 @@ signal program_mem_read_adress	: 	std_logic_vector(15 downto 0) := (others => '0
 signal program_mem_re			:	std_logic;
 
 -- Signals between cpu and object_mem
-signal object_mem_write_adress : GPU_Info.ObjAddr_t;
+signal object_mem_write_adress : std_logic_vector(8 downto 0);
 signal object_mem_write_data   : GPU_Info.ObjData_t;
 signal object_mem_we           : std_logic;
 
@@ -246,6 +246,9 @@ begin
     CPUCOMP : cpu port map(clk=>slow_clk,pm_instruction=>program_mem_read_instruction,
             pc_out=>program_mem_read_adress,
             pc_re=>program_mem_re,
+            obj_mem_data=>object_mem_write_data,
+            obj_mem_adress=>object_mem_write_adress,
+            obj_mem_we=>object_mem_we,
             debuginfo=>cpu_debug_data);
 -- VGA motor component connection
 	VGAMOTOR : vga_motor port map(
@@ -284,7 +287,7 @@ begin
    OBJECTMEM : ObjMem port map(clk=>clk,
                             read_addr=>object_mem_read_adress,
                             read_data=>object_mem_read_data,
-                            write_addr=>object_mem_write_adress,
+                            write_addr=>unsigned(object_mem_write_adress),
                             write_data=>object_mem_write_data,
                             we=>object_mem_we,
                             debug_info=>objm_debug_data);
