@@ -15,7 +15,7 @@ package GPU_Info is
     subtype ObjAddr_t is unsigned(OBJ_ADDR_SIZE - 1 downto 0);
     subtype ObjData_t is std_logic_vector(OBJ_DATA_SIZE - 1 downto 0);
 
-    constant MODEL_ADDR_SIZE: positive := 10;
+    constant MODEL_ADDR_SIZE: positive := 9;
 
     subtype ModelAddr_t is unsigned(MODEL_ADDR_SIZE - 1 downto 0);
     subtype ModelData_t is Vector.InMemory_t;
