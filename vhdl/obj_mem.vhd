@@ -10,12 +10,13 @@ entity ObjMem is
 port (
         clk : in std_logic;
         -- port 1
-        read_addr : in GPU_Info.ModelAddr_t;
-        read_data : out GPU_Info.ModelData_t;
+        read_addr : in GPU_Info.ObjAddr_t;
+        read_data : out GPU_Info.ObjData_t;
         -- port 2
-        write_addr : in GPU_Info.ModelAddr_t;
-        write_data : in GPU_Info.ModelData_t;
-        we         : in std_logic := '0'
+        write_addr : in GPU_Info.ObjAddr_t;
+        write_data : in GPU_Info.ObjData_t;
+        we         : in std_logic := '0';
+        debug_info : out std_logic_vector(15 downto 0)
     );
 end entity;
 
@@ -27,7 +28,7 @@ type ram_t is array (0 to 511) of Vector.InMemory_t;
 
     -- Nollställ alla bitar på alla adresser
     signal ram : ram_t := (
-        0  => x"0070007000000000",
+        0  => x"000D000E000A000D",
         1  => x"0000000000000000",
         2  => x"0000000000000000",
         3  => x"0000000000000000",
@@ -44,6 +45,7 @@ type ram_t is array (0 to 511) of Vector.InMemory_t;
         others => (others => '0'));
 
 begin
+debug_info <= ram(0)(15 downto 0);
 
 PROCESS(clk)
 BEGIN
