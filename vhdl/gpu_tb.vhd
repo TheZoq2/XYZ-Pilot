@@ -69,8 +69,12 @@ architecture Behavioral of gpu_tb is
     port (
             clk : in std_logic;
             -- port 1
-            read_addr : in GPU_Info.ModelAddr_t;
-            read_data : out GPU_Info.ModelData_t
+            read_addr : in GPU_Info.ObjAddr_t;
+            read_data : out GPU_Info.ObjData_t;
+            -- port 2
+            write_addr : in GPU_Info.ObjAddr_t;
+            write_data : in GPU_Info.ObjData_t;
+            we         : in std_logic := '0'
         );
     end component;
 
@@ -142,7 +146,9 @@ begin
     uut_obj_mem : ObjMem port map (
             clk => clk,
             read_addr => obj_mem_addr,
-            read_data => obj_mem_data
+            read_data => obj_mem_data,
+            write_addr => (others => '0'),
+            write_data => (others => '0')
         );
 
     clk <= not clk after 5 ns;

@@ -232,14 +232,21 @@ begin
             if gpu_state = READ_OBJECT then
                 line_start_addr <= x"0000";
 
+                    report("Reading new line");
                 --Incrememnt the current offset and switch states
                 if current_obj_offset = 3 then
                     current_obj_offset <= "000";
-                    gpu_state <= FETCH_LINE;
+                    current_obj_start <= current_obj_start + 4;
+
+                    if obj_mem_data = x"ffffffffffffffff" then 
+                        gpu_state <= WAIT_FOR_VGA;
+                        report("Going into WAIT");
+                    else
+                        gpu_state <= FETCH_LINE;
+                    end if;
                 else
                     current_obj_offset <= current_obj_offset + 1;
                 end if;
-
 
                 if current_obj_offset = 3 then
                     --line_start_addr <= unsigned(obj_mem_data(15 downto 0));
@@ -275,7 +282,7 @@ begin
                 --Set up the pixel drawing calculation
                 --Since start.x = 0, dx = end.x in bresenham's algorithm
                 if end_vector = x"ffffffffffffffff" then
-                    gpu_state <= WAIT_FOR_VGA;
+                    gpu_state <= READ_OBJECT;
                 else
                     draw_d_var <= draw_end(1) - draw_end(0);
                     current_pixel(0) <= draw_start(0);
@@ -310,6 +317,8 @@ begin
                 if vga_done = '1' then
                     gpu_state <= READ_OBJECT;
                     --angle <= angle + 1;
+
+                    current_obj_start <= (others => '0');
                 end if;
             end if;
         end if;
