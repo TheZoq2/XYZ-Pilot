@@ -91,7 +91,7 @@ architecture Behavioral of GPU is
     signal model_mem_data: GPU_Info.ModelData_t;
 
     --The address in the model memory that the next 
-    signal line_start_addr: GPU_Info.ModelAddr_t := x"0000";
+    signal line_start_addr: GPU_Info.ModelAddr_t := (others => '0');
 
     signal fetch_line_state: Line_Fetch_State.type_t := Line_Fetch_State.SET_START;
 
@@ -175,47 +175,47 @@ begin
                 vec => obj_mem_vec
             );
 
-    sin_calculator: sin_table port map(
-                        angle => angle,
-                        result => sin_val
-                  );
-    cos_calculator: cos_table port map(
-                        angle => angle,
-                        result => cos_val
-                  );
-    y_cos_calculator: FractionalMultiplyer port map(
-                big_num => raw_start(1),
-                small_num => cos_val,
-                result => y_cos
-            );
-    z_sin_calculator: FractionalMultiplyer port map(
-                big_num => raw_start(2),
-                small_num => sin_val,
-                result => z_sin
-            );
+    --sin_calculator: sin_table port map(
+    --                    angle => angle,
+    --                    result => sin_val
+    --              );
+    --cos_calculator: cos_table port map(
+    --                    angle => angle,
+    --                    result => cos_val
+    --              );
+    --y_cos_calculator: FractionalMultiplyer port map(
+    --            big_num => raw_start(1),
+    --            small_num => cos_val,
+    --            result => y_cos
+    --        );
+    --z_sin_calculator: FractionalMultiplyer port map(
+    --            big_num => raw_start(2),
+    --            small_num => sin_val,
+    --            result => z_sin
+    --        );
 
-    y_cos_end_calculator: FractionalMultiplyer port map(
-                big_num => raw_end(1),
-                small_num => cos_val,
-                result => y_cos_end
-            );
-    z_sin_end_calculator: FractionalMultiplyer port map(
-                big_num => raw_end(2),
-                small_num => sin_val,
-                result => z_sin_end
-            );
+    --y_cos_end_calculator: FractionalMultiplyer port map(
+    --            big_num => raw_end(1),
+    --            small_num => cos_val,
+    --            result => y_cos_end
+    --        );
+    --z_sin_end_calculator: FractionalMultiplyer port map(
+    --            big_num => raw_end(2),
+    --            small_num => sin_val,
+    --            result => z_sin_end
+    --        );
 
     obj_mem_addr <= current_obj_start + current_obj_offset;
 
     screen_start(0) <= raw_start(0);
-    --screen_start(1) <= raw_start(1);
-    screen_start(1) <= y_cos - z_sin;
+    screen_start(1) <= raw_start(1);
+    --screen_start(1) <= y_cos - z_sin;
 
     screen_start(2) <= x"0000";
     screen_start(3) <= x"0000";
     screen_end(0) <= raw_end(0);
-    --screen_end(1) <= raw_end(1);
-    screen_end(1) <= y_cos_end - z_sin_end;
+    screen_end(1) <= raw_end(1);
+    --screen_end(1) <= y_cos_end - z_sin_end;
     screen_end(2) <= x"0000";
     screen_end(3) <= x"0000";
 
@@ -230,16 +230,23 @@ begin
     process(clk) begin
         if rising_edge(clk) then
             if gpu_state = READ_OBJECT then
-                line_start_addr <= x"0000";
+                line_start_addr <= (others => '0');
 
+                    report("Reading new line");
                 --Incrememnt the current offset and switch states
                 if current_obj_offset = 3 then
                     current_obj_offset <= "000";
-                    gpu_state <= FETCH_LINE;
+                    current_obj_start <= current_obj_start + 4;
+
+                    if obj_mem_data = x"ffffffffffffffff" then 
+                        gpu_state <= WAIT_FOR_VGA;
+                        report("Going into WAIT");
+                    else
+                        gpu_state <= FETCH_LINE;
+                    end if;
                 else
                     current_obj_offset <= current_obj_offset + 1;
                 end if;
-
 
                 if current_obj_offset = 3 then
                     --line_start_addr <= unsigned(obj_mem_data(15 downto 0));
@@ -275,7 +282,7 @@ begin
                 --Set up the pixel drawing calculation
                 --Since start.x = 0, dx = end.x in bresenham's algorithm
                 if end_vector = x"ffffffffffffffff" then
-                    gpu_state <= WAIT_FOR_VGA;
+                    gpu_state <= READ_OBJECT;
                 else
                     draw_d_var <= draw_end(1) - draw_end(0);
                     current_pixel(0) <= draw_start(0);
@@ -309,7 +316,9 @@ begin
             elsif gpu_state = WAIT_FOR_VGA then
                 if vga_done = '1' then
                     gpu_state <= READ_OBJECT;
-                    --angle <= angle + 1;
+                    angle <= angle + 1;
+
+                    current_obj_start <= (others => '0');
                 end if;
             end if;
         end if;
