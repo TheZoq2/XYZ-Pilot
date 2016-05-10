@@ -52,8 +52,8 @@ architecture Behavioral of vga_motor is
 	constant x_sync_end		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(751,10));
 	constant y_max			: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(520,10));
 	constant y_blank		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(480,10));
-	constant y_sync_start	: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(490,10));
-	constant y_sync_end		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(491,10));
+	constant y_sync_start	: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(491,10));
+	constant y_sync_end		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(492,10));
 
 
 begin
