@@ -31,6 +31,7 @@ component cpu is
             obj_mem_data : out std_logic_vector(63 downto 0);
             obj_mem_adress : out std_logic_vector(8 downto 0);
             obj_mem_we  : out std_logic;
+            frame_done  : in std_logic;
             debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); 
 end component;
 
@@ -198,6 +199,7 @@ signal debug_mem_pos    : std_logic_vector(15 downto 0) := (others => '0');
 signal debug_mem_instr  : std_logic_vector(63 downto 0) := (others => '0'); 
 
 
+
 begin
 
 object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
@@ -241,6 +243,7 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
             obj_mem_data=>object_mem_write_data,
             obj_mem_adress=>object_mem_write_adress,
             obj_mem_we=>object_mem_we,
+            frame_done=>vga_done,
             debuginfo=>cpu_debug_data);
 -- VGA motor component connection
 	VGAMOTOR : vga_motor port map(

@@ -17,6 +17,7 @@ entity cpu is
             obj_mem_data : out std_logic_vector(63 downto 0);
             obj_mem_adress : out std_logic_vector(8 downto 0);
             obj_mem_we  : out std_logic;
+            frame_done  : in std_logic;
             debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); 
 end cpu;
 
@@ -128,6 +129,7 @@ constant beq_op_code       : std_logic_vector(7 downto 0)  := X"10";
 constant bge_op_code       : std_logic_vector(7 downto 0)  := X"11";
 constant ble_op_code       : std_logic_vector(7 downto 0)  := X"12";
 constant storeobj_op_code       : std_logic_vector(7 downto 0)  := X"13";
+constant waitframe_op_code       : std_logic_vector(7 downto 0)  := X"14";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
@@ -143,6 +145,10 @@ alias ir3_op 				: std_logic_vector(7 downto 0) is ir3(63 downto 56);
 alias ir4_op 				: std_logic_vector(7 downto 0) is ir4(63 downto 56);
 alias ir4_reg1 				: std_logic_vector(3 downto 0) is ir4(55 downto 52);
 alias ir4_data				: std_logic_vector(31 downto 0) is ir4(43 downto 12);
+
+
+signal wait_for_next_frame : std_logic := '0';
+
 
 begin
 
@@ -163,7 +169,9 @@ begin
   process(clk)
   begin
     if rising_edge(clk) then
-      nop_counter <= nop_counter + 1;
+      if wait_for_next_frame = '0' then
+        nop_counter <= nop_counter + 1;
+      end if;
     end if;
   end process;
 
@@ -184,6 +192,9 @@ begin
   begin
     if rising_edge(clk) then
       if nop_counter = 0 then
+        if ir1_op = waitframe_op_code then
+          wait_for_next_frame <= '1';
+        end if;
         if (ir1_op = bra_op_code) or 
            (ir1_op = bne_op_code and sr(1) = '0') or
            (ir1_op = beq_op_code and sr(1) = '1') or 
@@ -193,6 +204,8 @@ begin
         else
           pc <= pc + 1;
         end if;
+      elsif frame_done = '1' then
+        wait_for_next_frame <= '0';
       end if;
     end if;
   end process;
