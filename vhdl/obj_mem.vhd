@@ -26,7 +26,6 @@ architecture Behavioral of ObjMem is
 type ram_t is array (0 to 511) of Vector.InMemory_t;
 
     -- Nollställ alla bitar på alla adresser
-<<<<<<< HEAD
     signal ram : ram_t := (
         0  => x"0070007000000000",
         1  => x"0000000000000000",
@@ -43,9 +42,6 @@ type ram_t is array (0 to 511) of Vector.InMemory_t;
         15 => x"ffffffffffffffff",
         16 => x"ffffffffffffffff",
         others => (others => '0'));
-=======
-    signal ram : ram_t := (others => (others => '0'));
->>>>>>> a703e2081dbae2fc50b178ec9a70a6c7f47463bc
 
 begin
 
