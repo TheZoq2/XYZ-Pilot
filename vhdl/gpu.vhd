@@ -91,7 +91,7 @@ architecture Behavioral of GPU is
     signal model_mem_data: GPU_Info.ModelData_t;
 
     --The address in the model memory that the next 
-    signal line_start_addr: GPU_Info.ModelAddr_t := x"0000";
+    signal line_start_addr: GPU_Info.ModelAddr_t := (others => '0');
 
     signal fetch_line_state: Line_Fetch_State.type_t := Line_Fetch_State.SET_START;
 
@@ -230,7 +230,7 @@ begin
     process(clk) begin
         if rising_edge(clk) then
             if gpu_state = READ_OBJECT then
-                line_start_addr <= x"0000";
+                line_start_addr <= (others => '0');
 
                     report("Reading new line");
                 --Incrememnt the current offset and switch states
@@ -316,7 +316,7 @@ begin
             elsif gpu_state = WAIT_FOR_VGA then
                 if vga_done = '1' then
                     gpu_state <= READ_OBJECT;
-                    --angle <= angle + 1;
+                    angle <= angle + 1;
 
                     current_obj_start <= (others => '0');
                 end if;
