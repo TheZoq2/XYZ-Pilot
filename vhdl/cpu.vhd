@@ -14,9 +14,9 @@ entity cpu is
 			pm_instruction : in std_logic_vector(63 downto 0);	-- Instruction from program memory
 			pc_out		: out std_logic_vector(15 downto 0) := (others => '0'); -- Program Counter
             pc_re       : out std_logic := '1'; -- Read Enable to be sent to program mem
-            obj_mem_data : out std_logic_vector(63 downto 0); -- Data to be sent to Object Memory
-            obj_mem_adress : out std_logic_vector(8 downto 0); -- Adress to be sent to Object Memory
-            obj_mem_we  : out std_logic; -- Write Enable to be sent to Object Memory
+            obj_mem_data : out std_logic_vector(63 downto 0);
+            obj_mem_adress : out std_logic_vector(8 downto 0);
+            obj_mem_we  : out std_logic;
             debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); 
 end cpu;
 
