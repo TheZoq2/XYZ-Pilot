@@ -194,7 +194,7 @@ signal debug_data : std_logic_vector(15 downto 0);
 signal cpu_debug_data : std_logic_vector(15 downto 0);
 signal pm_debug_data : std_logic_vector(15 downto 0);
 
-signal slow_clk_counter : std_logic_vector(19 downto 0) := (0 => '1',others => '0');
+signal slow_clk_counter : std_logic_vector(16 downto 0) := (0 => '1',others => '0');
 signal slow_clk         : std_logic := '0';
 
 signal debug_mem_pos    : std_logic_vector(15 downto 0) := (others => '0'); 
@@ -210,6 +210,7 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
   begin
   if rising_edge(clk) then
     slow_clk_counter <= slow_clk_counter + 1;
+    null;
   end if;
   end process;
   

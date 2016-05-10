@@ -168,6 +168,7 @@ begin
   end process;
 
   -- IR SWITCHES --
+
   ir1 <= pm_instruction when nop_counter = 0 else (others => '0');
   process(clk)
   begin
