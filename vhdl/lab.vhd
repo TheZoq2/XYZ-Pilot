@@ -116,7 +116,6 @@ port (
         vga_read_adress: in std_logic_vector(16 downto 0);
         vga_re : in std_logic;
         vga_read_data : out std_logic
-);							-- Read data
 
 end component;
 
