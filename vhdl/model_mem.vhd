@@ -42,7 +42,7 @@ architecture Behavioral of ModelMem is
 
 -- Deklaration av ett dubbelportat block-RAM
 -- med 2048 adresser av 8 bitars bredd.
-type ram_t is array (0 to 255) of Vector.InMemory_t;
+type ram_t is array (0 to 511) of Vector.InMemory_t;
 
     -- Nollställ alla bitar på alla adresser
     signal ram : ram_t := (

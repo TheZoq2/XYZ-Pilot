@@ -175,47 +175,47 @@ begin
                 vec => obj_mem_vec
             );
 
-    sin_calculator: sin_table port map(
-                        angle => angle,
-                        result => sin_val
-                  );
-    cos_calculator: cos_table port map(
-                        angle => angle,
-                        result => cos_val
-                  );
-    y_cos_calculator: FractionalMultiplyer port map(
-                big_num => raw_start(1),
-                small_num => cos_val,
-                result => y_cos
-            );
-    z_sin_calculator: FractionalMultiplyer port map(
-                big_num => raw_start(2),
-                small_num => sin_val,
-                result => z_sin
-            );
+    --sin_calculator: sin_table port map(
+    --                    angle => angle,
+    --                    result => sin_val
+    --              );
+    --cos_calculator: cos_table port map(
+    --                    angle => angle,
+    --                    result => cos_val
+    --              );
+    --y_cos_calculator: FractionalMultiplyer port map(
+    --            big_num => raw_start(1),
+    --            small_num => cos_val,
+    --            result => y_cos
+    --        );
+    --z_sin_calculator: FractionalMultiplyer port map(
+    --            big_num => raw_start(2),
+    --            small_num => sin_val,
+    --            result => z_sin
+    --        );
 
-    y_cos_end_calculator: FractionalMultiplyer port map(
-                big_num => raw_end(1),
-                small_num => cos_val,
-                result => y_cos_end
-            );
-    z_sin_end_calculator: FractionalMultiplyer port map(
-                big_num => raw_end(2),
-                small_num => sin_val,
-                result => z_sin_end
-            );
+    --y_cos_end_calculator: FractionalMultiplyer port map(
+    --            big_num => raw_end(1),
+    --            small_num => cos_val,
+    --            result => y_cos_end
+    --        );
+    --z_sin_end_calculator: FractionalMultiplyer port map(
+    --            big_num => raw_end(2),
+    --            small_num => sin_val,
+    --            result => z_sin_end
+    --        );
 
     obj_mem_addr <= current_obj_start + current_obj_offset;
 
     screen_start(0) <= raw_start(0);
-    --screen_start(1) <= raw_start(1);
-    screen_start(1) <= y_cos - z_sin;
+    screen_start(1) <= raw_start(1);
+    --screen_start(1) <= y_cos - z_sin;
 
     screen_start(2) <= x"0000";
     screen_start(3) <= x"0000";
     screen_end(0) <= raw_end(0);
-    --screen_end(1) <= raw_end(1);
-    screen_end(1) <= y_cos_end - z_sin_end;
+    screen_end(1) <= raw_end(1);
+    --screen_end(1) <= y_cos_end - z_sin_end;
     screen_end(2) <= x"0000";
     screen_end(3) <= x"0000";
 
