@@ -194,6 +194,7 @@ begin
                           line_start_addr when Line_Fetch_State.STORE_START,
                           line_start_addr + 1 when others;
 
+
     --###########################################################################
     --      Main GPU state machine
     --###########################################################################
@@ -287,9 +288,8 @@ begin
                 if vga_done = '1' then
                     gpu_state <= READ_OBJECT;
                     --angle <= angle + 1;
-
-                    current_obj_start <= (others => '0');
                 end if;
+                current_obj_start <= (others => '0');
             end if;
         end if;
     end process;
