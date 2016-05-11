@@ -32,7 +32,7 @@ component cpu is
             obj_mem_adress : out std_logic_vector(8 downto 0);
             obj_mem_we  : out std_logic;
             frame_done  : in std_logic;
-            kbd_reg     : in std_logic_vector(3 downto 0) := (others => '0');
+            kbd_reg     : in std_logic_vector(6 downto 0) := (others => '0');
             debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); 
 end component;
 
@@ -46,11 +46,13 @@ end component;
 
 -- KEYBOARD ENCODER
 component kbd_enc is
-  port ( clk	                : in std_logic;			-- system clock
+  port ( clk	                : in std_logic;			-- system clock (100 MHz)
          ps2_kbd_clk	        : in std_logic; 		-- USB keyboard PS2 clock
          ps2_kbd_data	        : in std_logic;         -- USB keyboard PS2 data
-         kbd_reg                : out std_logic_vector(0 to 3) := (others => '0')); 
-        -- [W,A,D,SPACE] 1 means key is pushed down, 0 means key is up
+         test                   : out std_logic_vector(3 downto 0) := "0000";
+         testbit                : out std_logic := '0';
+         kbd_reg                : out std_logic_vector(0 to 6) := (others => '0')); 
+        -- [W,A,S,D,SPACE,J,L] 1 means key is pushed down, 0 means key is up	
 end component;
 
 -- VGA Motor
@@ -118,7 +120,8 @@ port (
         -- port 2
         write_addr : in GPU_Info.ObjAddr_t;
         write_data : in GPU_Info.ObjData_t;
-        we         : in std_logic := '0'
+        we         : in std_logic := '0';
+        debuginfo  : out std_logic_vector(15 downto 0)
     );
 end component;
 
@@ -171,7 +174,7 @@ signal object_mem_read_data :   GPU_Info.ObjData_t;
 
 -- Signals to CPU
 signal cpu_clk					: std_logic := '0';
-signal kbd_reg                  : std_logic_vector(3 downto 0);
+signal kbd_reg                  : std_logic_vector(6 downto 0);
 
 -- Signals between vga_motor and pixel_mem
 signal vga_pixel_read_data	:	std_logic;
@@ -199,6 +202,7 @@ signal vga_done: std_logic;
 signal debug_data : std_logic_vector(15 downto 0);
 signal cpu_debug_data : std_logic_vector(15 downto 0);
 signal pm_debug_data : std_logic_vector(15 downto 0);
+signal object_mem_debug_data : std_logic_vector(15 downto 0);
 
 signal debug_mem_pos    : std_logic_vector(15 downto 0) := (others => '0'); 
 signal debug_mem_instr  : std_logic_vector(63 downto 0) := (others => '0'); 
@@ -247,7 +251,8 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
                          );
 
     -- Debug
-    debug_data <= program_mem_write_adress;
+    debug_data <= program_mem_write_adress; 
+    --debug_data <= object_mem_debug_data;
 
 -- CPU component connection
     CPUCOMP : cpu port map(clk=>slow_clk,pm_instruction=>program_mem_read_instruction,
@@ -282,7 +287,8 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
                            read_data=>object_mem_read_data,
                            write_addr=>object_mem_write_adress_unsigned,
                            write_data=>object_mem_write_data,
-                           we=>object_mem_we);
+                           we=>object_mem_we,
+                           debuginfo=>object_mem_debug_data);
 -- Pixel memory component connection
 	PIXELMEM : pixel_mem port map(
                         clk=>slow_clk,
