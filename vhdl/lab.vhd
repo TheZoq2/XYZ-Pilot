@@ -187,6 +187,10 @@ signal program_mem_write_instruction: std_logic_vector(63 downto 0);
 signal program_mem_write_adress: std_logic_vector(15 downto 0);
 signal program_mem_we : std_logic;
 
+signal slow_clk_counter: std_logic_vector(1 downto 0) := "00";
+signal slow_clk: std_logic;
+
+
 signal vga_done: std_logic;
 
 -- Debug signals
@@ -201,6 +205,14 @@ signal debug_mem_instr  : std_logic_vector(63 downto 0) := (others => '0');
 begin
 
 object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
+
+    process(clk) begin
+        if rising_edge(clk) then
+            slow_clk_counter <= slow_clk_counter + 1;
+        end if;
+    end process;
+
+    slow_clk <= '1' when slow_clk_counter = 0 else '0';
 
   -- DEBUG PROCESSES --
   
@@ -222,7 +234,7 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
 
     --GPU port map
     gpu_map: gpu port map(
-                             clk => clk, 
+                             clk => slow_clk, 
                              obj_mem_addr=>object_mem_read_adress,
                              obj_mem_data=>object_mem_read_data,
                              pixel_address => gpu_pixel_write_addr,
@@ -235,7 +247,7 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
     debug_data <= program_mem_write_adress;
 
 -- CPU component connection
-    CPUCOMP : cpu port map(clk=>clk,pm_instruction=>program_mem_read_instruction,
+    CPUCOMP : cpu port map(clk=>slow_clk,pm_instruction=>program_mem_read_instruction,
             pc_out=>program_mem_read_adress,
             pc_re=>program_mem_re,
             obj_mem_data=>object_mem_write_data,
@@ -244,7 +256,7 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
             debuginfo=>cpu_debug_data);
 -- VGA motor component connection
 	VGAMOTOR : vga_motor port map(
-                            clk=>clk,
+                            clk=>slow_clk,
                             data=>vga_pixel_read_data,
                             addr=>vga_pixel_read_addr, 
                             re=>vga_pixel_re,
@@ -260,7 +272,7 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
                         );
 
    OBJECTMEM : ObjMem port map(
-                           clk=>clk,
+                           clk=>slow_clk,
                            read_addr=>object_mem_read_adress,
                            read_data=>object_mem_read_data,
                            write_addr=>object_mem_write_adress_unsigned,
@@ -268,7 +280,7 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
                            we=>object_mem_we);
 -- Pixel memory component connection
 	PIXELMEM : pixel_mem port map(
-                        clk=>clk,
+                        clk=>slow_clk,
                         gpu_write_adress => gpu_pixel_write_addr,
                         gpu_write_data => gpu_pixel_write_data,
                         gpu_we => gpu_pixel_we,
@@ -284,18 +296,18 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
                     );
 
 -- Program memory component connection
-	PROGRAMMEM: program_mem port map(clk=>clk, write_adress=>program_mem_write_adress, we=>program_mem_we,
+	PROGRAMMEM: program_mem port map(clk=>slow_clk, write_adress=>program_mem_write_adress, we=>program_mem_we,
 	write_instruction=>program_mem_write_instruction, read_adress=>program_mem_read_adress,
 	re=>program_mem_re, read_instruction=>program_mem_read_instruction);
 -- UART component connection
-	UARTCOMP: uart port map(clk=>clk,rx=>rx,cpu_clk=>cpu_clk,we=>program_mem_we,
+	UARTCOMP: uart port map(clk=>slow_clk,rx=>rx,cpu_clk=>cpu_clk,we=>program_mem_we,
 	mem_instr=>program_mem_write_instruction,mem_pos=>program_mem_write_adress);
 -- Keyboard Encoder component connection
-	KBDENC: kbd_enc port map(clk=>clk,ps2_kbd_clk=>ps2_kbd_clk,ps2_kbd_data=>ps2_kbd_data,
+	KBDENC: kbd_enc port map(clk=>slow_clk,ps2_kbd_clk=>ps2_kbd_clk,ps2_kbd_data=>ps2_kbd_data,
     kbd_reg=>kbd_reg);
 -- Debug
    DEBUG : dbg_segment port map (
-          clk         => clk,
+          clk         => slow_clk,
           debug_value => debug_data,
           segment_out => seg,
           segment_n   => an);
