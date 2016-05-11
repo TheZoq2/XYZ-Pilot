@@ -1,9 +1,7 @@
 import sys
 
-def twos_comp(val, bits):
-    if val < 0:
-        val = abs(val)*2
-    return val                         # return positive value as is
+def tohex(val, nbits):
+    return "{:04x}".format((val + (1 << nbits)) % (1 << nbits))
 
 #Read coords from stdin
 input_file = sys.stdin.read();
@@ -20,7 +18,8 @@ for line in input_lines:
     result_line += "{} => x\"".format(current_index)
     for coord in coords:
         try:
-            result_line += ("{:04x}".format(twos_comp(int(coord), 16)));
+            #result_line += ("{:04x}".format(twos_comp(int(coord), 16)));
+            result_line += ("{}".format(tohex(int(coord), 16)));
         except(ValueError):
             pass
     

@@ -175,36 +175,6 @@ begin
                 vec => obj_mem_vec
             );
 
-    --sin_calculator: sin_table port map(
-    --                    angle => angle,
-    --                    result => sin_val
-    --              );
-    --cos_calculator: cos_table port map(
-    --                    angle => angle,
-    --                    result => cos_val
-    --              );
-    --y_cos_calculator: FractionalMultiplyer port map(
-    --            big_num => raw_start(1),
-    --            small_num => cos_val,
-    --            result => y_cos
-    --        );
-    --z_sin_calculator: FractionalMultiplyer port map(
-    --            big_num => raw_start(2),
-    --            small_num => sin_val,
-    --            result => z_sin
-    --        );
-
-    --y_cos_end_calculator: FractionalMultiplyer port map(
-    --            big_num => raw_end(1),
-    --            small_num => cos_val,
-    --            result => y_cos_end
-    --        );
-    --z_sin_end_calculator: FractionalMultiplyer port map(
-    --            big_num => raw_end(2),
-    --            small_num => sin_val,
-    --            result => z_sin_end
-    --        );
-
     obj_mem_addr <= current_obj_start + current_obj_offset;
 
     screen_start(0) <= raw_start(0);
@@ -230,9 +200,9 @@ begin
     process(clk) begin
         if rising_edge(clk) then
             if gpu_state = READ_OBJECT then
-                line_start_addr <= (others => '0');
+                --line_start_addr <= (others => '0');
 
-                    report("Reading new line");
+                    --report("Reading new line");
                 --Incrememnt the current offset and switch states
                 if current_obj_offset = 3 then
                     current_obj_offset <= "000";
@@ -249,7 +219,7 @@ begin
                 end if;
 
                 if current_obj_offset = 3 then
-                    --line_start_addr <= unsigned(obj_mem_data(15 downto 0));
+                    line_start_addr <= unsigned(obj_mem_data(GPU_Info.MODEL_ADDR_SIZE - 1 downto 0));
                 elsif current_obj_offset = 2 then --If this is the position value
                     obj_scale <=  obj_mem_vec;
                 elsif current_obj_offset = 1 then
@@ -316,7 +286,7 @@ begin
             elsif gpu_state = WAIT_FOR_VGA then
                 if vga_done = '1' then
                     gpu_state <= READ_OBJECT;
-                    angle <= angle + 1;
+                    --angle <= angle + 1;
 
                     current_obj_start <= (others => '0');
                 end if;

@@ -91,11 +91,11 @@ process(uart_clk) begin
 	  end if;
 
       if ce='1' then
-        if clkn=868 then
+        if clkn=217 then
           clkn <= "0000000000";
         else
           clkn <= clkn + '1';
-          if clkn=434 then
+          if clkn=108 then
             bitn <= bitn + '1';
 			bitn2 <= bitn2 + '1';
             sp <= '1';
