@@ -95,14 +95,8 @@ architecture Behavioral of GPU is
 
     signal fetch_line_state: Line_Fetch_State.type_t := Line_Fetch_State.SET_START;
 
-    signal angle: unsigned(7 downto 0) := x"00";
-    signal cos_val: datatypes.small_number_t;
+    signal calc_angle: unsigned(7 downto 0) := x"00";
     signal sin_val: datatypes.small_number_t;
-
-    signal y_cos: datatypes.std_number_t;
-    signal z_sin: datatypes.std_number_t;
-    signal y_cos_end: datatypes.std_number_t;
-    signal z_sin_end: datatypes.std_number_t;
 
     component VectorSubtractor is
         port(
@@ -169,6 +163,10 @@ begin
                 vec => obj_mem_vec
             );
 
+    sin_map : sin_table port map (
+            angle => calc_angle,
+            result => sin_val
+        );
 
     obj_mem_addr <= current_obj_start + current_obj_offset;
 
@@ -196,10 +194,6 @@ begin
     process(clk) begin
         if rising_edge(clk) then
             if gpu_state = READ_OBJECT then
-                --line_start_addr <= (others => '0');
-
-                    --report("Reading new line");
-                --Incrememnt the current offset and switch states
                 if current_obj_offset = 4 then
                     current_obj_offset <= "000";
                     current_obj_start <= current_obj_start + 4;
@@ -216,11 +210,11 @@ begin
 
                 if current_obj_offset = 4 then
                     line_start_addr <= unsigned(obj_mem_data(GPU_Info.MODEL_ADDR_SIZE - 1 downto 0));
-                elsif current_obj_offset = 2 then --If this is the position value
+                elsif current_obj_offset = 3 then --If this is the position value
                     obj_scale <=  obj_mem_vec;
-                elsif current_obj_offset = 1 then
+                elsif current_obj_offset = 2 then
                     obj_angle <=  obj_mem_vec;
-                elsif current_obj_offset = 0 then
+                elsif current_obj_offset = 1 then
                     obj_position <=  obj_mem_vec;
                 end if;
             elsif gpu_state = FETCH_LINE then
