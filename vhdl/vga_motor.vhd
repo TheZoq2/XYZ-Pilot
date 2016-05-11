@@ -108,7 +108,8 @@ begin
                     '0' when others;
 		
   	-- 25 MHz clock (one system clock pulse width)
-  	clk_25 <= '1' when (clk_div = 1) else '0';
+  	--clk_25 <= '1' when (clk_div = 1) else '0';
+  	clk_25 <= '1';
 	
 	-- Horizontal sync
 	h_sync <= '0' when (x_pixel <= x_sync_end) and (x_pixel >= x_sync_start) else '1';
