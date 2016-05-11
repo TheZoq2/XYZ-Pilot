@@ -128,12 +128,6 @@ architecture Behavioral of GPU is
         );
     end component;
             
-    component cos_table is
-        port(
-                angle: in unsigned (7 downto 0);
-                result: out datatypes.small_number_t
-            );
-    end component;
     component sin_table is
         port(
                 angle: in unsigned (7 downto 0);
@@ -175,6 +169,7 @@ begin
                 vec => obj_mem_vec
             );
 
+
     obj_mem_addr <= current_obj_start + current_obj_offset;
 
     screen_start(0) <= raw_start(0);
@@ -205,7 +200,7 @@ begin
 
                     --report("Reading new line");
                 --Incrememnt the current offset and switch states
-                if current_obj_offset = 3 then
+                if current_obj_offset = 4 then
                     current_obj_offset <= "000";
                     current_obj_start <= current_obj_start + 4;
 
@@ -219,7 +214,7 @@ begin
                     current_obj_offset <= current_obj_offset + 1;
                 end if;
 
-                if current_obj_offset = 3 then
+                if current_obj_offset = 4 then
                     line_start_addr <= unsigned(obj_mem_data(GPU_Info.MODEL_ADDR_SIZE - 1 downto 0));
                 elsif current_obj_offset = 2 then --If this is the position value
                     obj_scale <=  obj_mem_vec;
