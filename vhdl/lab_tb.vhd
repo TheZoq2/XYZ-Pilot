@@ -57,6 +57,6 @@ begin
   	end process;
 
 	-- clk 100 MHz
-	clk <= not clk after 5 ns;
+	clk <= not clk after 10 ps;
 
 end;
