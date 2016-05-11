@@ -194,13 +194,14 @@ begin
     process(clk) begin
         if rising_edge(clk) then
             if gpu_state = READ_OBJECT then
+                --Going to the next state if all the object data for the current object
+                --has been read
                 if current_obj_offset = 4 then
                     current_obj_offset <= "000";
                     current_obj_start <= current_obj_start + 4;
 
                     if obj_mem_data = x"ffffffffffffffff" then 
                         gpu_state <= WAIT_FOR_VGA;
-                        report("Going into WAIT");
                     else
                         gpu_state <= FETCH_LINE;
                     end if;
@@ -208,6 +209,7 @@ begin
                     current_obj_offset <= current_obj_offset + 1;
                 end if;
 
+                --Reading object data
                 if current_obj_offset = 4 then
                     line_start_addr <= unsigned(obj_mem_data(GPU_Info.MODEL_ADDR_SIZE - 1 downto 0));
                 elsif current_obj_offset = 3 then --If this is the position value
