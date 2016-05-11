@@ -12,8 +12,8 @@ entity kbd_enc is
          ps2_kbd_data	        : in std_logic;         -- USB keyboard PS2 data
          test                   : out std_logic_vector(3 downto 0) := "0000";
          testbit                : out std_logic := '0';
-         kbd_reg                : out std_logic_vector(0 to 8) := (others => '0')); 
-        -- [W,A,S,D,SPACE,O,K,L,0_] 1 means key is pushed down, 0 means key is up	
+         kbd_reg                : out std_logic_vector(0 to 3) := (others => '0')); 
+        -- [W,A,D,SPACE] 1 means key is pushed down, 0 means key is up	
 end kbd_enc;
 
 -- architecture
@@ -102,26 +102,16 @@ begin
 			when X"F0" => ps2_state <= BREAK;
 			when X"1D" => kbd_reg(0) <= '1'; ps2_state <= IDLE; -- SET W
 			when X"1C" => kbd_reg(1) <= '1'; ps2_state <= IDLE; -- SET A
-			when X"1B" => kbd_reg(2) <= '1'; ps2_state <= IDLE; -- SET S
-			when X"23" => kbd_reg(3) <= '1'; ps2_state <= IDLE; -- SET D
-            when X"29" => kbd_reg(4) <= '1'; ps2_state <= IDLE; -- SET SPACE
-            when X"44" => kbd_reg(5) <= '1'; ps2_state <= IDLE; -- SET O
-            when X"42" => kbd_reg(6) <= '1'; ps2_state <= IDLE; -- SET K
-            when X"4B" => kbd_reg(7) <= '1'; ps2_state <= IDLE; -- SET L
-            when X"4C" => kbd_reg(8) <= '1'; ps2_state <= IDLE; -- SET O_
+			when X"23" => kbd_reg(2) <= '1'; ps2_state <= IDLE; -- SET D
+            when X"29" => kbd_reg(3) <= '1'; ps2_state <= IDLE; -- SET SPACE
             when others => ps2_state <= IDLE;
         end case;
       elsif ps2_state = BREAK then
         case scan_code is
 			when X"1D" => kbd_reg(0) <= '0'; ps2_state <= IDLE; -- UNSET W
 			when X"1C" => kbd_reg(1) <= '0'; ps2_state <= IDLE; -- UNSET A
-			when X"1B" => kbd_reg(2) <= '0'; ps2_state <= IDLE; -- UNSET S
-			when X"23" => kbd_reg(3) <= '0'; ps2_state <= IDLE; -- UNSET D
-            when X"29" => kbd_reg(4) <= '0'; ps2_state <= IDLE; -- UNSET SPACE
-            when X"44" => kbd_reg(5) <= '0'; ps2_state <= IDLE; -- UNSET O
-            when X"42" => kbd_reg(6) <= '0'; ps2_state <= IDLE; -- UNSET K
-            when X"4B" => kbd_reg(7) <= '0'; ps2_state <= IDLE; -- UNSET L
-            when X"4C" => kbd_reg(8) <= '0'; ps2_state <= IDLE; -- UNSET O:
+			when X"23" => kbd_reg(2) <= '0'; ps2_state <= IDLE; -- UNSET D
+            when X"29" => kbd_reg(3) <= '0'; ps2_state <= IDLE; -- UNSET SPACE
             when others => ps2_state <= IDLE;
         end case;
       end if;

@@ -17,7 +17,7 @@ end program_mem;
 architecture Behavioral of program_mem is
 
 
--- Declaration of program memory of 65535 (4095) adresses with an instruction size of 64 bits
+-- Declaration of program memory of 65535 (2048) adresses with an instruction size of 64 bits
 type ram_t is array (0 to 2047) of std_logic_vector(63 downto 0);
 
 -- Clears all adresses

@@ -17,6 +17,8 @@ entity cpu is
             obj_mem_data : out std_logic_vector(63 downto 0);
             obj_mem_adress : out std_logic_vector(8 downto 0);
             obj_mem_we  : out std_logic;
+            frame_done  : in std_logic;
+            kbd_reg     : in std_logic_vector(3 downto 0) := (others => '0');
             debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); 
 end cpu;
 
@@ -128,6 +130,8 @@ constant beq_op_code       : std_logic_vector(7 downto 0)  := X"10";
 constant bge_op_code       : std_logic_vector(7 downto 0)  := X"11";
 constant ble_op_code       : std_logic_vector(7 downto 0)  := X"12";
 constant storeobj_op_code       : std_logic_vector(7 downto 0)  := X"13";
+constant waitframe_op_code       : std_logic_vector(7 downto 0)  := X"14";
+constant btst_op_code       : std_logic_vector(7 downto 0)  := X"15";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
@@ -144,6 +148,10 @@ alias ir4_op 				: std_logic_vector(7 downto 0) is ir4(63 downto 56);
 alias ir4_reg1 				: std_logic_vector(3 downto 0) is ir4(55 downto 52);
 alias ir4_data				: std_logic_vector(31 downto 0) is ir4(43 downto 12);
 
+
+signal wait_for_next_frame : std_logic := '0';
+
+
 begin
 
   vec_split1 : VectorSplitter port map(memory=>vec_split_in1, vec=>vec_split_out1);
@@ -153,17 +161,20 @@ begin
   vec_merge : VectorMerger port map(memory=>vec_merge_out,vec=>vec_merge_in);
 
   pc_out <= pc;
-  debuginfo <= reg_file(0)(51 downto 48) & 
-               reg_file(0)(35 downto 32) & 
-               reg_file(0)(19 downto 16) & 
-               reg_file(0)(3 downto 0);
+  --debuginfo <= reg_file(0)(51 downto 48) & 
+    --           reg_file(0)(35 downto 32) & 
+      --         reg_file(0)(19 downto 16) & 
+        --       reg_file(0)(3 downto 0);
+  --debuginfo <= reg_file(15)(15 downto 0);
   
   --debuginfo <= pc;
 
   process(clk)
   begin
     if rising_edge(clk) then
-      nop_counter <= nop_counter + 1;
+      if wait_for_next_frame = '0' then
+        nop_counter <= nop_counter + 1;
+      end if;
     end if;
   end process;
 
@@ -184,6 +195,9 @@ begin
   begin
     if rising_edge(clk) then
       if nop_counter = 0 then
+        if ir1_op = waitframe_op_code then
+          wait_for_next_frame <= '1';
+        end if;
         if (ir1_op = bra_op_code) or 
            (ir1_op = bne_op_code and sr(1) = '0') or
            (ir1_op = beq_op_code and sr(1) = '1') or 
@@ -193,6 +207,8 @@ begin
         else
           pc <= pc + 1;
         end if;
+      elsif frame_done = '1' then
+        wait_for_next_frame <= '0';
       end if;
     end if;
   end process;
@@ -217,6 +233,7 @@ begin
       case ir1_op is
         when movhi_op_code => d_2 <= reg_file(conv_integer(ir1_reg1));
         when movlo_op_code => d_2 <= reg_file(conv_integer(ir1_reg1));
+        when btst_op_code => d_2 <= reg_file(conv_integer(ir1_reg1));
         when others => d_2 <= reg_file(conv_integer(ir1_reg2));
       end case;
 
@@ -230,7 +247,8 @@ begin
                      ir2_op = movhi_op_code or 
                      ir2_op = movlo_op_code or
                      ir2_op = store_op_code or
-                     ir2_op = load_op_code else
+                     ir2_op = load_op_code or 
+                     ir2_op = btst_op_code else
            d_1;
 
   -- ALU --
@@ -272,9 +290,15 @@ begin
                vec_merge_out when vecsub_op_code,
                alu_1 when storeobj_op_code,
                X"0000000000000000" when others;
-  sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) else
+  sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) or 
+                  (ir2_op=btst_op_code and alu_2(conv_integer(alu_1)) = '1') else
         "01" when (ir2_op=cmp_op_code and alu_1<alu_2) else
-        "00" when (ir2_op=cmp_op_code) else
+        "00" when (ir2_op=cmp_op_code or -- Clears sr when jumping
+                  ir2_op=beq_op_code or
+                  ir2_op=bne_op_code or
+                  ir2_op=bge_op_code or
+                  ir2_op=ble_op_code or
+                  ir2_op=bra_op_code) else
         sr_last;
   
   process(clk)
@@ -319,6 +343,8 @@ begin
       ir4_op = vecadd_op_code or
       ir4_op = vecsub_op_code then
         reg_file(conv_integer(ir4_reg1)) <= write_reg;
+      elsif frame_done = '1' then
+        reg_file(15) <= X"000000000000000" & kbd_reg;
       end if;
     end if;
   end process;
