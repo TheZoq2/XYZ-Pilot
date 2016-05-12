@@ -260,7 +260,7 @@ begin
   -- ALU --
 
   -- Multiplication
-  --mult_result <= alu_1 * alu_2;
+  mult_result <= alu_1 * alu_2;
 
   -- Splitting the two vectors
   vec_split_in1 <= alu_1;
@@ -292,8 +292,8 @@ begin
                alu_1 + alu_2 when store_rel_op_code,
                alu_2 - alu_1 when sub_op_code,
                alu_2 - alu_1 when subi_op_code,
-               --mult_result(63 downto 0) when mult_op_code,
-               --mult_result(63 downto 0) when multi_op_code,
+               mult_result(63 downto 0) when mult_op_code,
+               mult_result(63 downto 0) when multi_op_code,
                vec_merge_out when vecadd_op_code,
                vec_merge_out when vecsub_op_code,
                alu_1 when storeobj_op_code,
