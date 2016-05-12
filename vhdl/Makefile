@@ -34,7 +34,7 @@ PART=xc6slx16-3-csg324
 
 
 lab.%: S=lab.vhd cpu.vhd obj_mem.vhd vector_alu.vhd gpu.vhd vga_motor.vhd pixel_mem.vhd program_mem.vhd uart.vhd kbd_enc.vhd dbg_segment.vhd model_mem.vhd luts.vhd datatypes.vhd vector.vhd
-lab.%: T=lab_tb.vhd
+lab.%: T=gpu_tb.vhd
 lab.%: U=Nexys3.ucf
 
 

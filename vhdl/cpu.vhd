@@ -18,7 +18,7 @@ entity cpu is
             obj_mem_adress : out std_logic_vector(8 downto 0);
             obj_mem_we  : out std_logic;
             frame_done  : in std_logic;
-            kbd_reg     : in std_logic_vector(3 downto 0) := (others => '0');
+            kbd_reg     : in std_logic_vector(6 downto 0) := (others => '0');
             debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); 
 end cpu;
 
@@ -344,7 +344,7 @@ begin
       ir4_op = vecsub_op_code then
         reg_file(conv_integer(ir4_reg1)) <= write_reg;
       elsif frame_done = '1' then
-        reg_file(15) <= X"000000000000000" & kbd_reg;
+        reg_file(15) <= X"00000000000000" & '0' & kbd_reg;
       end if;
     end if;
   end process;

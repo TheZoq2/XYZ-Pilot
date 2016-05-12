@@ -15,14 +15,15 @@ port (
         -- port 2
         write_addr : in GPU_Info.ObjAddr_t;
         write_data : in GPU_Info.ObjData_t;
-        we         : in std_logic := '0'
+        we         : in std_logic := '0';
+        debuginfo  : out std_logic_vector(15 downto 0)
     );
 end entity;
 
 architecture Behavioral of ObjMem is
 
 -- Deklaration av ett dubbelportat block-RAM
--- med 512 adresser av 8 bitars bredd.
+-- med 512 adresser av 64 bitars bredd.
 type ram_t is array (0 to 511) of Vector.InMemory_t;
 
     -- Nollställ alla bitar på alla adresser
@@ -32,23 +33,38 @@ type ram_t is array (0 to 511) of Vector.InMemory_t;
         2  => x"0000000000000000",
         3  => x"0000000000000000",
 
-        4  => x"0050005000000000",
-        5  => x"0020002000000000",
-        6  => x"0030003000000000",
-        7  => x"0000000000000005",
+        4  => x"0020002000000000",
+        5  => x"0000000000000000",
+        6  => x"0000000000000000",
+        7  => x"0000000000000000",
 
-        8 => x"0000000000000000",
-        9 => x"0000000000000000",
-        11 => x"0000000000000000",
-        12 => x"0000000000000000",
+        8  => x"0090002100000000",
+        9  => x"0000000000000000",
+        10  => x"0000000000000000",
+        11  => x"0000000000000000",
+        
+        12 => x"0020000900000000",
+        13 => x"0000000000000000",
+        14 => x"0000000000000000",
+        15 => x"0000000000000000",
 
-        13 => x"FFFFFFFFFFFFFFFF",
-        14 => x"FFFFFFFFFFFFFFFF",
-        15 => x"FFFFFFFFFFFFFFFF",
-        16 => x"FFFFFFFFFFFFFFFF",
+        16 => x"0080009000000000",
+        17 => x"0000000000000000",
+        18 => x"0000000000000000",
+        19 => x"0000000000000000",
+
+        20 => x"ffffffffffffffff",
+        21 => x"ffffffffffffffff",
+        22 => x"ffffffffffffffff",
+        23 => x"ffffffffffffffff",
         others => (others => '0'));
 
 begin
+
+--debuginfo <= ram(8)(51 downto 48) & 
+  --             ram(8)(35 downto 32) & 
+    --           ram(8)(19 downto 16) & 
+      --         ram(8)(3 downto 0);
 
 PROCESS(clk)
 BEGIN
