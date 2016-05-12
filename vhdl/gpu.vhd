@@ -46,8 +46,52 @@ architecture Behavioral of GPU is
           DRAW_LINE_PIXEL,
           PREPARE_NEXT_LINE_PIXEL,
           PREPARE_NEXT_LINE,
-          WAIT_FOR_VGA
-                        );
+          WAIT_FOR_VGA,
+          CALC_TRIG,
+          CALC_ROTATED
+        );
+
+    function add_small_num(num1: datatypes.small_number_t; num2: datatypes.small_number_t)
+        return datatypes.small_number_t is
+
+        variable result: datatypes.small_number_t;
+
+        variable abs1: unsigned(9 downto 0);
+        variable abs2: unsigned(9 downto 0);
+
+        variable sign1: std_logic;
+        variable sign2: std_logic;
+    begin
+        abs1 := num1(9 downto 0);
+        abs2 := num2(9 downto 0);
+        sign1 := num1(15);
+        sign2 := num2(15);
+
+        result := (others => '0');
+        if sign1 = sign2 then --The signs are  the same. Preserve sign, add values.
+            result(15) := sign1;
+            result(9 downto 0) := abs1 + abs2;
+        elsif sign1 = '1' then --The First number is negative
+            if num1(9 downto 0) > num2(9 downto 0) then
+                result(15) := '1';
+                result(9 downto 0) := abs1 - abs2;
+            else
+                result(15) := '0';
+                result(9 downto 0) := unsigned(abs ((signed(abs1) - signed(abs2))));
+            end if;
+        else    --The second number is negative
+            if num2(9 downto 0) > num1(9 downto 0) then
+                result(15) := '1';
+                result(9 downto 0) := abs2 - abs1;
+            else
+                result(15) := '0';
+                result(9 downto 0) := unsigned(abs (signed(abs2) - signed(abs1)));
+            end if;
+        end if;
+
+        return result;
+    end function;
+
     signal gpu_state: gpu_state_type := READ_OBJECT;
 
     signal delay_counter: unsigned(2 downto 0) := "000";
@@ -84,14 +128,48 @@ architecture Behavioral of GPU is
 
     signal fetch_line_state: Line_Fetch_State.type_t := Line_Fetch_State.SET_START;
 
-    signal angle: unsigned(7 downto 0) := x"00";
-    signal cos_val: datatypes.small_number_t;
+    signal calc_angle: unsigned(7 downto 0) := x"00";
     signal sin_val: datatypes.small_number_t;
 
-    signal y_cos: datatypes.std_number_t;
-    signal z_sin: datatypes.std_number_t;
-    signal y_cos_end: datatypes.std_number_t;
-    signal z_sin_end: datatypes.std_number_t;
+    signal trig_calc_stage: unsigned(2 downto 0) := (others => '0');
+
+    signal calc_rotation_start_or_end: std_logic := '0';
+    signal rotation_calc_stage: unsigned(4 downto 0) := (others => '0');
+
+    type big_mul_in_selector_t is (
+        SEL_TRIG_BUFF,
+        SEL_TRIG_RESULT
+    );
+    signal big_mul_in_selector: big_mul_in_selector_t;
+
+    --Buffers to store calculated trig values for all the angles
+    signal sin_a: datatypes.small_number_t;
+    signal sin_b: datatypes.small_number_t;
+    signal sin_c: datatypes.small_number_t;
+
+    signal cos_a: datatypes.small_number_t;
+    signal cos_b: datatypes.small_number_t;
+    signal cos_c: datatypes.small_number_t;
+
+
+    --The regsiters where intermediate results of trigonometric functions are stored
+    signal current_trig: datatypes.small_number_t;
+    signal current_coord: datatypes.std_number_t;
+
+    --Input into the small  fraction multiplyer
+    signal trig_in_1: datatypes.small_number_t;
+    signal trig_in_2: datatypes.small_number_t;
+    signal trig_result: datatypes.small_number_t;
+    signal trig_buff: datatypes.small_number_t;
+
+    --Result and input to the fractional number multiplyer
+    signal big_mult_num: datatypes.std_number_t;
+    signal big_mult_result: datatypes.std_number_t;
+
+    signal big_mul_trig_in: datatypes.small_number_t;
+
+    signal current_rotated_vector: Vector.Elements_t;
+    signal rotation_result: Vector.Elements_t;
 
     -- Variables for Bresenham's line algorithm
     signal dx : signed(15 downto 0);
@@ -144,6 +222,14 @@ architecture Behavioral of GPU is
                 result: out Datatypes.std_number_t
             );
     end component;
+
+    component SmallNumberMultiplyer is
+        port(
+                num1: in Datatypes.small_number_t;
+                num2: in Datatypes.small_number_t;
+                result: out Datatypes.small_number_t
+            );
+    end component;
     
 begin
     model_mem_map: ModelMem port map(
@@ -166,26 +252,47 @@ begin
                 vec => obj_mem_vec
             );
 
+    sin_map : sin_table port map (
+            angle => calc_angle,
+            result => sin_val
+        );
+
+    frac_map : FractionalMultiplyer port map (
+            big_num => big_mult_num,
+            small_num => big_mul_trig_in,
+            result => big_mult_result
+        );
+    small_num_map : SmallNumberMultiplyer port map (
+            num1 => trig_in_1,
+            num2 => trig_in_2,
+            result => trig_result
+        );
 
     obj_mem_addr <= current_obj_start + current_obj_offset;
 
-    screen_start(0) <= raw_start(0);
-    screen_start(1) <= raw_start(1);
-    --screen_start(1) <= y_cos - z_sin;
+    --screen_start(0) <= raw_start(0);
+    --screen_start(1) <= raw_start(1);
+    ----screen_start(1) <= y_cos - z_sin;
 
-    screen_start(2) <= x"0000";
-    screen_start(3) <= x"0000";
-    screen_end(0) <= raw_end(0);
-    screen_end(1) <= raw_end(1);
-    --screen_end(1) <= y_cos_end - z_sin_end;
-    screen_end(2) <= x"0000";
-    screen_end(3) <= x"0000";
+    --screen_start(2) <= x"0000";
+    --screen_start(3) <= x"0000";
+    --screen_end(0) <= raw_end(0);
+    --screen_end(1) <= raw_end(1);
+    ----screen_end(1) <= y_cos_end - z_sin_end;
+    --screen_end(2) <= x"0000";
+    --screen_end(3) <= x"0000";
 
     with fetch_line_state select
         model_mem_addr <= line_start_addr when Line_Fetch_State.SET_START,
                           line_start_addr when Line_Fetch_State.STORE_START,
                           line_start_addr + 1 when others;
 
+    --Change between calculating the rotation of the start or end vector
+    current_rotated_vector <= raw_start when calc_rotation_start_or_end = '1' and gpu_state = CALC_ROTATED else raw_end;
+    screen_start <= rotation_result when calc_rotation_start_or_end = '1' and gpu_state = CALC_ROTATED else screen_start;
+    screen_end <= rotation_result when calc_rotation_start_or_end = '0' and gpu_state = CALC_ROTATED else screen_end;
+    
+    big_mul_trig_in <= trig_result when big_mul_in_selector = SEL_TRIG_RESULT else trig_buff;
 
     --###########################################################################
     --      Main GPU state machine
@@ -193,33 +300,59 @@ begin
     process(clk) begin
         if rising_edge(clk) then
             if gpu_state = READ_OBJECT then
-                --line_start_addr <= (others => '0');
-
-                    --report("Reading new line");
-                --Incrememnt the current offset and switch states
+                --Going to the next state if all the object data for the current object
+                --has been read
                 if current_obj_offset = 4 then
                     current_obj_offset <= "000";
                     current_obj_start <= current_obj_start + 4;
 
                     if obj_mem_data = x"ffffffffffffffff" then 
                         gpu_state <= WAIT_FOR_VGA;
-                        report("Going into WAIT");
                     else
-                        gpu_state <= FETCH_LINE;
+                        gpu_state <= CALC_TRIG;
                     end if;
                 else
                     current_obj_offset <= current_obj_offset + 1;
                 end if;
 
+                --Reading object data
                 if current_obj_offset = 4 then
                     line_start_addr <= unsigned(obj_mem_data(GPU_Info.MODEL_ADDR_SIZE - 1 downto 0));
-                elsif current_obj_offset = 2 then --If this is the position value
+                elsif current_obj_offset = 3 then --If this is the position value
                     obj_scale <=  obj_mem_vec;
-                elsif current_obj_offset = 1 then
+                elsif current_obj_offset = 2 then
                     obj_angle <=  obj_mem_vec;
-                elsif current_obj_offset = 0 then
+                elsif current_obj_offset = 1 then
                     obj_position <=  obj_mem_vec;
                 end if;
+            elsif gpu_state = CALC_TRIG then
+
+                trig_calc_stage <= trig_calc_stage + 1;
+                --Do the actual calculations
+                case trig_calc_stage is
+                    when "000" =>
+                        calc_angle <= unsigned(obj_angle(0)(7 downto 0));
+                    when "001" =>
+                        calc_angle <= unsigned(obj_angle(1)(7 downto 0));
+                        sin_a <= sin_val;
+                    when "010" =>
+                        calc_angle <= unsigned(obj_angle(2)(7 downto 0));
+                        sin_b <= sin_val;
+                    when "011" =>
+                        calc_angle <= unsigned(obj_angle(0)(7 downto 0) + 64);
+                        sin_c <= sin_val;
+                    when "100" =>
+                        calc_angle <= unsigned(obj_angle(1)(7 downto 0) + 64);
+                        cos_a <= sin_val;
+                    when "101" =>
+                        calc_angle <= unsigned(obj_angle(2)(7 downto 0) + 64);
+                        cos_b <= sin_val;
+                    when "110" =>
+                        cos_c <= sin_val;
+                    when others =>
+                        gpu_state <= FETCH_LINE;
+                        trig_calc_stage <= (others => '0');
+                end case;
             elsif gpu_state = FETCH_LINE then
                 --Wait for model memory to update the data
                 if fetch_line_state = Line_Fetch_State.SET_START then
@@ -238,8 +371,109 @@ begin
                     end_vector <= model_mem_data;
 
                     fetch_line_state <= Line_Fetch_State.SET_START;
-                    gpu_state <= PREPARE_LINE;
+                    gpu_state <= CALC_ROTATED;
                 end if;
+            elsif gpu_state = CALC_ROTATED then
+                rotation_calc_stage <= rotation_calc_stage + 1;
+
+
+                case rotation_calc_stage is
+                    when "00000" => --cos(a)*cos(b) * x
+                        trig_in_1 <= cos_b;
+                        trig_in_2 <= cos_c;
+                        big_mult_num <= current_rotated_vector(0);
+
+                        big_mul_in_selector <= SEL_TRIG_RESULT;
+                    when "00001" => --Save x, calc cos(c)*sin(b)
+                        current_coord <= big_mult_result;
+                        
+                        trig_in_1 <= cos_c;
+                        trig_in_2 <= sin_a;
+                    when "00010" => --Calc result*sin(b)
+                        trig_in_1 <= trig_result;
+                        trig_in_2 <= sin_b;
+                    when "00011" => --Store result and calculate cos(a) * sin(c)
+                        trig_buff <= trig_result;
+                        trig_in_1 <= cos_a;
+                        trig_in_2 <= sin_c;
+                    when "00100" => --Subtract the previous two results from each other
+                        --Subtract result from the  buffer content
+                        trig_buff <= add_small_num(trig_buff, not trig_result(15) & trig_result(14 downto 0));
+                        big_mult_num <= current_rotated_vector(1);
+
+                        big_mul_in_selector <= SEL_TRIG_BUFF;
+                    when "00101" => --Store trig_buff * y, calculate cos(a)*cos(c)
+                        --Add the result of the y variable to the result
+                        current_coord <= current_coord + big_mult_result;
+
+                        trig_in_1 <= cos_a;
+                        trig_in_2 <= sin_c;
+                    when "00110" => --Old result * sin(b)
+                        trig_in_1 <= trig_result;
+                        trig_in_2 <= sin_b;
+                    when "00111" => --Store in buff, calcl sin(a)*sin(c)
+                        trig_buff <= trig_result;
+                        trig_in_1 <= sin_a;
+                        trig_in_2 <= sin_c;
+                    when "01000" =>  --Part1 + part2. Start y element
+                        big_mul_in_selector <= SEL_TRIG_BUFF;
+                        big_mult_num <= current_rotated_vector(2);
+
+                        trig_buff <= add_small_num(trig_buff, trig_result);
+                        
+                        big_mul_in_selector <= SEL_TRIG_RESULT;
+                    when "01001" => --Start the y element and store the x element
+                        rotation_result(0) <= current_coord + big_mult_result;
+
+                        big_mult_num <= current_rotated_vector(0);
+                        trig_in_1 <= cos_b;
+                        trig_in_2 <= sin_c;
+                    when "01010" => --Store cos(b)*sin(c) * x, calc cos(a)*cos(c)
+                        current_coord <= big_mult_result;
+
+                        trig_in_1 <= cos_a;
+                        trig_in_2 <= cos_c;
+                    when "01011" =>  --sin(a)*sin(b)
+                        trig_buff <= trig_result;
+                        trig_in_1 <= sin_a;
+                        trig_in_2 <= sin_b;
+                    when "01100" => --trig_buff * sin(c)
+                        trig_in_1 <= trig_result;
+                        trig_in_2 <= sin_c;
+                    when "01101" => --Store the result of the y trig  function, start z
+                        trig_buff <= add_small_num(trig_buff, trig_result);
+                        big_mult_num <= current_rotated_vector(1);
+                        
+                        big_mul_in_selector <= SEL_TRIG_BUFF;
+                    when "01110" => --Calculate the final z term
+                        current_coord <= current_coord + big_mult_result;
+
+                        trig_in_1 <= cos_a;
+                        trig_in_2 <= sin_b;
+                    when "01111" =>
+                        trig_in_1 <= trig_result;
+                        trig_in_2 <= sin_c;
+                    when "10000"  =>
+                        trig_buff <= trig_result;
+                        trig_in_1 <= cos_c;
+                        trig_in_2 <= sin_a;
+                    when "10001" =>
+                        --Subtract result from the  buffer content
+                        trig_buff <= add_small_num(trig_buff, not trig_result(15) & trig_result(14 downto 0));
+                        big_mult_num <= current_rotated_vector(2);
+
+                        big_mul_in_selector <= SEL_TRIG_BUFF;
+                    when "10010" =>
+                        rotation_result(1) <= current_coord + big_mult_Result;
+                    when others =>
+                        if calc_rotation_start_or_end = '1' then
+                            gpu_state <= PREPARE_LINE;
+                        end if;
+
+                        calc_rotation_start_or_end <= not calc_rotation_start_or_end;
+
+                        rotation_calc_stage <= (others => '0');
+                end case;
             elsif gpu_state = PREPARE_LINE then
               if end_vector = x"ffffffffffffffff" then
                 -- Last line in object was found. Parse next object.
