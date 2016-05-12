@@ -39,13 +39,14 @@ end entity;
 
 architecture Behavioral of GPU is
 	type gpu_state_type is (
- 							READ_OBJECT,
-                            FETCH_LINE,
-                            START_PIXEL_CALC,
-                            WAIT_FOR_COMB,
-                            CALC_PIXELS,
-                            PREPARE_NEXT_LINE,
-                            WAIT_FOR_VGA
+          READ_OBJECT,
+          FETCH_LINE,
+          PREPARE_LINE,
+          START_LINE,
+          DRAW_LINE_PIXEL,
+          PREPARE_NEXT_LINE_PIXEL,
+          PREPARE_NEXT_LINE,
+          WAIT_FOR_VGA
                         );
     signal gpu_state: gpu_state_type := READ_OBJECT;
 
@@ -65,15 +66,6 @@ architecture Behavioral of GPU is
     signal screen_start: Vector.Elements_t;
     signal screen_end: Vector.Elements_t;
 
-    --The coordinate that is being drawn
-    signal current_pixel: Vector.Elements_t;
-
-    signal draw_start: Vector.Elements_t; --The start of the vector to be drawn on the screen
-    signal draw_end: Vector.Elements_t; --The end of ^^
-    signal draw_diff: Vector.Elements_t := (to_signed(0, 16), to_signed(0, 16), to_signed(0, 16), to_signed(0, 16)); --The vector between draw_start and  draw_end
-    signal pixel_out: Vector.Elements_t;
-    signal draw_d_var: signed(15 downto 0);
-
     signal obj_position: Vector.Elements_t;
     signal obj_angle: Vector.Elements_t;
     signal obj_scale: Vector.Elements_t;
@@ -82,9 +74,6 @@ architecture Behavioral of GPU is
     --octant
     signal raw_start: Vector.Elements_t;
     signal raw_end: Vector.Elements_t; 
-
-    signal octant: unsigned(2 downto 0) := "000";
-    signal octant_selector: std_logic_vector(2 downto 0);
 
     --Model data signals
     signal model_mem_addr: GPU_Info.ModelAddr_t;
@@ -103,6 +92,19 @@ architecture Behavioral of GPU is
     signal z_sin: datatypes.std_number_t;
     signal y_cos_end: datatypes.std_number_t;
     signal z_sin_end: datatypes.std_number_t;
+
+    -- Variables for Bresenham's line algorithm
+    signal dx : signed(15 downto 0);
+    signal dy : signed(15 downto 0);
+    signal D : signed(31 downto 0);
+    signal i : signed(15 downto 0);
+    signal len : signed(15 downto 0);
+    signal x : signed(15 downto 0);
+    signal y : signed(15 downto 0);
+    signal x_out : signed(15 downto 0);
+    signal y_out : signed(15 downto 0);
+    signal x_incr : signed(15 downto 0);
+    signal y_incr : signed(15 downto 0);
 
     component VectorSubtractor is
         port(
@@ -150,11 +152,6 @@ architecture Behavioral of GPU is
     end component;
     
 begin
-    draw_diff_calculator: VectorSubtractor port map(
-                vec2 => screen_start,
-                vec1 => screen_end,
-                result => draw_diff
-            );
     model_mem_map: ModelMem port map(
                 clk => clk,
                 read_addr => model_mem_addr,
@@ -245,40 +242,67 @@ begin
                     end_vector <= model_mem_data;
 
                     fetch_line_state <= Line_Fetch_State.SET_START;
-                    gpu_state <= START_PIXEL_CALC;
+                    gpu_state <= PREPARE_LINE;
                 end if;
+            elsif gpu_state = PREPARE_LINE then
+              if end_vector = x"ffffffffffffffff" then
+                -- Last line in object was found. Parse next object.
+                gpu_state <= READ_OBJECT;
+              else
+                -- Calculate pre-conditions for the line algorithm.
+                dx <= abs(screen_end(0) - screen_start(0));
+                dy <= abs(screen_end(1) - screen_start(1));
+                x <= (others => '0');
+                y <= (others => '0');
+                i <= (others => '0');
                 
-            elsif gpu_state = START_PIXEL_CALC then
-                --Set up the pixel drawing calculation
-                --Since start.x = 0, dx = end.x in bresenham's algorithm
-                if end_vector = x"ffffffffffffffff" then
-                    gpu_state <= READ_OBJECT;
-                else
-                    draw_d_var <= draw_end(1) - draw_end(0);
-                    current_pixel(0) <= draw_start(0);
-                    current_pixel(1) <= draw_start(1);
+                gpu_state <= START_LINE;
+              end if;
+            elsif gpu_state = START_LINE then
+              -- Finalize pre-conditions. Loop over the longest axis.
+              if dx > dy then
+                len <= dx;
+                D <= 2 * dy - dx;
+              else
+                len <= dy;
+                D <= 2 * dx - dy;
+              end if;
 
-                    gpu_state <= WAIT_FOR_COMB;
-                    delay_counter <= "000";
+              gpu_state <= DRAW_LINE_PIXEL;
+            elsif gpu_state = DRAW_LINE_PIXEL then
+              -- The current x and y values are sent to the pixel memory while
+              -- this state is active.
+              
+              if i >= len then
+                -- Stop looping when all pixels on the chosen axis has been processed.
+                gpu_state <= PREPARE_NEXT_LINE;
+              else
+                if D > 0 then
+                  -- Increase the opposite axis if the algorithm says so.
+                  if dx > dy then
+                    y <= y + y_incr;
+                    D <= D - 2 * dx;
+                  else
+                    x <= x + x_incr;
+                    D <= D - 2 * dy;
+                  end if;
                 end if;
-            elsif gpu_state = WAIT_FOR_COMB then
-                if delay_counter = "111" then
-                    gpu_state <= CALC_PIXELS;
-                else
-                    delay_counter <= delay_counter + 1;
-                end if;
-            elsif gpu_state = CALC_PIXELS then
-                if current_pixel(0) > draw_end(0) then
-                    gpu_state <= PREPARE_NEXT_LINE;
-                else
-                    current_pixel(0) <= current_pixel(0) + 1;
-                    if draw_d_var >= 0 then
-                        current_pixel(1) <= current_pixel(1) + 1;
-                        draw_d_var <= draw_d_var + draw_end(1) - draw_end(0);
-                    else
-                        draw_d_var <= draw_d_var + draw_end(1);
-                    end if;
-                end if;
+
+                gpu_state <= PREPARE_NEXT_LINE_PIXEL;
+              end if;
+            elsif gpu_state = PREPARE_NEXT_LINE_PIXEL then
+              -- Increase the loop index as well as the current position along the
+              -- loop axis before drawing the next pixel.
+              i <= i + 1;
+              if dx > dy then
+                x <= x + x_incr;
+                D <= D + 2 * dy;
+              else
+                y <= y + y_incr;
+                D <= D + 2 * dx;
+              end if;
+
+              gpu_state <= DRAW_LINE_PIXEL;
             elsif gpu_state = PREPARE_NEXT_LINE then
                 line_start_addr <= line_start_addr + 2;
 
@@ -293,55 +317,24 @@ begin
             end if;
         end if;
     end process;
-    
-    --###########################################################################
-    --                   Octant transform code
-    --###########################################################################
-    octant_selector(2) <= '1' when draw_diff(0) > 0 else '0';
-    octant_selector(1) <= '1' when draw_diff(1) > 0 else '0';
-    octant_selector(0) <= '1' when abs(draw_diff(0)) > abs(draw_diff(1)) else '0';
-    
-    with octant_selector select
-        octant <= "000" when "111",
-                  "001" when "110",
-                  "010" when "010",
-                  "011" when "011",
-                  "100" when "001",
-                  "101" when "000",
-                  "110" when "100",
-                  "111" when others;
 
-    draw_start <= (to_signed(0, 16), to_signed(0, 16), to_signed(0, 16), to_signed(0, 16));
-    with octant select
-        draw_end   <= (x"0000", x"0000", draw_diff(1), draw_diff(0)) when "000",
-                      (x"0000", x"0000", draw_diff(0), draw_diff(1)) when "001",
-                      (x"0000", x"0000",-draw_diff(0), draw_diff(1)) when "010",
-                      (x"0000", x"0000", draw_diff(1),-draw_diff(0)) when "011",
-                      (x"0000", x"0000",-draw_diff(1),-draw_diff(0)) when "100",
-                      (x"0000", x"0000",-draw_diff(0),-draw_diff(1)) when "101",
-                      (x"0000", x"0000", draw_diff(0),-draw_diff(1)) when "110",
-                      (x"0000", x"0000",-draw_diff(1), draw_diff(0)) when others;
+    -- Direction from line start to line end.
+    x_incr <= to_signed(1, 16) when screen_end(0) > screen_start(0) else to_signed(-1, 16);
+    y_incr <= to_signed(1, 16) when screen_end(1) > screen_start(1) else to_signed(-1, 16);
 
+    -- Complete x and y positions to render to pixel memory.
+    x_out <= obj_position(0) + screen_start(0) + x;
+    y_out <= obj_position(1) + screen_start(1) + y;
 
-    with octant select
-        pixel_out <=  (x"0000", x"0000", obj_position(1) + screen_start(1) + current_pixel(1), obj_position(0) + screen_start(0) + current_pixel(0)) when "000",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) + current_pixel(0), obj_position(0) + screen_start(0) + current_pixel(1)) when "001",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) + current_pixel(0), obj_position(0) + screen_start(0) - current_pixel(1)) when "010",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) + current_pixel(1), obj_position(0) + screen_start(0) - current_pixel(0)) when "011",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) - current_pixel(1), obj_position(0) + screen_start(0) - current_pixel(0)) when "100",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) - current_pixel(0), obj_position(0) + screen_start(0) - current_pixel(1)) when "101",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) - current_pixel(0), obj_position(0) + screen_start(0) + current_pixel(1)) when "110",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) - current_pixel(1), obj_position(0) + screen_start(0) + current_pixel(0)) when others;
-
-    pixel_address(16 downto 8) <= std_logic_vector(pixel_out(0)(8 downto 0));
-    pixel_address(7 downto 0) <= std_logic_vector(pixel_out(1)(7 downto 0));
+    pixel_address(16 downto 8) <= std_logic_vector(x_out(8 downto 0));
+    pixel_address(7 downto 0) <= std_logic_vector(y_out(7 downto 0));
     pixel_data <= '1';
 
-    pixel_write_enable <= '1' when gpu_state = CALC_PIXELS and 
-                          pixel_out(0) > 0 and
-                          pixel_out(1) > 0 and
-                          pixel_out(0) < 321 and
-                          pixel_out(1) < 241
+    pixel_write_enable <= '1' when gpu_state = DRAW_LINE_PIXEL and 
+                          x_out > 0 and
+                          y_out > 0 and
+                          x_out < 321 and
+                          y_out < 241
                     else '0';
 
 end Behavioral;
