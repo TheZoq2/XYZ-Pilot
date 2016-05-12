@@ -134,6 +134,7 @@ constant waitframe_op_code       : std_logic_vector(7 downto 0)  := X"14";
 constant btst_op_code       : std_logic_vector(7 downto 0)  := X"15";
 constant load_rel_op_code : std_logic_vector(7 downto 0) := X"16";
 constant store_rel_op_code : std_logic_vector(7 downto 0) := X"17";
+constant and_op_code : std_logic_vector(7 downto 0) := X"18";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
@@ -297,7 +298,9 @@ begin
                vec_merge_out when vecadd_op_code,
                vec_merge_out when vecsub_op_code,
                alu_1 when storeobj_op_code,
+               alu_1 and alu_2 when and_op_code,
                X"0000000000000000" when others;
+
   sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) or 
                   (ir2_op=btst_op_code and alu_2(conv_integer(alu_1)) = '1') else
         "01" when (ir2_op=cmp_op_code and alu_1<alu_2) else
@@ -352,6 +355,7 @@ begin
       ir4_op = mult_op_code or
       ir4_op = multi_op_code or
       ir4_op = vecadd_op_code or
+      ir4_op = and_op_code or 
       ir4_op = vecsub_op_code then
         reg_file(conv_integer(ir4_reg1)) <= write_reg;
       elsif frame_done = '1' then
