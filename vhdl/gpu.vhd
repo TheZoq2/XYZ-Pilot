@@ -50,6 +50,48 @@ architecture Behavioral of GPU is
           CALC_TRIG,
           CALC_ROTATED
         );
+
+    function add_small_num(num1: datatypes.small_number_t; num2: datatypes.small_number_t)
+        return datatypes.small_number_t is
+
+        variable result: datatypes.small_number_t;
+
+        variable abs1: unsigned(9 downto 0);
+        variable abs2: unsigned(9 downto 0);
+
+        variable sign1: std_logic;
+        variable sign2: std_logic;
+    begin
+        abs1 := num1(9 downto 0);
+        abs2 := num2(9 downto 0);
+        sign1 := num1(15);
+        sign2 := num2(15);
+
+        result := (others => '0');
+        if sign1 = sign2 then --The signs are  the same. Preserve sign, add values.
+            result(15) := sign1;
+            result(9 downto 0) := abs1 + abs2;
+        elsif sign1 = '1' then --The First number is negative
+            if num1(9 downto 0) > num2(9 downto 0) then
+                result(15) := '1';
+                result(9 downto 0) := abs1 - abs2;
+            else
+                result(15) := '0';
+                result(9 downto 0) := unsigned(abs ((signed(abs1) - signed(abs2))));
+            end if;
+        else    --The second number is negative
+            if num2(9 downto 0) > num1(9 downto 0) then
+                result(15) := '1';
+                result(9 downto 0) := abs2 - abs1;
+            else
+                result(15) := '0';
+                result(9 downto 0) := unsigned(abs (signed(abs2) - signed(abs1)));
+            end if;
+        end if;
+
+        return result;
+    end function;
+
     signal gpu_state: gpu_state_type := READ_OBJECT;
 
     signal delay_counter: unsigned(2 downto 0) := "000";
@@ -109,7 +151,6 @@ architecture Behavioral of GPU is
     signal cos_b: datatypes.small_number_t;
     signal cos_c: datatypes.small_number_t;
 
-    signal trig_buff: datatypes.small_number_t;
 
     --The regsiters where intermediate results of trigonometric functions are stored
     signal current_trig: datatypes.small_number_t;
@@ -119,6 +160,7 @@ architecture Behavioral of GPU is
     signal trig_in_1: datatypes.small_number_t;
     signal trig_in_2: datatypes.small_number_t;
     signal trig_result: datatypes.small_number_t;
+    signal trig_buff: datatypes.small_number_t;
 
     --Result and input to the fractional number multiplyer
     signal big_mult_num: datatypes.std_number_t;
@@ -355,7 +397,8 @@ begin
                         trig_in_1 <= cos_a;
                         trig_in_2 <= sin_c;
                     when "00100" => --Subtract the previous two results from each other
-                        trig_buff <= trig_buff - trig_result;
+                        --Subtract result from the  buffer content
+                        trig_buff <= add_small_num(trig_buff, not trig_result(15) & trig_result(14 downto 0));
                         big_mult_num <= current_rotated_vector(1);
 
                         big_mul_in_selector <= SEL_TRIG_BUFF;
@@ -376,7 +419,7 @@ begin
                         big_mul_in_selector <= SEL_TRIG_BUFF;
                         big_mult_num <= current_rotated_vector(2);
 
-                        trig_buff <= trig_buff + trig_result;
+                        trig_buff <= add_small_num(trig_buff, trig_result);
                         
                         big_mul_in_selector <= SEL_TRIG_RESULT;
                     when "01001" => --Start the y element and store the x element
@@ -398,7 +441,7 @@ begin
                         trig_in_1 <= trig_result;
                         trig_in_2 <= sin_c;
                     when "01101" => --Store the result of the y trig  function, start z
-                        trig_buff <= trig_buff + trig_result;
+                        trig_buff <= add_small_num(trig_buff, trig_result);
                         big_mult_num <= current_rotated_vector(1);
                         
                         big_mul_in_selector <= SEL_TRIG_BUFF;
@@ -415,7 +458,8 @@ begin
                         trig_in_1 <= cos_c;
                         trig_in_2 <= sin_a;
                     when "10001" =>
-                        trig_buff <= trig_buff - trig_result;
+                        --Subtract result from the  buffer content
+                        trig_buff <= add_small_num(trig_buff, not trig_result(15) & trig_result(14 downto 0));
                         big_mult_num <= current_rotated_vector(2);
 
                         big_mul_in_selector <= SEL_TRIG_BUFF;
