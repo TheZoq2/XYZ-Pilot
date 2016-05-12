@@ -39,16 +39,17 @@ end entity;
 
 architecture Behavioral of GPU is
 	type gpu_state_type is (
- 							READ_OBJECT,
-                            FETCH_LINE,
-                            START_PIXEL_CALC,
-                            WAIT_FOR_COMB,
-                            CALC_PIXELS,
-                            PREPARE_NEXT_LINE,
-                            WAIT_FOR_VGA,
-
-                            CALC_TRIG
-                        );
+          READ_OBJECT,
+          FETCH_LINE,
+          PREPARE_LINE,
+          START_LINE,
+          DRAW_LINE_PIXEL,
+          PREPARE_NEXT_LINE_PIXEL,
+          PREPARE_NEXT_LINE,
+          WAIT_FOR_VGA,
+          CALC_TRIG,
+          CALC_ROTATED
+        );
     signal gpu_state: gpu_state_type := READ_OBJECT;
 
     signal delay_counter: unsigned(2 downto 0) := "000";
@@ -67,15 +68,6 @@ architecture Behavioral of GPU is
     signal screen_start: Vector.Elements_t;
     signal screen_end: Vector.Elements_t;
 
-    --The coordinate that is being drawn
-    signal current_pixel: Vector.Elements_t;
-
-    signal draw_start: Vector.Elements_t; --The start of the vector to be drawn on the screen
-    signal draw_end: Vector.Elements_t; --The end of ^^
-    signal draw_diff: Vector.Elements_t := (to_signed(0, 16), to_signed(0, 16), to_signed(0, 16), to_signed(0, 16)); --The vector between draw_start and  draw_end
-    signal pixel_out: Vector.Elements_t;
-    signal draw_d_var: signed(15 downto 0);
-
     signal obj_position: Vector.Elements_t;
     signal obj_angle: Vector.Elements_t;
     signal obj_scale: Vector.Elements_t;
@@ -84,9 +76,6 @@ architecture Behavioral of GPU is
     --octant
     signal raw_start: Vector.Elements_t;
     signal raw_end: Vector.Elements_t; 
-
-    signal octant: unsigned(2 downto 0) := "000";
-    signal octant_selector: std_logic_vector(2 downto 0);
 
     --Model data signals
     signal model_mem_addr: GPU_Info.ModelAddr_t;
@@ -102,6 +91,16 @@ architecture Behavioral of GPU is
 
     signal trig_calc_stage: unsigned(2 downto 0) := (others => '0');
 
+    signal calc_rotation_start_or_end: std_logic := '0';
+    signal rotation_calc_stage: unsigned(4 downto 0) := (others => '0');
+
+    type big_mul_in_selector_t is (
+        SEL_TRIG_BUFF,
+        SEL_TRIG_RESULT
+    );
+    signal big_mul_in_selector: big_mul_in_selector_t;
+
+    --Buffers to store calculated trig values for all the angles
     signal sin_a: datatypes.small_number_t;
     signal sin_b: datatypes.small_number_t;
     signal sin_c: datatypes.small_number_t;
@@ -109,6 +108,39 @@ architecture Behavioral of GPU is
     signal cos_a: datatypes.small_number_t;
     signal cos_b: datatypes.small_number_t;
     signal cos_c: datatypes.small_number_t;
+
+    signal trig_buff: datatypes.small_number_t;
+
+    --The regsiters where intermediate results of trigonometric functions are stored
+    signal current_trig: datatypes.small_number_t;
+    signal current_coord: datatypes.std_number_t;
+
+    --Input into the small  fraction multiplyer
+    signal trig_in_1: datatypes.small_number_t;
+    signal trig_in_2: datatypes.small_number_t;
+    signal trig_result: datatypes.small_number_t;
+
+    --Result and input to the fractional number multiplyer
+    signal big_mult_num: datatypes.std_number_t;
+    signal big_mult_result: datatypes.std_number_t;
+
+    signal big_mul_trig_in: datatypes.small_number_t;
+
+    signal current_rotated_vector: Vector.Elements_t;
+    signal rotation_result: Vector.Elements_t;
+
+    -- Variables for Bresenham's line algorithm
+    signal dx : signed(15 downto 0);
+    signal dy : signed(15 downto 0);
+    signal D : signed(31 downto 0);
+    signal i : signed(15 downto 0);
+    signal len : signed(15 downto 0);
+    signal x : signed(15 downto 0);
+    signal y : signed(15 downto 0);
+    signal x_out : signed(15 downto 0);
+    signal y_out : signed(15 downto 0);
+    signal x_incr : signed(15 downto 0);
+    signal y_incr : signed(15 downto 0);
 
     component VectorSubtractor is
         port(
@@ -148,13 +180,16 @@ architecture Behavioral of GPU is
                 result: out Datatypes.std_number_t
             );
     end component;
+
+    component SmallNumberMultiplyer is
+        port(
+                num1: in Datatypes.small_number_t;
+                num2: in Datatypes.small_number_t;
+                result: out Datatypes.small_number_t
+            );
+    end component;
     
 begin
-    draw_diff_calculator: VectorSubtractor port map(
-                vec2 => screen_start,
-                vec1 => screen_end,
-                result => draw_diff
-            );
     model_mem_map: ModelMem port map(
                 clk => clk,
                 read_addr => model_mem_addr,
@@ -180,25 +215,42 @@ begin
             result => sin_val
         );
 
+    frac_map : FractionalMultiplyer port map (
+            big_num => big_mult_num,
+            small_num => big_mul_trig_in,
+            result => big_mult_result
+        );
+    small_num_map : SmallNumberMultiplyer port map (
+            num1 => trig_in_1,
+            num2 => trig_in_2,
+            result => trig_result
+        );
+
     obj_mem_addr <= current_obj_start + current_obj_offset;
 
-    screen_start(0) <= raw_start(0);
-    screen_start(1) <= raw_start(1);
-    --screen_start(1) <= y_cos - z_sin;
+    --screen_start(0) <= raw_start(0);
+    --screen_start(1) <= raw_start(1);
+    ----screen_start(1) <= y_cos - z_sin;
 
-    screen_start(2) <= x"0000";
-    screen_start(3) <= x"0000";
-    screen_end(0) <= raw_end(0);
-    screen_end(1) <= raw_end(1);
-    --screen_end(1) <= y_cos_end - z_sin_end;
-    screen_end(2) <= x"0000";
-    screen_end(3) <= x"0000";
+    --screen_start(2) <= x"0000";
+    --screen_start(3) <= x"0000";
+    --screen_end(0) <= raw_end(0);
+    --screen_end(1) <= raw_end(1);
+    ----screen_end(1) <= y_cos_end - z_sin_end;
+    --screen_end(2) <= x"0000";
+    --screen_end(3) <= x"0000";
 
     with fetch_line_state select
         model_mem_addr <= line_start_addr when Line_Fetch_State.SET_START,
                           line_start_addr when Line_Fetch_State.STORE_START,
                           line_start_addr + 1 when others;
 
+    --Change between calculating the rotation of the start or end vector
+    current_rotated_vector <= raw_start when calc_rotation_start_or_end = '1' else raw_end;
+    screen_start <= rotation_result when calc_rotation_start_or_end = '1' else screen_start;
+    screen_end <= rotation_result when calc_rotation_start_or_end = '0' else screen_end;
+    
+    big_mul_trig_in <= trig_result when big_mul_in_selector = SEL_TRIG_RESULT else trig_buff;
 
     --###########################################################################
     --      Main GPU state machine
@@ -277,40 +329,166 @@ begin
                     end_vector <= model_mem_data;
 
                     fetch_line_state <= Line_Fetch_State.SET_START;
-                    gpu_state <= START_PIXEL_CALC;
+                    gpu_state <= CALC_ROTATED;
                 end if;
-                
-            elsif gpu_state = START_PIXEL_CALC then
-                --Set up the pixel drawing calculation
-                --Since start.x = 0, dx = end.x in bresenham's algorithm
-                if end_vector = x"ffffffffffffffff" then
-                    gpu_state <= READ_OBJECT;
-                else
-                    draw_d_var <= draw_end(1) - draw_end(0);
-                    current_pixel(0) <= draw_start(0);
-                    current_pixel(1) <= draw_start(1);
+            elsif gpu_state = CALC_ROTATED then
+                rotation_calc_stage <= rotation_calc_stage + 1;
 
-                    gpu_state <= WAIT_FOR_COMB;
-                    delay_counter <= "000";
+
+                case rotation_calc_stage is
+                    when "00000" => --cos(a)*cos(b) * x
+                        trig_in_1 <= cos_b;
+                        trig_in_2 <= cos_a;
+                        big_mult_num <= current_rotated_vector(0);
+
+                        big_mul_in_selector <= SEL_TRIG_RESULT;
+                    when "00001" => --Save x, calc cos(c)*sin(b)
+                        current_coord <= big_mult_result;
+                        
+                        trig_in_1 <= cos_c;
+                        trig_in_2 <= sin_a;
+                    when "00010" => --Calc result*sin(b)
+                        trig_in_1 <= trig_result;
+                        trig_in_2 <= sin_b;
+                    when "00011" => --Store result and calculate cos(a) * sin(c)
+                        trig_buff <= trig_result;
+                        trig_in_1 <= cos_a;
+                        trig_in_2 <= sin_c;
+                    when "00100" => --Subtract the previous two results from each other
+                        trig_buff <= trig_buff - trig_result;
+                        big_mult_num <= current_rotated_vector(1);
+
+                        big_mul_in_selector <= SEL_TRIG_BUFF;
+                    when "00101" => --Store trig_buff * y, calculate cos(a)*cos(c)
+                        --Add the result of the y variable to the result
+                        current_coord <= current_coord + big_mult_result;
+
+                        trig_in_1 <= cos_a;
+                        trig_in_2 <= cos_c;
+                    when "00110" => --Old result * sin(b)
+                        trig_in_1 <= trig_result;
+                        trig_in_2 <= sin_b;
+                    when "00111" => --Store in buff, calcl sin(a)*sin(c)
+                        trig_buff <= trig_result;
+                        trig_in_1 <= sin_a;
+                        trig_in_2 <= sin_b;
+                    when "01000" =>  --Part1 + part2. Start y element
+                        big_mul_in_selector <= SEL_TRIG_BUFF;
+                        big_mult_num <= current_rotated_vector(2);
+
+                        trig_buff <= trig_buff + trig_result;
+                        
+                        big_mul_in_selector <= SEL_TRIG_RESULT;
+                    when "01001" => --Start the y element and store the x element
+                        rotation_result(0) <= current_coord + big_mult_result;
+
+                        big_mult_num <= current_rotated_vector(0);
+                        trig_in_1 <= cos_b;
+                        trig_in_2 <= sin_c;
+                    when "01010" => --Store cos(b)*sin(c) * x, calc cos(a)*cos(c)
+                        current_coord <= big_mult_result;
+
+                        trig_in_1 <= cos_a;
+                        trig_in_2 <= cos_c;
+                    when "01011" =>  --sin(a)*sin(b)
+                        trig_buff <= trig_result;
+                        trig_in_1 <= sin_a;
+                        trig_in_2 <= sin_b;
+                    when "01100" => --trig_buff * sin(c)
+                        trig_in_1 <= trig_result;
+                        trig_in_2 <= sin_c;
+                    when "01101" => --Store the result of the y trig  function, start z
+                        trig_buff <= trig_buff + trig_result;
+                        big_mult_num <= current_rotated_vector(1);
+                        
+                        big_mul_in_selector <= SEL_TRIG_BUFF;
+                    when "01110" => --Calculate the final z term
+                        current_coord <= current_coord + big_mult_result;
+
+                        trig_in_1 <= cos_a;
+                        trig_in_2 <= sin_b;
+                    when "01111" =>
+                        trig_in_1 <= trig_result;
+                        trig_in_2 <= sin_c;
+                    when "10000"  =>
+                        trig_buff <= trig_result;
+                        trig_in_1 <= cos_c;
+                        trig_in_2 <= sin_a;
+                    when "10001" =>
+                        trig_buff <= trig_buff - trig_result;
+                        big_mult_num <= current_rotated_vector(2);
+
+                        big_mul_in_selector <= SEL_TRIG_BUFF;
+                    when "10010" =>
+                        rotation_result(1) <= current_coord + big_mult_Result;
+                    when others =>
+                        if calc_rotation_start_or_end = '1' then
+                            gpu_state <= PREPARE_LINE;
+                        end if;
+
+                        calc_rotation_start_or_end <= not calc_rotation_start_or_end;
+
+                        rotation_calc_stage <= (others => '0');
+                end case;
+            elsif gpu_state = PREPARE_LINE then
+              if end_vector = x"ffffffffffffffff" then
+                -- Last line in object was found. Parse next object.
+                gpu_state <= READ_OBJECT;
+              else
+                -- Calculate pre-conditions for the line algorithm.
+                dx <= abs(screen_end(0) - screen_start(0));
+                dy <= abs(screen_end(1) - screen_start(1));
+                x <= (others => '0');
+                y <= (others => '0');
+                i <= (others => '0');
+                
+                gpu_state <= START_LINE;
+              end if;
+            elsif gpu_state = START_LINE then
+              -- Finalize pre-conditions. Loop over the longest axis.
+              if dx > dy then
+                len <= dx;
+                D <= 2 * dy - dx;
+              else
+                len <= dy;
+                D <= 2 * dx - dy;
+              end if;
+
+              gpu_state <= DRAW_LINE_PIXEL;
+            elsif gpu_state = DRAW_LINE_PIXEL then
+              -- The current x and y values are sent to the pixel memory while
+              -- this state is active.
+              
+              if i >= len then
+                -- Stop looping when all pixels on the chosen axis has been processed.
+                gpu_state <= PREPARE_NEXT_LINE;
+              else
+                if D > 0 then
+                  -- Increase the opposite axis if the algorithm says so.
+                  if dx > dy then
+                    y <= y + y_incr;
+                    D <= D - 2 * dx;
+                  else
+                    x <= x + x_incr;
+                    D <= D - 2 * dy;
+                  end if;
                 end if;
-            elsif gpu_state = WAIT_FOR_COMB then
-                if delay_counter = "111" then
-                    gpu_state <= CALC_PIXELS;
-                else
-                    delay_counter <= delay_counter + 1;
-                end if;
-            elsif gpu_state = CALC_PIXELS then
-                if current_pixel(0) > draw_end(0) then
-                    gpu_state <= PREPARE_NEXT_LINE;
-                else
-                    current_pixel(0) <= current_pixel(0) + 1;
-                    if draw_d_var >= 0 then
-                        current_pixel(1) <= current_pixel(1) + 1;
-                        draw_d_var <= draw_d_var + draw_end(1) - draw_end(0);
-                    else
-                        draw_d_var <= draw_d_var + draw_end(1);
-                    end if;
-                end if;
+
+                gpu_state <= PREPARE_NEXT_LINE_PIXEL;
+              end if;
+            elsif gpu_state = PREPARE_NEXT_LINE_PIXEL then
+              -- Increase the loop index as well as the current position along the
+              -- loop axis before drawing the next pixel.
+              i <= i + 1;
+              if dx > dy then
+                x <= x + x_incr;
+                D <= D + 2 * dy;
+              else
+                y <= y + y_incr;
+                D <= D + 2 * dx;
+              end if;
+
+              gpu_state <= DRAW_LINE_PIXEL;
             elsif gpu_state = PREPARE_NEXT_LINE then
                 line_start_addr <= line_start_addr + 2;
 
@@ -324,55 +502,24 @@ begin
             end if;
         end if;
     end process;
-    
-    --###########################################################################
-    --                   Octant transform code
-    --###########################################################################
-    octant_selector(2) <= '1' when draw_diff(0) > 0 else '0';
-    octant_selector(1) <= '1' when draw_diff(1) > 0 else '0';
-    octant_selector(0) <= '1' when abs(draw_diff(0)) > abs(draw_diff(1)) else '0';
-    
-    with octant_selector select
-        octant <= "000" when "111",
-                  "001" when "110",
-                  "010" when "010",
-                  "011" when "011",
-                  "100" when "001",
-                  "101" when "000",
-                  "110" when "100",
-                  "111" when others;
 
-    draw_start <= (to_signed(0, 16), to_signed(0, 16), to_signed(0, 16), to_signed(0, 16));
-    with octant select
-        draw_end   <= (x"0000", x"0000", draw_diff(1), draw_diff(0)) when "000",
-                      (x"0000", x"0000", draw_diff(0), draw_diff(1)) when "001",
-                      (x"0000", x"0000",-draw_diff(0), draw_diff(1)) when "010",
-                      (x"0000", x"0000", draw_diff(1),-draw_diff(0)) when "011",
-                      (x"0000", x"0000",-draw_diff(1),-draw_diff(0)) when "100",
-                      (x"0000", x"0000",-draw_diff(0),-draw_diff(1)) when "101",
-                      (x"0000", x"0000", draw_diff(0),-draw_diff(1)) when "110",
-                      (x"0000", x"0000",-draw_diff(1), draw_diff(0)) when others;
+    -- Direction from line start to line end.
+    x_incr <= to_signed(1, 16) when screen_end(0) > screen_start(0) else to_signed(-1, 16);
+    y_incr <= to_signed(1, 16) when screen_end(1) > screen_start(1) else to_signed(-1, 16);
 
+    -- Complete x and y positions to render to pixel memory.
+    x_out <= obj_position(0) + screen_start(0) + x;
+    y_out <= obj_position(1) + screen_start(1) + y;
 
-    with octant select
-        pixel_out <=  (x"0000", x"0000", obj_position(1) + screen_start(1) + current_pixel(1), obj_position(0) + screen_start(0) + current_pixel(0)) when "000",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) + current_pixel(0), obj_position(0) + screen_start(0) + current_pixel(1)) when "001",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) + current_pixel(0), obj_position(0) + screen_start(0) - current_pixel(1)) when "010",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) + current_pixel(1), obj_position(0) + screen_start(0) - current_pixel(0)) when "011",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) - current_pixel(1), obj_position(0) + screen_start(0) - current_pixel(0)) when "100",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) - current_pixel(0), obj_position(0) + screen_start(0) - current_pixel(1)) when "101",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) - current_pixel(0), obj_position(0) + screen_start(0) + current_pixel(1)) when "110",
-                      (x"0000", x"0000", obj_position(1) + screen_start(1) - current_pixel(1), obj_position(0) + screen_start(0) + current_pixel(0)) when others;
-
-    pixel_address(16 downto 8) <= std_logic_vector(pixel_out(0)(8 downto 0));
-    pixel_address(7 downto 0) <= std_logic_vector(pixel_out(1)(7 downto 0));
+    pixel_address(16 downto 8) <= std_logic_vector(x_out(8 downto 0));
+    pixel_address(7 downto 0) <= std_logic_vector(y_out(7 downto 0));
     pixel_data <= '1';
 
-    pixel_write_enable <= '1' when gpu_state = CALC_PIXELS and 
-                          pixel_out(0) > 0 and
-                          pixel_out(1) > 0 and
-                          pixel_out(0) < 321 and
-                          pixel_out(1) < 241
+    pixel_write_enable <= '1' when gpu_state = DRAW_LINE_PIXEL and 
+                          x_out > 0 and
+                          y_out > 0 and
+                          x_out < 321 and
+                          y_out < 241
                     else '0';
 
 end Behavioral;
