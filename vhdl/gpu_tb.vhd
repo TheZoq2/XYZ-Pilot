@@ -104,7 +104,7 @@ architecture Behavioral of gpu_tb is
     signal obj_mem_data: GPU_Info.ObjData_t;
 begin
     uut_len: gpu PORT MAP(
-            clk => gpu_clk,
+            clk => clk,
             obj_mem_data  => obj_mem_data,
             obj_mem_addr => obj_mem_addr,
             vga_done => vga_done,

@@ -45,7 +45,9 @@ architecture Behavioral of GPU is
                             WAIT_FOR_COMB,
                             CALC_PIXELS,
                             PREPARE_NEXT_LINE,
-                            WAIT_FOR_VGA
+                            WAIT_FOR_VGA,
+
+                            CALC_TRIG
                         );
     signal gpu_state: gpu_state_type := READ_OBJECT;
 
@@ -97,6 +99,16 @@ architecture Behavioral of GPU is
 
     signal calc_angle: unsigned(7 downto 0) := x"00";
     signal sin_val: datatypes.small_number_t;
+
+    signal trig_calc_stage: unsigned(2 downto 0) := (others => '0');
+
+    signal sin_a: datatypes.small_number_t;
+    signal sin_b: datatypes.small_number_t;
+    signal sin_c: datatypes.small_number_t;
+
+    signal cos_a: datatypes.small_number_t;
+    signal cos_b: datatypes.small_number_t;
+    signal cos_c: datatypes.small_number_t;
 
     component VectorSubtractor is
         port(
@@ -203,7 +215,7 @@ begin
                     if obj_mem_data = x"ffffffffffffffff" then 
                         gpu_state <= WAIT_FOR_VGA;
                     else
-                        gpu_state <= FETCH_LINE;
+                        gpu_state <= CALC_TRIG;
                     end if;
                 else
                     current_obj_offset <= current_obj_offset + 1;
@@ -219,6 +231,34 @@ begin
                 elsif current_obj_offset = 1 then
                     obj_position <=  obj_mem_vec;
                 end if;
+            elsif gpu_state = CALC_TRIG then
+
+                trig_calc_stage <= trig_calc_stage + 1;
+                --Do the actual calculations
+                case trig_calc_stage is
+                    when "000" =>
+                        calc_angle <= unsigned(obj_angle(0)(7 downto 0));
+                    when "001" =>
+                        calc_angle <= unsigned(obj_angle(1)(7 downto 0));
+                        sin_a <= sin_val;
+                    when "010" =>
+                        calc_angle <= unsigned(obj_angle(2)(7 downto 0));
+                        sin_b <= sin_val;
+                    when "011" =>
+                        calc_angle <= unsigned(obj_angle(0)(7 downto 0) + 64);
+                        sin_c <= sin_val;
+                    when "100" =>
+                        calc_angle <= unsigned(obj_angle(1)(7 downto 0) + 64);
+                        cos_a <= sin_val;
+                    when "101" =>
+                        calc_angle <= unsigned(obj_angle(2)(7 downto 0) + 64);
+                        cos_b <= sin_val;
+                    when "110" =>
+                        cos_c <= sin_val;
+                    when others =>
+                        gpu_state <= FETCH_LINE;
+                        trig_calc_stage <= (others => '0');
+                end case;
             elsif gpu_state = FETCH_LINE then
                 --Wait for model memory to update the data
                 if fetch_line_state = Line_Fetch_State.SET_START then
