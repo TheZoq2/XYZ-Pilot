@@ -338,7 +338,7 @@ begin
                 case rotation_calc_stage is
                     when "00000" => --cos(a)*cos(b) * x
                         trig_in_1 <= cos_b;
-                        trig_in_2 <= cos_a;
+                        trig_in_2 <= sin_c;
                         big_mult_num <= current_rotated_vector(0);
 
                         big_mul_in_selector <= SEL_TRIG_RESULT;
@@ -371,7 +371,7 @@ begin
                     when "00111" => --Store in buff, calcl sin(a)*sin(c)
                         trig_buff <= trig_result;
                         trig_in_1 <= sin_a;
-                        trig_in_2 <= sin_b;
+                        trig_in_2 <= sin_c;
                     when "01000" =>  --Part1 + part2. Start y element
                         big_mul_in_selector <= SEL_TRIG_BUFF;
                         big_mult_num <= current_rotated_vector(2);
