@@ -380,7 +380,7 @@ begin
                 case rotation_calc_stage is
                     when "00000" => --cos(a)*cos(b) * x
                         trig_in_1 <= cos_b;
-                        trig_in_2 <= sin_c;
+                        trig_in_2 <= cos_c;
                         big_mult_num <= current_rotated_vector(0);
 
                         big_mul_in_selector <= SEL_TRIG_RESULT;
@@ -407,7 +407,7 @@ begin
                         current_coord <= current_coord + big_mult_result;
 
                         trig_in_1 <= cos_a;
-                        trig_in_2 <= cos_c;
+                        trig_in_2 <= sin_c;
                     when "00110" => --Old result * sin(b)
                         trig_in_1 <= trig_result;
                         trig_in_2 <= sin_b;
