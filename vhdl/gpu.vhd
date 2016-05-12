@@ -246,9 +246,9 @@ begin
                           line_start_addr + 1 when others;
 
     --Change between calculating the rotation of the start or end vector
-    current_rotated_vector <= raw_start when calc_rotation_start_or_end = '1' else raw_end;
-    screen_start <= rotation_result when calc_rotation_start_or_end = '1' else screen_start;
-    screen_end <= rotation_result when calc_rotation_start_or_end = '0' else screen_end;
+    current_rotated_vector <= raw_start when calc_rotation_start_or_end = '1' and gpu_state = CALC_ROTATED else raw_end;
+    screen_start <= rotation_result when calc_rotation_start_or_end = '1' and gpu_state = CALC_ROTATED else screen_start;
+    screen_end <= rotation_result when calc_rotation_start_or_end = '0' and gpu_state = CALC_ROTATED else screen_end;
     
     big_mul_trig_in <= trig_result when big_mul_in_selector = SEL_TRIG_RESULT else trig_buff;
 
