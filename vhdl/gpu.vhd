@@ -405,7 +405,7 @@ begin
                         current_coord <= current_coord + big_mult_result;
 
                         trig_in_1 <= cos_a;
-                        trig_in_2 <= sin_c;
+                        trig_in_2 <= cos_c;
                     when "00110" => --Old result * sin(b)
                         trig_in_1 <= trig_result;
                         trig_in_2 <= sin_b;
@@ -419,10 +419,11 @@ begin
 
                         trig_buff <= add_small_num(trig_buff, trig_result);
                         
-                        big_mul_in_selector <= SEL_TRIG_RESULT;
+                        big_mul_in_selector <= SEL_TRIG_BUFF;
                     when "01001" => --Start the y element and store the x element
                         rotation_result(0) <= current_coord + big_mult_result;
 
+                        big_mul_in_selector <= SEL_TRIG_RESULT;
                         big_mult_num <= current_rotated_vector(0);
                         trig_in_1 <= cos_b;
                         trig_in_2 <= sin_c;
