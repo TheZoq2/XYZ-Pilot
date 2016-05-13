@@ -132,6 +132,9 @@ constant ble_op_code       : std_logic_vector(7 downto 0)  := X"12";
 constant storeobj_op_code       : std_logic_vector(7 downto 0)  := X"13";
 constant waitframe_op_code       : std_logic_vector(7 downto 0)  := X"14";
 constant btst_op_code       : std_logic_vector(7 downto 0)  := X"15";
+constant load_rel_op_code : std_logic_vector(7 downto 0) := X"16";
+constant store_rel_op_code : std_logic_vector(7 downto 0) := X"17";
+constant and_op_code : std_logic_vector(7 downto 0) := X"18";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
@@ -224,8 +227,10 @@ begin
 
       case ir1_op is
         when store_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
+        when store_rel_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));                              
         when storeobj_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
         when load_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
+        when load_rel_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));                             
         when cmp_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
         when others => d_1 <= reg_file(conv_integer(ir1_reg3));
       end case;
@@ -247,7 +252,9 @@ begin
                      ir2_op = movhi_op_code or 
                      ir2_op = movlo_op_code or
                      ir2_op = store_op_code or
-                     ir2_op = load_op_code or 
+                     ir2_op = store_rel_op_code or
+                     ir2_op = load_op_code or
+                     ir2_op = load_rel_op_code or
                      ir2_op = btst_op_code else
            d_1;
 
@@ -282,6 +289,8 @@ begin
                alu_2(63 downto 32) & alu_1(31 downto 0) when movlo_op_code,
                alu_1 when store_op_code,
                alu_1 when load_op_code,
+               alu_1 + alu_2 when load_rel_op_code,
+               alu_1 + alu_2 when store_rel_op_code,
                alu_2 - alu_1 when sub_op_code,
                alu_2 - alu_1 when subi_op_code,
                --mult_result(63 downto 0) when mult_op_code,
@@ -289,7 +298,9 @@ begin
                vec_merge_out when vecadd_op_code,
                vec_merge_out when vecsub_op_code,
                alu_1 when storeobj_op_code,
+               alu_1 and alu_2 when and_op_code,
                X"0000000000000000" when others;
+
   sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) or 
                   (ir2_op=btst_op_code and alu_2(conv_integer(alu_1)) = '1') else
         "01" when (ir2_op=cmp_op_code and alu_1<alu_2) else
@@ -315,7 +326,7 @@ begin
   begin
     if rising_edge(clk) then
       d_4 <= d_3;
-      if(ir3_op = store_op_code) then
+      if(ir3_op = store_op_code) or (ir3_op = store_rel_op_code) then
         data_mem(conv_integer(d_3(9 downto 0))) <= z_3;
       else
         z_4 <= data_mem(conv_integer(d_3(9 downto 0)));
@@ -326,12 +337,15 @@ begin
 
   ---- 5. WB ----
   write_reg <= z_4 when ir4_op = load_op_code else
+               z_4 when ir4_op = load_rel_op_code else
                d_4;
-  -- Writing back to register file
+  
+  -- Writing back to register file 
   process(clk)
   begin
     if rising_edge(clk) then
-      if ir4_op = load_op_code or 
+      if ir4_op = load_op_code or
+      ir4_op = load_rel_op_code or
       ir4_op = movhi_op_code or 
       ir4_op = movlo_op_code or 
       ir4_op = add_op_code or 
@@ -341,6 +355,7 @@ begin
       ir4_op = mult_op_code or
       ir4_op = multi_op_code or
       ir4_op = vecadd_op_code or
+      ir4_op = and_op_code or 
       ir4_op = vecsub_op_code then
         reg_file(conv_integer(ir4_reg1)) <= write_reg;
       elsif frame_done = '1' then
