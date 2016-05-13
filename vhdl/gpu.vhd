@@ -104,8 +104,8 @@ architecture Behavioral of GPU is
     --Decides which vector register in the gpu to write the current line in the model memory  to
     signal set_start_or_end: std_logic := '0';
 
-    signal start_vector: work.Vector.InMemory_t;
-    signal end_vector: work.Vector.InMemory_t;
+    signal start_vector: work.Vector.InMemory_t := (others => '0');
+    signal end_vector: work.Vector.InMemory_t := (others => '0');
 
     signal screen_start: Vector.Elements_t;
     signal screen_end: Vector.Elements_t;
@@ -289,8 +289,6 @@ begin
 
     --Change between calculating the rotation of the start or end vector
     current_rotated_vector <= raw_start when calc_rotation_start_or_end = '1' and gpu_state = CALC_ROTATED else raw_end;
-    screen_start <= rotation_result when calc_rotation_start_or_end = '1' and gpu_state = CALC_ROTATED else screen_start;
-    screen_end <= rotation_result when calc_rotation_start_or_end = '0' and gpu_state = CALC_ROTATED else screen_end;
     
     big_mul_trig_in <= trig_result when big_mul_in_selector = SEL_TRIG_RESULT else trig_buff;
 
@@ -467,7 +465,10 @@ begin
                         rotation_result(1) <= current_coord + big_mult_Result;
                     when others =>
                         if calc_rotation_start_or_end = '1' then
+                            screen_end <= rotation_result;
                             gpu_state <= PREPARE_LINE;
+                        else
+                            screen_start <= rotation_result;
                         end if;
 
                         calc_rotation_start_or_end <= not calc_rotation_start_or_end;
