@@ -158,6 +158,16 @@ type ram_t is array (0 to 511) of Vector.InMemory_t;
     109 => x"fff9fffb00010000",
     110 => x"ffffffffffffffff",
     111 => x"ffffffffffffffff",
+    112 => x"0000000000000000",
+    113 => x"0000000600000000",
+    114 => x"0000000000000000",
+    115 => x"0006000000000000",
+    116 => x"0000000000000000",
+    117 => x"fffa000000000000",
+    118 => x"0000000000000000",
+    119 => x"0000fffa00000000",
+    120 => x"ffffffffffffffff",
+    121 => x"ffffffffffffffff",
         others => (others => '0'));
 
 begin
