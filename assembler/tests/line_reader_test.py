@@ -1,6 +1,7 @@
 import unittest
 
 from parsing.line_reader import LineReader
+from parts.Alias import Alias
 from parts.Comment import Comment
 from parts.Instruction import Instruction
 from parts.Label import Label
@@ -127,3 +128,16 @@ class WhileLoopTest(unittest.TestCase):
         part = LineReader('    ENDWHILE   ', 1).parse()
         self.failUnless(isinstance(part, LoopEnd))
 
+
+class AliasTest(unittest.TestCase):
+    def test_alias_normal(self):
+        part = LineReader('ALIAS 0 FOO', 1).parse()
+        self.failUnless(isinstance(part, Alias))
+        self.failUnless(part.register == '0')
+        self.failUnless(part.name == 'FOO')
+
+    def test_alias_extra_space(self):
+        part = LineReader('   ALIAS    0   FOO  ', 1).parse()
+        self.failUnless(isinstance(part, Alias))
+        self.failUnless(part.register == '0')
+        self.failUnless(part.name == 'FOO')

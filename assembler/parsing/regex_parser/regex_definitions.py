@@ -1,3 +1,4 @@
+from parts.Alias import Alias
 from parts.Comment import Comment
 from parts.IfEnd import IfEnd
 from parts.IfStart import IfStart
@@ -29,3 +30,4 @@ define(InvertedLoopStart, r'\s*WHILE\s+(\S+)\s*!=\s*(\S+)\s*')
 define(LoopEnd, r'\s*ENDWHILE\s*')
 define(IfStart, r'\s*IF\s*(\S+)\s*==\s*(\S+)\s*')
 define(IfEnd, r'\s*ENDIF\s*')
+define(Alias, r'\s*ALIAS\s+([0-9]+)\s+(\S+)\s*')
