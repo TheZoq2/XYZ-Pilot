@@ -1,6 +1,8 @@
 from compiler.mapper import Mapper
 from parts.Alias import Alias
+from parts.IfStart import IfStart
 from parts.Instruction import Instruction
+from parts.LoopStart import LoopStart
 
 
 class AliasMapper(Mapper):
@@ -31,6 +33,11 @@ class AliasMapper(Mapper):
             for i in range(len(part.args)):
                 if part.args[i] in self.aliases:
                     part.args[i] = self.aliases[part.args[i]]
+        elif isinstance(part, IfStart) or isinstance(part, LoopStart):
+            if part.lhs in self.aliases:
+                part.lhs_register = int(self.aliases[part.lhs], 16)
+            if part.rhs in self.aliases:
+                part.rhs_register = int(self.aliases[part.rhs], 16)
 
     def apply_part(self, part):
         pass
