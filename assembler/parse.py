@@ -53,7 +53,7 @@ def main():
     if len(argv) > 1:
         filename = argv[1]
     else:
-        filename = '../test.asm.out'
+        filename = 'test.asm.out'
 
     current_address = 0
     rows = []
