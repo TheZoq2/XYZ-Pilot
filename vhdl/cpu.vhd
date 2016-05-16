@@ -136,7 +136,7 @@ constant load_rel_op_code : std_logic_vector(7 downto 0) := X"16";
 constant store_rel_op_code : std_logic_vector(7 downto 0) := X"17";
 constant and_op_code : std_logic_vector(7 downto 0) := X"18";
 constant lsli_op_code : std_logic_vector(7 downto 0) := X"19";
-constant lsri_op_code : std_logic_vector(7 downto 0) := X"12";
+constant lsri_op_code : std_logic_vector(7 downto 0) := X"1A";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
