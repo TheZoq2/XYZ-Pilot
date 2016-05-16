@@ -304,8 +304,8 @@ begin
                vec_merge_out when vecsub_op_code,
                alu_1 when storeobj_op_code,
                alu_1 and alu_2 when and_op_code,
-               std_logic_vector(shift_left(unsigned(alu_1), to_integer(unsigned(alu_2)))) when lsli_op_code,
-               std_logic_vector(shift_right(unsigned(alu_1), to_integer(unsigned(alu_2)))) when lsri_op_code,
+               std_logic_vector(shift_left(unsigned(alu_2), conv_integer(alu_1))) when lsli_op_code,
+               std_logic_vector(shift_right(unsigned(alu_2), conv_integer(alu_1))) when lsri_op_code,
                X"0000000000000000" when others;
 
   sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) or 
@@ -365,7 +365,8 @@ begin
       ir4_op = and_op_code or 
       ir4_op = lsli_op_code or
       ir4_op = lsri_op_code or
-      ir4_op = vecsub_op_code then
+      ir4_op = vecsub_op_code or
+      ir4_op = and_op_code then
         reg_file(conv_integer(ir4_reg1)) <= write_reg;
       elsif frame_done = '1' then
         reg_file(15) <= X"00000000000000" & '0' & kbd_reg;

@@ -60,6 +60,18 @@ ITER:
     ADD 0 0 4
     STOREOBJ 0 0
   UPDATEASTEROIDS:
+    X = 0
+    CURRENTASTEROID = ARRAYSTART
+    
+    WHILE X != ARRAYSIZE
+    
+
+    # X++
+    LOAD A X
+    ADDI A A 1
+    STORE A X
+    
+    ENDWHILE
     
   
   WAITFRAME
