@@ -22,7 +22,7 @@ class LoopStart(Part):
         self.end_address = None
 
     def occupied_addresses(self):
-        address_count = 3
+        address_count = 2
         if self.lhs_register == LoopStart.USED_REGISTER_LHS:
             address_count += 1
         if self.rhs_register == LoopStart.USED_REGISTER_RHS:
@@ -32,7 +32,6 @@ class LoopStart(Part):
 
     def get_bytes(self):
         instructions = []
-        instructions += generate_instruction_bytes(get_op_code('NOP'))
 
         if self.lhs_register == LoopStart.USED_REGISTER_LHS:
             instructions += generate_instruction_bytes(get_op_code('LOAD'), LoopStart.USED_REGISTER_LHS,

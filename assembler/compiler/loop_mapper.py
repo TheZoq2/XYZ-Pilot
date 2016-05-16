@@ -19,7 +19,7 @@ class LoopMapper(Mapper):
                 self.fail('Error: Unexpected ENDWHILE. Loop was never opened')
             else:
                 loop_start = self.while_constructs.pop()
-                loop_start.end_address = self.address + 1  # TODO: Verify if this is needed. Same situation as NOPs
+                loop_start.end_address = self.address + 1
                 part.start_address = loop_start.address
 
     def apply_part(self, part):
