@@ -5,7 +5,7 @@ from specification.instruction_spec import get_op_code
 
 
 class Variable(Part):
-    USED_REGISTER = 0xF
+    USED_REGISTER = 0xE
 
     def __init__(self, name, value):
         self.label = name

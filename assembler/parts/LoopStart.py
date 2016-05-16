@@ -3,8 +3,8 @@ from specification.instruction_spec import get_op_code, generate_instruction_byt
 
 
 class LoopStart(Part):
-    USED_REGISTER_LHS = 0xE
-    USED_REGISTER_RHS = 0xF
+    USED_REGISTER_LHS = 0xD
+    USED_REGISTER_RHS = 0xE
     BRANCH_MAP = {
         '=': 'BNE',
         '!': 'BEQ',
