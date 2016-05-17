@@ -205,10 +205,10 @@ end entity;
 
 architecture Behavioral of VectorDot is
 begin
-    result <= (vec1(0) + vec2(0)) * 
-              (vec1(1) + vec2(1)) *
-              (vec1(2) + vec2(2)) *
-              (vec1(3) + vec2(3));
+    result <= x"00000000" & (vec1(0) * vec2(0)) + 
+                  (vec1(1) * vec2(1)) +
+                  (vec1(2) * vec2(2)) +
+                  (vec1(3) * vec2(3));
 end behavioral;
 
 --########################################################
