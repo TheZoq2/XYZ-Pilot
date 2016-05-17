@@ -1,6 +1,6 @@
 NOP
 
-i = 0
+i = 1
 num = A
 offset = 0
 
@@ -16,8 +16,7 @@ LOAD 2 POSVEC
 LOAD 3 ADDVEC
 LOAD 4 NULLVEC
 
-# Following statement logic is reveresed (i <= num)
-WHILE num <= i
+WHILE i <= num
   VECADD POSVEC POSVEC ADDVEC
   STOREOBJ.R POSVEC offset 0
   STOREOBJ.R NULLVEC offset 1
