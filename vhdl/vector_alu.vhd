@@ -187,6 +187,31 @@ end Behavioral;
 
 
 --########################################################
+--             Vector dot  product
+--########################################################
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
+
+use work.Vector;
+
+entity VectorDot is
+    port(
+            vec1: in Vector.Elements_t;
+            vec2: in Vector.Elements_t;
+            result: out signed(63 downto 0)
+        );
+end entity;
+
+architecture Behavioral of VectorDot is
+begin
+    result <= (vec1(0) + vec2(0)) * 
+              (vec1(1) + vec2(1)) *
+              (vec1(2) + vec2(2)) *
+              (vec1(3) + vec2(3));
+end behavioral;
+
+--########################################################
 --             Vector splitter / merger
 --########################################################
 library IEEE;
