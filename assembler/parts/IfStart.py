@@ -8,8 +8,8 @@ class IfStart(Part):
     BRANCH_MAP = {
         '=': 'BNE',
         '!': 'BEQ',
-        '>': 'BLE',
-        '<': 'BGE'
+        '>': 'BGE',
+        '<': 'BLE'
     }
 
     def __init__(self, lhs, compare_type, rhs):
