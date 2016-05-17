@@ -6,6 +6,7 @@ use IEEE.NUMERIC_STD.ALL;               -- IEEE library for the unsigned type
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 use work.Vector;                        -- Vector package
+use work.Datatypes;
 
 
 -- entity
@@ -58,6 +59,21 @@ component VectorSubtractor is
         );
 end component;
 
+component cos_table is
+    port(
+        angle: in unsigned(7 downto 0);
+        result: out datatypes.small_number_t
+    );
+end component;
+
+component FractionalMultiplyer is
+    port(
+        big_num: in Datatypes.std_number_t;
+        small_num: in Datatypes.small_number_t;
+        result: out Datatypes.std_number_t
+    );
+end component;
+
 --COUNTER--
 signal nop_counter : std_logic_vector(1 downto 0) := "00";
 
@@ -102,6 +118,12 @@ signal vec_sub_in1 : Vector.Elements_t;
 signal vec_sub_in2 : Vector.Elements_t;
 signal vec_sub_res : Vector.Elements_t;
 
+-- Signals connecting the cos calculator
+signal cos_angle: unsigned(7 downto 0);
+signal cos_big_num: datatypes.std_number_t;
+signal cos_result: datatypes.small_number_t;
+signal cos_mul_result: datatypes.std_number_t;
+
 type register_t is array (0 to 15) of std_logic_vector(63 downto 0);
 signal reg_file : register_t := (others =>(others=>'0'));   
 
@@ -136,8 +158,9 @@ constant load_rel_op_code : std_logic_vector(7 downto 0) := X"16";
 constant store_rel_op_code : std_logic_vector(7 downto 0) := X"17";
 constant and_op_code : std_logic_vector(7 downto 0) := X"18";
 constant lsli_op_code : std_logic_vector(7 downto 0) := X"19";
-constant lsri_op_code : std_logic_vector(7 downto 0) := X"12";
-constant storeobj_rel_op_code : std_logic_vector(7 downto 0) := X"1B";
+constant lsri_op_code : std_logic_vector(7 downto 0) := X"1A";
+constant mulcos_op_code : std_logic_vector(7 downto 0) := X"1B";
+constant storeobj_rel_op_code : std_logic_vector(7 downto 0) := X"1C";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
@@ -157,7 +180,6 @@ alias ir4_data				: std_logic_vector(31 downto 0) is ir4(43 downto 12);
 
 signal wait_for_next_frame : std_logic := '0';
 
-
 begin
 
   vec_split1 : VectorSplitter port map(memory=>vec_split_in1, vec=>vec_split_out1);
@@ -165,6 +187,16 @@ begin
   vec_add : VectorAdder port map(vec1=>vec_add_in1,vec2=>vec_add_in2,result=>vec_add_res);
   vec_sub : VectorSubtractor port map(vec1=>vec_sub_in1,vec2=>vec_sub_in2,result=>vec_sub_res);
   vec_merge : VectorMerger port map(memory=>vec_merge_out,vec=>vec_merge_in);
+
+  cos_lut : cos_table port map (
+          angle => cos_angle,
+          result => cos_result
+      );
+  cos_mult : FractionalMultiplyer port map (
+          big_num => cos_big_num,
+          small_num => cos_result,
+          result => cos_mul_result
+      );
 
   pc_out <= pc;
   --debuginfo <= reg_file(0)(51 downto 48) & 
@@ -268,6 +300,9 @@ begin
            d_1;
 
   -- ALU --
+  cos_angle <= unsigned(d_1(7 downto 0));
+  cos_big_num <= signed(d_2(15 downto 0));
+
 
   -- Multiplication
   --mult_result <= alu_1 * alu_2;
@@ -309,8 +344,9 @@ begin
                alu_1 when storeobj_op_code,
                alu_1 + alu_2 when storeobj_rel_op_code,
                alu_1 and alu_2 when and_op_code,
-               std_logic_vector(shift_left(unsigned(alu_1), to_integer(unsigned(alu_2)))) when lsli_op_code,
-               std_logic_vector(shift_right(unsigned(alu_1), to_integer(unsigned(alu_2)))) when lsri_op_code,
+               std_logic_vector(shift_left(unsigned(alu_2), conv_integer(alu_1))) when lsli_op_code,
+               std_logic_vector(shift_right(unsigned(alu_2), conv_integer(alu_1))) when lsri_op_code,
+               x"000000000000" & std_logic_vector(cos_big_num) when mulcos_op_code,
                X"0000000000000000" when others;
 
   sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) or 
@@ -370,6 +406,8 @@ begin
       ir4_op = and_op_code or 
       ir4_op = lsli_op_code or
       ir4_op = lsri_op_code or
+      ir4_op = mulcos_op_code or
+      ir4_op = and_op_code or
       ir4_op = vecsub_op_code then
         reg_file(conv_integer(ir4_reg1)) <= write_reg;
       elsif frame_done = '1' then

@@ -1,8 +1,8 @@
+from parts.Alias import Alias
 from parts.Comment import Comment
 from parts.IfEnd import IfEnd
 from parts.IfStart import IfStart
 from parts.Instruction import Instruction
-from parts.InvertedLoopStart import InvertedLoopStart
 from parts.Label import Label
 from parts.LoopEnd import LoopEnd
 from parts.LoopStart import LoopStart
@@ -24,8 +24,8 @@ define(Instruction, r'\s*(\S+)(\s*\S+)?(\s*\S+)?(\s*\S+)?(\s*\S+)?\s*')
 define(Label, r'\s*(\S+):\s*')
 define(NoOp, r'\s*')
 define(Variable, r'\s*(\S+)\s*=\s*(\S+)\s*')
-define(LoopStart, r'\s*WHILE\s+(\S+)\s*==\s*(\S+)\s*')
-define(InvertedLoopStart, r'\s*WHILE\s+(\S+)\s*!=\s*(\S+)\s*')
+define(LoopStart, r'\s*WHILE\s+(\S+)\s*(=|!|>|<)=\s*(\S+)\s*')
 define(LoopEnd, r'\s*ENDWHILE\s*')
-define(IfStart, r'\s*IF\s*(\S+)\s*==\s*(\S+)\s*')
+define(IfStart, r'\s*IF\s*(\S+)\s*(=|!|>|<)=\s*(\S+)\s*')
 define(IfEnd, r'\s*ENDIF\s*')
+define(Alias, r'\s*ALIAS\s+([0-9]+)\s+(\S+)\s*')

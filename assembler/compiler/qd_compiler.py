@@ -1,3 +1,4 @@
+from compiler.alias_mapper import AliasMapper
 from compiler.if_mapper import IfMapper
 from compiler.label_mapper import LabelMapper
 from compiler.loop_mapper import LoopMapper
@@ -9,6 +10,7 @@ class QuickAndDirtyCompiler(object):
         self.filename = filename
         self.parts = []
         self.mappers = [
+            AliasMapper(),
             LabelMapper(),
             LoopMapper(),
             IfMapper()

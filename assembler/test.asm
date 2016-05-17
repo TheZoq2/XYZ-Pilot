@@ -35,6 +35,23 @@ WHILE i != len
     ENDIF
 ENDWHILE
 
+# Alias functionality demo
+x = 10
+y = 20
+z = 0
+
+# Implicit generation of 'ALIAS 0 x' and 'ALIAS 1 y'
+LOAD 0 x
+LOAD 1 y
+
+ALIAS 2 z
+
+# Perform artitmetics x + y and store in register z
+ADD z x y
+
+# Store z register in z variable
+STORE z z
+
 # Infinite loop
 LOOP:
     BRA LOOP
