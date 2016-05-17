@@ -45,7 +45,8 @@ architecture Behavioral of ModelMem is
 type ram_t is array (0 to 511) of Vector.InMemory_t;
 
     -- Nollställ alla bitar på alla adresser
-    signal ram : ram_t := (
+    signal ram : ram_t := ( 
+    -- Start of ship
     0 => x"000e0000fffd0000",
     1 => x"000e000000020000",
     2 => x"ffeb000000000000",

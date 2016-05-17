@@ -158,7 +158,7 @@ constant load_rel_op_code : std_logic_vector(7 downto 0) := X"16";
 constant store_rel_op_code : std_logic_vector(7 downto 0) := X"17";
 constant and_op_code : std_logic_vector(7 downto 0) := X"18";
 constant lsli_op_code : std_logic_vector(7 downto 0) := X"19";
-constant lsri_op_code : std_logic_vector(7 downto 0) := X"12";
+constant lsri_op_code : std_logic_vector(7 downto 0) := X"1A";
 constant mulcos_op_code : std_logic_vector(7 downto 0) := X"1B";
 
 -- ALIASES --
@@ -339,9 +339,8 @@ begin
                vec_merge_out when vecsub_op_code,
                alu_1 when storeobj_op_code,
                alu_1 and alu_2 when and_op_code,
-
-               std_logic_vector(shift_left(unsigned(alu_1), to_integer(unsigned(alu_2)))) when lsli_op_code,
-               std_logic_vector(shift_right(unsigned(alu_1), to_integer(unsigned(alu_2)))) when lsri_op_code,
+               std_logic_vector(shift_left(unsigned(alu_2), conv_integer(alu_1))) when lsli_op_code,
+               std_logic_vector(shift_right(unsigned(alu_2), conv_integer(alu_1))) when lsri_op_code,
                x"000000000000" & std_logic_vector(cos_big_num) when mulcos_op_code,
                X"0000000000000000" when others;
 
@@ -403,6 +402,7 @@ begin
       ir4_op = lsli_op_code or
       ir4_op = lsri_op_code or
       ir4_op = mulcos_op_code or
+      ir4_op = and_op_code or
       ir4_op = vecsub_op_code then
         reg_file(conv_integer(ir4_reg1)) <= write_reg;
       elsif frame_done = '1' then

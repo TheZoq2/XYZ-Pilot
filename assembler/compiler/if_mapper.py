@@ -18,7 +18,7 @@ class IfMapper(Mapper):
                 self.fail('Error: Unexpected ENDIF. If statement was never opened')
             else:
                 if_start = self.if_constructs.pop()
-                if_start.end_address = self.address + 1  # TODO: Verify if this is needed. Same situation as NOPs
+                if_start.end_address = self.address
 
     def apply_part(self, part):
         pass
