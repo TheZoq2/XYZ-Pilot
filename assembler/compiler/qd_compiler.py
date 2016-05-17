@@ -4,6 +4,8 @@ from compiler.label_mapper import LabelMapper
 from compiler.loop_mapper import LoopMapper
 from parsing.line_reader import LineReader
 
+import sys
+
 
 class QuickAndDirtyCompiler(object):
     def __init__(self, filename):
@@ -21,12 +23,14 @@ class QuickAndDirtyCompiler(object):
             for mapper in self.mappers:
                 if not mapper.map(self.parts):
                     print('Compilation finished with errors')
+                    sys.exit(-1)
                     return
 
             self.output()
             print('Compilation success')
         else:
             print('Compilation finished with errors')
+            sys.exit(-1)
 
     def parse(self):
         line_no = 0
