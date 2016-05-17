@@ -296,8 +296,8 @@ begin
            d_1;
 
   -- ALU --
-  cos_angle <= unsigned(d_1(7 downto 0));
-  cos_big_num <= signed(d_2(15 downto 0));
+  cos_angle <= unsigned(alu_2(7 downto 0));
+  cos_big_num <= signed(alu_1(15 downto 0));
 
 
   -- Multiplication
@@ -341,7 +341,7 @@ begin
                alu_1 and alu_2 when and_op_code,
                std_logic_vector(shift_left(unsigned(alu_2), conv_integer(alu_1))) when lsli_op_code,
                std_logic_vector(shift_right(unsigned(alu_2), conv_integer(alu_1))) when lsri_op_code,
-               x"000000000000" & std_logic_vector(cos_big_num) when mulcos_op_code,
+               x"000000000000" & std_logic_vector(cos_mul_result) when mulcos_op_code,
                X"0000000000000000" when others;
 
   sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) or 
