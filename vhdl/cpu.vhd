@@ -137,6 +137,7 @@ constant store_rel_op_code : std_logic_vector(7 downto 0) := X"17";
 constant and_op_code : std_logic_vector(7 downto 0) := X"18";
 constant lsli_op_code : std_logic_vector(7 downto 0) := X"19";
 constant lsri_op_code : std_logic_vector(7 downto 0) := X"12";
+constant storeobj_rel_op_code : std_logic_vector(7 downto 0) := X"1B";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
@@ -231,6 +232,7 @@ begin
         when store_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
         when store_rel_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));                              
         when storeobj_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
+        when storeobj_rel_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));                                 
         when load_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
         when load_rel_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));                             
         when cmp_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
@@ -259,7 +261,9 @@ begin
                      ir2_op = load_rel_op_code or
                      ir2_op = btst_op_code or
                      ir2_op = lsli_op_code or
-                     ir2_op = lsri_op_code
+                     ir2_op = lsri_op_code or
+                     ir2_op = storeobj_op_code or
+                     ir2_op = storeobj_rel_op_code
                  else
            d_1;
 
@@ -303,6 +307,7 @@ begin
                vec_merge_out when vecadd_op_code,
                vec_merge_out when vecsub_op_code,
                alu_1 when storeobj_op_code,
+               alu_1 + alu_2 when storeobj_rel_op_code,
                alu_1 and alu_2 when and_op_code,
                std_logic_vector(shift_left(unsigned(alu_1), to_integer(unsigned(alu_2)))) when lsli_op_code,
                std_logic_vector(shift_right(unsigned(alu_1), to_integer(unsigned(alu_2)))) when lsri_op_code,
@@ -373,9 +378,9 @@ begin
     end if;
   end process;
   -- Writing to object memory
-  obj_mem_data <= d_4;
-  obj_mem_adress <= ir4_data(8 downto 0);
-  obj_mem_we <= '1' when ir4_op = storeobj_op_code else '0';
+  obj_mem_data <= z_3;
+  obj_mem_adress <= d_3(8 downto 0);
+  obj_mem_we <= '1' when ir3_op = storeobj_op_code or ir3_op = storeobj_rel_op_code else '0';
 
 
 end Behavioral;
