@@ -426,6 +426,7 @@ begin
       ir4_op = lsri_op_code or
       ir4_op = mulcos_op_code or
       ir4_op = and_op_code or
+      ir4_op = dot_op_code or
       ir4_op = vecsub_op_code then
         reg_file(conv_integer(ir4_reg1)) <= write_reg;
       elsif frame_done = '1' then
