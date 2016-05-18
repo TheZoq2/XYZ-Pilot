@@ -15,6 +15,7 @@ SHIPVEL = 0000000000000000
 
 FORWARD_ACCEL = 3
 
+VISUAL_ADD = 0020000000000000
 
 SHIP_ANGLE = 0000000000000000
 TURN_SPEED = 0000000000050000
@@ -46,9 +47,6 @@ ITER:
   TESTLEFT:
     BTST F 5
     BEQ GOLEFT
-  TESTDOWN:
-    BTST F 4
-    BEQ GODOWN
   TESTUP:
     BTST F 6
     BEQ GOUP
@@ -69,7 +67,12 @@ ITER:
   #Update ship position and angle
   #Add the velocity of the ship
   ADD 0 0 1
-  #STOREOBJ 0 0
+  STORE 0 SHIPPOS
+  STORE 1 SHIPVEL
+  STORE 7 SHIP_ANGLE
+  #Rotate the ship
+  VECADD SHIP_ANGLE VISUAL_ANGLE SHIP_ANGLE
+  STOREOBJ SHIP_ANGLE 1
 
   #Divide the actual position to get the visual position
   LOAD C LAST_VEC_ELEMENT
@@ -79,8 +82,8 @@ ITER:
   #Shift 48 bits
   LSRI 9 SHIPPOS 30
   AND 9 9 LAST_VEC_ELEMENT
-  #Divide speed by 4
-  LSRI 9 9 3
+  #Divide speed by 8
+  LSRI 9 9 4
   #Shift back 48 bits
   LSLI 9 9 30 
   VECADD FINAL_POS FINAL_POS 9
@@ -88,8 +91,8 @@ ITER:
   #Shift 32 bits
   LSRI 9 SHIPPOS 20
   AND 9 9 LAST_VEC_ELEMENT
-  #Divide speed by 4
-  LSRI 9 9 3
+  #Divide speed by 8
+  LSRI 9 9 4
   #Shift back 32 bits
   LSLI 9 9 20 
   VECADD FINAL_POS FINAL_POS 9
@@ -97,13 +100,6 @@ ITER:
   #Update the visual position
   STOREOBJ FINAL_POS 0
 
-  #Rotate the ship
-  #VECADD 3 7 3
-  STOREOBJ 7 1
-
-  STORE 0 SHIPPOS
-  STORE 1 SHIPVEL
-  STORE 7 SHIP_ANGLE
 
   #Spin the asteroid
   LOAD 2 SLOW_TURN_ADD
@@ -139,6 +135,9 @@ GORIGHT:
   MULCOS 8 SHIP_ANGLE FORWARD_ACCEL
   LSLI 8 8 30
   VECADD A A 8
+
+  LOAD E VISUAL_ADD
+  VECADD 2 2 E
   
   VECSUB 1 1 A
   BRA TEST_TURN_LEFT
@@ -160,10 +159,11 @@ GOLEFT:
   MULCOS 8 SHIP_ANGLE FORWARD_ACCEL
   LSLI 8 8 30
   VECADD A A 8
+
+  LOAD E VISUAL_ADD
+  VECSUB 2 2 E
   
   VECADD 1 1 A
-  BRA TESTDOWN
-GODOWN:
   BRA TESTUP
 GOUP:
   LOAD B SHIP_ANGLE
@@ -191,13 +191,16 @@ GOUP:
   BRA TESTRIGHT
 TURN_LEFT:
   ADD 7 7 8
+
+  #Make sure overflow doesn't gause weird issues
   LOAD E ANGLE_MASK
   AND 7 7 E
 
   BRA TEST_TURN_RIGHT
 TURN_RIGHT:
   SUB 7 7 8
-
+  
+  #Make sure overflow doesn't gause weird issues
   LOAD E ANGLE_MASK
   AND 7 7 E
 
