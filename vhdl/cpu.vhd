@@ -385,7 +385,7 @@ begin
 
   sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) or 
                   (ir2_op=btst_op_code and alu_2(conv_integer(alu_1)) = '1') else
-        "01" when (ir2_op=cmp_op_code and alu_1<alu_2) else
+        "01" when (ir2_op=cmp_op_code and signed(alu_1)<signed(alu_2)) else
         "00" when (ir2_op=cmp_op_code or -- Clears sr when jumping
                   ir2_op=beq_op_code or
                   ir2_op=bne_op_code or
