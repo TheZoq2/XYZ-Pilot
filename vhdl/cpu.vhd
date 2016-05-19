@@ -226,7 +226,7 @@ begin
       );
 
   vec_len : VectorLength port map (
-          vec1 => vec_split_out1,
+          vec1 => vec_split_out2,
           result => vec_len_result
       );
 
