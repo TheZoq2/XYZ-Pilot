@@ -82,6 +82,14 @@ component VectorDot is
         );
 end component;
 
+component VectorLength is
+    port(
+            vec1: in Vector.Elements_t;
+
+            result: out unsigned(15 downto 0)
+        );
+end component;
+
 --COUNTER--
 signal nop_counter : std_logic_vector(1 downto 0) := "00";
 
@@ -127,6 +135,7 @@ signal vec_sub_in2 : Vector.Elements_t;
 signal vec_sub_res : Vector.Elements_t;
 
 signal vec_dot_result: signed(63 downto 0);
+signal vec_len_result: unsigned(15 downto 0);
 
 -- Signals connecting the cos calculator
 signal cos_angle: unsigned(7 downto 0);
@@ -172,6 +181,7 @@ constant lsri_op_code : std_logic_vector(7 downto 0) := X"1A";
 constant mulcos_op_code : std_logic_vector(7 downto 0) := X"1B";
 constant storeobj_rel_op_code : std_logic_vector(7 downto 0) := X"1C";
 constant dot_op_code: std_logic_vector(7 downto 0) := X"1D";
+constant len_op_code: std_logic_vector(7 downto 0) := X"1E";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
@@ -213,6 +223,11 @@ begin
           big_num => cos_big_num,
           small_num => cos_result,
           result => cos_mul_result
+      );
+
+  vec_len : VectorLength port map (
+          vec1 => vec_split_out1,
+          result => vec_len_result
       );
 
   pc_out <= pc;
@@ -365,6 +380,7 @@ begin
                std_logic_vector(shift_right(unsigned(alu_2), conv_integer(alu_1))) when lsri_op_code,
                x"000000000000" & std_logic_vector(cos_mul_result) when mulcos_op_code,
                std_logic_vector(vec_dot_result) when dot_op_code,
+               X"000000000000" & std_logic_vector(vec_len_result) when len_op_code,
                X"0000000000000000" when others;
 
   sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) or 
@@ -427,6 +443,7 @@ begin
       ir4_op = mulcos_op_code or
       ir4_op = and_op_code or
       ir4_op = dot_op_code or
+      ir4_op = len_op_code or
       ir4_op = vecsub_op_code then
         reg_file(conv_integer(ir4_reg1)) <= write_reg;
       elsif frame_done = '1' then
