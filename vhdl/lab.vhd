@@ -251,7 +251,7 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
                          );
 
     -- Debug
-    debug_data <= program_mem_write_adress; 
+    debug_data <= cpu_debug_data; 
     --debug_data <= object_mem_debug_data;
 
 -- CPU component connection

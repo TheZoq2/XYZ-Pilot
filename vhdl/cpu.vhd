@@ -182,6 +182,7 @@ constant mulcos_op_code : std_logic_vector(7 downto 0) := X"1B";
 constant storeobj_rel_op_code : std_logic_vector(7 downto 0) := X"1C";
 constant dot_op_code: std_logic_vector(7 downto 0) := X"1D";
 constant len_op_code: std_logic_vector(7 downto 0) := X"1E";
+constant dbg_op_code: std_logic_vector(7 downto 0) := X"1F";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
@@ -300,6 +301,7 @@ begin
         when load_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
         when load_rel_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));                             
         when cmp_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
+        when dbg_op_code => d_1 <= reg_file(conv_integer(ir1_reg1)); debuginfo <= reg_file(conv_integer(ir1_reg1))(15 downto 0);
         when others => d_1 <= reg_file(conv_integer(ir1_reg3));
       end case;
 
@@ -337,7 +339,7 @@ begin
 
 
   -- Multiplication
-  --mult_result <= alu_1 * alu_2;
+  mult_result <= alu_1 * alu_2;
 
   -- Splitting the two vectors
   vec_split_in1 <= alu_1;
@@ -369,8 +371,8 @@ begin
                alu_1 + alu_2 when store_rel_op_code,
                alu_2 - alu_1 when sub_op_code,
                alu_2 - alu_1 when subi_op_code,
-               --mult_result(63 downto 0) when mult_op_code,
-               --mult_result(63 downto 0) when multi_op_code,
+               mult_result(63 downto 0) when mult_op_code,
+               mult_result(63 downto 0) when multi_op_code,
                vec_merge_out when vecadd_op_code,
                vec_merge_out when vecsub_op_code,
                alu_1 when storeobj_op_code,
