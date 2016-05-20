@@ -5,6 +5,8 @@ NULL = 0000000000000000
 MANYF = FFFFFFFFFFFFFFFF
 ONE = 1
 
+ASTEROID_GRAVEYARD = 7FFF7FFF7FFF7FFF
+
 #AND with a vector to remove all but the last element
 LAST_VEC_ELEMENT = FFFF
 
@@ -52,6 +54,7 @@ LINE_START = 1FC
 #LINE_START = 7E
 LOAD 0 LINE_START
 STOREOBJ 0 7
+STOREOBJ 0 4
 
 BRA INIT
 FINISHED_INIT:
@@ -443,6 +446,48 @@ UPDATE_ASTEROIDS:
   LOAD 2 OFFSET
   LOAD 3 ARRAYSTART
   WHILE i <= ARRAYSIZE
+    #---------------------------------
+    #Respawning broken asteroids
+    LOAD.R 4 ARRAYSTART 0
+    ALIAS 4 POS
+
+    LOAD 5 ASTEROID_GRAVEYARD
+    IF POS == ASTEROID_GRAVEYARD
+      DBG ASTEROID_GRAVEYARD
+      #Random position
+      RANDOM 4 
+      MOVHI 5 014000F0
+      MOVLO 5 00000000
+      AND 4 4 5
+      STORE.R 4 CURRENT_ASTEROID 0
+
+      #No velocity
+      MOVHI 4 00000000
+      MOVLO 4 00000000
+      STORE.R 4 CURRENT_ASTEROID 1
+
+      #Random rotation
+      RANDOM 4
+      STORE.R 4 CURRENT_ASTEROID 2
+      
+      #Small angular velocity
+      RANDOM 4
+      MOVHI 5 00030003
+      MOVLO 5 00030000
+      AND 4 5 4
+
+      #RANDOM 5
+      #MOVHI 6 0
+      #MOVLO 6 4
+      #STORE.R 4 CURRENT_ASTEROID 3
+
+      LOAD 4 AST_MODEL_START
+      STORE.R AST_MODEL_START CURRENT_ASTEROID 4
+      LOAD 4 BOX
+      STORE.R BOX CURRENT_ASTEROID 5
+    ENDIF
+
+    #---------------------------------
 	#Update position
     LOAD.R 4 ARRAYSTART 0
     ALIAS 4 POS
@@ -481,6 +526,44 @@ UPDATE_ASTEROIDS:
       BRA GAME_OVER
     ENDIF
     
+    #------------------------------
+    #Shot collision 
+    LOAD 4 NULL
+    ALIAS 4 n
+    LOAD 6 SHOT_AMOUNT
+    LOAD 7 SHOT_ARRAY_START
+    ALIAS 7 CURRENT_SHOT_START
+    WHILE n <= SHOT_AMOUNT
+      #Load the real pos
+      LOAD.R 8 CURRENT_SHOT_START 2
+      ALIAS 8 SHOT_POS
+      
+      #Load the asteroid pos
+      LOAD.R 9 ARRAYSTART 0
+
+      VECSUB 8 9 8
+      LEN 8 8
+      ALIAS 8 DISTANCE
+    
+
+      LOAD.R 9 ARRAYSTART 5
+      ALIAS 9 HITBOX
+
+      IF DISTANCE <= HITBOX
+        LOAD 9 ASTEROID_GRAVEYARD
+        STORE.R ASTEROID_GRAVEYARD ARRAYSTART 0
+
+        STORE.R 9 CURRENT_SHOT_START 0
+        MOVHI 9 00000000
+        MOVLO 9 00000000
+        STORE.R 9 CURRENT_SHOT_START 1
+      ENDIF
+
+      
+      LOAD 8 SHOT_MEM_SIZE
+      ADD CURRENT_SHOT_START CURRENT_SHOT_START SHOT_MEM_SIZE
+      ADDI n n 1
+    ENDWHILE
     
     ADDI ARRAYSTART ARRAYSTART 6
     ADDI OFFSET OFFSET 4
@@ -488,6 +571,7 @@ UPDATE_ASTEROIDS:
   ENDWHILE
 
   BRA DONE_UPDATE_ASTEROIDS
+
 
 BORDERCONTROL:
     LOAD 0 SHIPPOS
