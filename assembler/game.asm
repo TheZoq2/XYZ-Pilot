@@ -460,7 +460,7 @@ UPDATE_ASTEROIDS:
 
     #Load the max coord on the y axis
     MOVHI 5 0
-    MOVLO 5 10E
+    MOVLO 5 150
     ALIAS 5 Y_MAX
 
     #Filter out the Y axis
@@ -481,7 +481,7 @@ UPDATE_ASTEROIDS:
 
     #Load the max coord on the x axis
     MOVHI 5 0
-    MOVLO 5 168
+    MOVLO 5 1A0
     ALIAS 5 X_MAX
 
     #Filter out the Y axis
