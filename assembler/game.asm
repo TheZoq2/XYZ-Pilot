@@ -495,14 +495,7 @@ UPDATE_ASTEROIDS:
 
     LOAD 5 ASTEROID_GRAVEYARD
     IF POS == ASTEROID_GRAVEYARD
-      ##Random position
-      #RANDOM 4 
-      #MOVHI 5 00FF00FF
-      #MOVLO 5 00000000
-      #AND 4 4 5
-      #STORE.R 4 CURRENT_ASTEROID 0
-
-      ##COOL SHIT HERE
+      #Random position along the borders
       LOAD 7 ONE
       RANDOM 4
       MOVHI 5 00000000
@@ -588,20 +581,24 @@ UPDATE_ASTEROIDS:
       STORE.R STARTPOS CURRENT_ASTEROID 0
 
       #Chose a velocity
-      MOVHI 4 00070007
-      MOVLO 4 00000000
-      RANDOM 5
-      AND 4 5 4
+      SET_VEL:
+        MOVHI 4 00070007
+        MOVLO 4 00000000
+        RANDOM 5
+        AND 4 5 4
 
-      #Subtract the actual coordinate from about half of the max velocity
-      MOVHI 5 00030003
-      VECSUB 4 5 4
+        #Subtract the actual coordinate from about half of the max velocity
+        MOVHI 5 00030003
+        VECSUB 4 5 4
 
-      #Remove anything  in the z and w coordinates
-      MOVHI 5 FFFFFFFF
-      MOVLO 5 00000000
-      AND 4 5 4
-      
+        #Remove anything  in the z and w coordinates
+        MOVHI 5 FFFFFFFF
+        MOVLO 5 00000000
+        AND 4 5 4
+        
+        LOAD 6 NULL
+        CMP 4 NULL
+        BEQ SET_VEL        
 
       #Store the velocity
       STORE.R 4 CURRENT_ASTEROID 1
