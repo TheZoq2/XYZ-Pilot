@@ -203,6 +203,7 @@ signal debug_data : std_logic_vector(15 downto 0);
 signal cpu_debug_data : std_logic_vector(15 downto 0);
 signal pm_debug_data : std_logic_vector(15 downto 0);
 signal object_mem_debug_data : std_logic_vector(15 downto 0);
+signal uart_instruction_debug_data : std_logic_vector(15 downto 0);
 
 signal debug_mem_pos    : std_logic_vector(15 downto 0) := (others => '0'); 
 signal debug_mem_instr  : std_logic_vector(63 downto 0) := (others => '0'); 
@@ -212,6 +213,7 @@ signal debug_mem_instr  : std_logic_vector(63 downto 0) := (others => '0');
 begin
 
 object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
+uart_instruction_debug_data <= program_mem_write_instruction(15 downto 0);
 
     process(clk) begin
         if rising_edge(clk) then
@@ -251,7 +253,7 @@ object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
                          );
 
     -- Debug
-    debug_data <= program_mem_write_adress; 
+    debug_data <= uart_instruction_debug_data;
     --debug_data <= object_mem_debug_data;
 
 -- CPU component connection
