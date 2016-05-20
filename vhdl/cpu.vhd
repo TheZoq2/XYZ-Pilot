@@ -79,6 +79,21 @@ component LinearFeedbackSR is
     clk : in std_logic;
     data : out Vector.InMemory_t
     );
+
+component VectorDot is
+    port(
+            vec1: in Vector.Elements_t;
+            vec2: in Vector.Elements_t;
+            result: out signed(63 downto 0)
+        );
+end component;
+
+component VectorLength is
+    port(
+            vec1: in Vector.Elements_t;
+
+            result: out unsigned(15 downto 0)
+        );
 end component;
 
 --COUNTER--
@@ -124,6 +139,9 @@ signal vec_add_res : Vector.Elements_t;
 signal vec_sub_in1 : Vector.Elements_t;
 signal vec_sub_in2 : Vector.Elements_t;
 signal vec_sub_res : Vector.Elements_t;
+
+signal vec_dot_result: signed(63 downto 0);
+signal vec_len_result: unsigned(15 downto 0);
 
 -- Signals connecting the cos calculator
 signal cos_angle: unsigned(7 downto 0);
@@ -172,7 +190,9 @@ constant lsli_op_code : std_logic_vector(7 downto 0) := X"19";
 constant lsri_op_code : std_logic_vector(7 downto 0) := X"1A";
 constant mulcos_op_code : std_logic_vector(7 downto 0) := X"1B";
 constant storeobj_rel_op_code : std_logic_vector(7 downto 0) := X"1C";
-constant random_op_code : std_logic_vector(7 downto 0) := X"1D";
+constant dot_op_code: std_logic_vector(7 downto 0) := X"1D";
+constant len_op_code: std_logic_vector(7 downto 0) := X"1E";
+constant random_op_code : std_logic_vector(7 downto 0) := X"1F";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
@@ -200,6 +220,12 @@ begin
   vec_sub : VectorSubtractor port map(vec1=>vec_sub_in1,vec2=>vec_sub_in2,result=>vec_sub_res);
   vec_merge : VectorMerger port map(memory=>vec_merge_out,vec=>vec_merge_in);
 
+  vec_dot : VectorDot port map (
+          vec1 => vec_split_out1,
+          vec2 => vec_split_out2,
+          result => vec_dot_result
+      );
+
   cos_lut : cos_table port map (
           angle => cos_angle,
           result => cos_result
@@ -216,6 +242,12 @@ begin
     );
 
   lf_clk <= clk;
+
+  vec_len : VectorLength port map (
+          vec1 => vec_split_out2,
+          result => vec_len_result
+      );
+
   pc_out <= pc;
   --debuginfo <= reg_file(0)(51 downto 48) & 
     --           reg_file(0)(35 downto 32) & 
@@ -318,8 +350,8 @@ begin
            d_1;
 
   -- ALU --
-  cos_angle <= unsigned(d_1(7 downto 0));
-  cos_big_num <= signed(d_2(15 downto 0));
+  cos_angle <= unsigned(alu_2(7 downto 0));
+  cos_big_num <= signed(alu_1(15 downto 0));
 
 
   -- Multiplication
@@ -364,12 +396,14 @@ begin
                alu_1 and alu_2 when and_op_code,
                std_logic_vector(shift_left(unsigned(alu_2), conv_integer(alu_1))) when lsli_op_code,
                std_logic_vector(shift_right(unsigned(alu_2), conv_integer(alu_1))) when lsri_op_code,
-               x"000000000000" & std_logic_vector(cos_big_num) when mulcos_op_code,
+               x"000000000000" & std_logic_vector(cos_mul_result) when mulcos_op_code,
+               std_logic_vector(vec_dot_result) when dot_op_code,
+               X"000000000000" & std_logic_vector(vec_len_result) when len_op_code,
                X"0000000000000000" when others;
 
   sr <= "10" when (ir2_op=cmp_op_code and alu_1=alu_2) or 
                   (ir2_op=btst_op_code and alu_2(conv_integer(alu_1)) = '1') else
-        "01" when (ir2_op=cmp_op_code and alu_1<alu_2) else
+        "01" when (ir2_op=cmp_op_code and signed(alu_1)<signed(alu_2)) else
         "00" when (ir2_op=cmp_op_code or -- Clears sr when jumping
                   ir2_op=beq_op_code or
                   ir2_op=bne_op_code or
@@ -427,8 +461,10 @@ begin
       ir4_op = lsri_op_code or
       ir4_op = mulcos_op_code or
       ir4_op = and_op_code or
-      ir4_op = vecsub_op_code or
-      ir4_op = random_op_code then
+      ir4_op = random_op_code or
+      ir4_op = dot_op_code or
+      ir4_op = len_op_code or
+      ir4_op = vecsub_op_code then
         reg_file(conv_integer(ir4_reg1)) <= write_reg;
       elsif frame_done = '1' then
         reg_file(15) <= X"00000000000000" & '0' & kbd_reg;
