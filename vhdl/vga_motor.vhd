@@ -52,8 +52,8 @@ architecture Behavioral of vga_motor is
 	constant x_sync_end		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(751,10));
 	constant y_max			: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(520,10));
 	constant y_blank		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(480,10));
-	constant y_sync_start	: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(491,10));
-	constant y_sync_end		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(492,10));
+	constant y_sync_start	: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(490,10));
+	constant y_sync_end		: std_logic_vector(9 downto 0) := std_logic_vector(to_unsigned(491,10));
 
 
 begin
@@ -132,10 +132,10 @@ begin
 	y_mem_pos <= y_next(8 downto 1); -- "y_pixel / 2"
 	addr <= (x_mem_pos & y_mem_pos);
 
-    write_addr <= ((old_x_pixel(9 downto 1)) & (old_y_pixel(8 downto 1)));
+    write_addr <= (x_mem_pos & y_mem_pos);
     write_data <= '0';
-    write_enable <= '1' when clk_25 = '1' and blank = '0' else '0';
-    --write_enable <= '0';
+    write_enable <= '1' when clk_25 = '1' and blank = '0' 
+                    and x_next(0) = '1' and y_next(0) = '1' else '0';
 
 	-- MUX
 	-- data = 1 represent white pixel, data = 0 represent black pixel
