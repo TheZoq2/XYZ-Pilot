@@ -74,6 +74,13 @@ component FractionalMultiplyer is
     );
 end component;
 
+component LinearFeedbackSR is
+  port(
+    clk : in std_logic;
+    data : out Vector.InMemory_t
+    );
+end component;
+
 --COUNTER--
 signal nop_counter : std_logic_vector(1 downto 0) := "00";
 
@@ -124,6 +131,10 @@ signal cos_big_num: datatypes.std_number_t;
 signal cos_result: datatypes.small_number_t;
 signal cos_mul_result: datatypes.std_number_t;
 
+-- Signals connecting the linear feedback shift Register
+signal lf_clk : std_logic;
+signal lf_data : Vector.InMemory_t;
+
 type register_t is array (0 to 15) of std_logic_vector(63 downto 0);
 signal reg_file : register_t := (others =>(others=>'0'));   
 
@@ -161,6 +172,7 @@ constant lsli_op_code : std_logic_vector(7 downto 0) := X"19";
 constant lsri_op_code : std_logic_vector(7 downto 0) := X"1A";
 constant mulcos_op_code : std_logic_vector(7 downto 0) := X"1B";
 constant storeobj_rel_op_code : std_logic_vector(7 downto 0) := X"1C";
+constant random_op_code : std_logic_vector(7 downto 0) := X"1D";
 
 -- ALIASES --
 alias ir1_op 				: std_logic_vector(7 downto 0) is ir1(63 downto 56);
@@ -198,6 +210,12 @@ begin
           result => cos_mul_result
       );
 
+  lf_sr : LinearFeedbackSR port map (
+    clk  => lf_clk,
+    data => lf_data
+    );
+
+  lf_clk <= clk;
   pc_out <= pc;
   --debuginfo <= reg_file(0)(51 downto 48) & 
     --           reg_file(0)(35 downto 32) & 
@@ -386,6 +404,7 @@ begin
   ---- 5. WB ----
   write_reg <= z_4 when ir4_op = load_op_code else
                z_4 when ir4_op = load_rel_op_code else
+               lf_data when ir4_op = random_op_code else
                d_4;
   
   -- Writing back to register file 
@@ -408,7 +427,8 @@ begin
       ir4_op = lsri_op_code or
       ir4_op = mulcos_op_code or
       ir4_op = and_op_code or
-      ir4_op = vecsub_op_code then
+      ir4_op = vecsub_op_code or
+      ir4_op = random_op_code then
         reg_file(conv_integer(ir4_reg1)) <= write_reg;
       elsif frame_done = '1' then
         reg_file(15) <= X"00000000000000" & '0' & kbd_reg;
