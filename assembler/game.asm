@@ -1,3 +1,4 @@
+#Make sure asteroids don't spawn with 0 velocity
 NOP
 
 RESTART:
@@ -323,7 +324,6 @@ SHOOT:
   LOAD 2 TIMER
   LOAD 3 LAST_SHOT
 
-  DBG TIMER
 
   IF TIMER >= LAST_SHOT
     #Update the reload time
@@ -442,15 +442,75 @@ UPDATE_SHOT:
   BRA SHOT_UPDATE_DONE
 
 UPDATE_ASTEROIDS:
+  #The part of the code that trump would enjoy  assuming asteroids are  mexican
+  LOAD 0 NULL
+  ALIAS 0 i
+  LOAD 1 ARRAYSIZE
+  LOAD 2 OFFSET
+  LOAD 3 ARRAYSTART
+  WHILE i <= ARRAYSIZE
+    LOAD.R 4 ARRAYSTART 0
+    ALIAS 4 POS
+    #Check the borders for asteroids(mexicans)
+    #Add 30 to the coordinates to make 0,0 be at the  border. This will caluse 
+    #overflows which will mess up the compare in our favour
+    MOVHI 5 00300030
+    MOVLO 5 00000000
+    VECADD POS POS 5
+
+    #Load the max coord on the y axis
+    MOVHI 5 0
+    MOVLO 5 10E
+    ALIAS 5 Y_MAX
+
+    #Filter out the Y axis
+    LSRI 6 POS 20
+    ALIAS 6 RAW_POS
+    MOVHI 7 0
+    MOVLO 7 ffff
+    AND RAW_POS RAW_POS 7
+
+    IF RAW_POS >= Y_MAX
+      LOAD 5 ASTEROID_GRAVEYARD
+      STORE.R 5 ARRAYSTART 0
+
+      MOVHI 5 0
+      MOVLO 5 0
+      STORE.R 5 ARRAYSTART 1
+    ENDIF
+
+    #Load the max coord on the x axis
+    MOVHI 5 0
+    MOVLO 5 168
+    ALIAS 5 X_MAX
+
+    #Filter out the Y axis
+    LSRI 6 POS 30
+    ALIAS 6 RAW_POS
+
+    IF RAW_POS >= X_MAX
+      LOAD 5 ASTEROID_GRAVEYARD
+      STORE.R 5 ARRAYSTART 0
+
+      MOVHI 5 0
+      MOVLO 5 0
+      STORE.R 5 ARRAYSTART 1
+    ENDIF
+
+    ADDI ARRAYSTART ARRAYSTART 6
+    ADDI OFFSET OFFSET 4
+    ADDI i i 1
+  ENDWHILE
+
   # ------------ UPDATING ASTEROIDS ------------
-  i = 0
-  LOAD 0 i
+  LOAD 0 NULL
+  ALIAS 0 i
   LOAD 1 ARRAYSIZE
   LOAD 2 OFFSET
   LOAD 3 ARRAYSTART
   WHILE i <= ARRAYSIZE
     #---------------------------------
-    #Respawning broken asteroids
+    #Respawning asteroids from the graveyard
     LOAD.R 4 ARRAYSTART 0
     ALIAS 4 POS
 
@@ -463,9 +523,23 @@ UPDATE_ASTEROIDS:
       AND 4 4 5
       STORE.R 4 CURRENT_ASTEROID 0
 
-      #No velocity
-      MOVHI 4 00000000
+      #Chose a velocity
+      MOVHI 4 00070007
       MOVLO 4 00000000
+      RANDOM 5
+      AND 4 5 4
+
+      #Subtract the actual coordinate from about half of the max velocity
+      MOVHI 5 00030003
+      VECSUB 4 5 4
+
+      #Remove anything  in the z and w coordinates
+      MOVHI 5 FFFFFFFF
+      MOVLO 5 00000000
+      AND 4 5 4
+      
+
+      #Store the velocity
       STORE.R 4 CURRENT_ASTEROID 1
 
       #Random rotation
@@ -569,7 +643,6 @@ UPDATE_ASTEROIDS:
   ENDWHILE
 
   BRA DONE_UPDATE_ASTEROIDS
-
 
 BORDERCONTROL:
     LOAD 0 SHIPPOS
