@@ -172,31 +172,9 @@ INIT:
   LOAD 6 BOX
 
   WHILE i <= ARRAYSIZE
-    #Random position
-    RANDOM 4 
-    MOVHI 5 01FF00FF
-    MOVLO 5 00000000
-    AND 4 4 5
+    #Set pos to graveyard
+    LOAD 4 ASTEROID_GRAVEYARD
     STORE.R 4 CURRENT_ASTEROID 0
-
-    #No velocity
-    MOVHI 4 00000000
-    MOVLO 4 00000000
-    STORE.R 4 CURRENT_ASTEROID 1
-
-    #Random rotation
-    RANDOM 4
-    STORE.R 4 CURRENT_ASTEROID 2
-    
-    #Small angular velocity
-    RANDOM 4
-    MOVHI 5 00030003
-    MOVLO 5 00030000
-    AND 4 5 4
-    STORE.R 4 CURRENT_ASTEROID 3
-
-    STORE.R AST_MODEL_START CURRENT_ASTEROID 4
-    STORE.R BOX CURRENT_ASTEROID 5
     
     ADDI CURRENT_ASTEROID  CURRENT_ASTEROID 6
     ADDI i i 1
@@ -469,18 +447,36 @@ UPDATE_ASTEROIDS:
       #Random rotation
       RANDOM 4
       STORE.R 4 CURRENT_ASTEROID 2
-      
-      #Small angular velocity
-      RANDOM 4
-      MOVHI 5 00030003
-      MOVLO 5 00030000
-      AND 4 5 4
+      SET_ROT_VEL:
+        #Small angular velocity
+        LOAD 7 ONE
+        RANDOM 4
+        MOVHI 5 00000000
+        MOVLO 5 00000003
+        AND 4 4 5
+        ALIAS 4 AXIS_DECIDER
+     
+        MOVHI 5 00030000
+        MOVLO 5 00000000
+        VECSUB AXIS_DECIDER AXIS_DECIDER ONE
+        IF AXIS_DECIDER == 0
+          MOVHI 5 00000003
+          MOVLO 5 00000000
+        ENDIF
+        VECSUB AXIS_DECIDER AXIS_DECIDER ONE
+        IF AXIS_DECIDER == 0
+          MOVHI 5 00000000
+          MOVLO 5 00030000
+        ENDIF
+        RANDOM 4
+        AND 4 5 4
+        LOAD 8 NULL
+        CMP 4 NULL
+        BEQ SET_ROT_VEL
 
-      #RANDOM 5
-      #MOVHI 6 0
-      #MOVLO 6 4
-      #STORE.R 4 CURRENT_ASTEROID 3
+      STORE.R 4 CURRENT_ASTEROID 3
 
+      #Give asteroid a model
       LOAD 4 AST_MODEL_START
       STORE.R AST_MODEL_START CURRENT_ASTEROID 4
       LOAD 4 BOX
@@ -595,7 +591,7 @@ BORDERCONTROL:
       MOVLO 9 FFFFFFFF
       AND SHIPVEL SHIPVEL 9
       STORE SHIPVEL SHIPVEL
-      #Set pos = border -1
+      #Set pos = border - 1
       AND SHIPPOS SHIPPOS 9
       LOAD A ONE
       VECSUB XBORDERHI XBORDERHI ONE
