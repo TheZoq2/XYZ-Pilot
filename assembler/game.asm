@@ -9,10 +9,10 @@ MANYF = FFFFFFFFFFFFFFFF
 LAST_VEC_ELEMENT = FFFF
 
 ARRAYSTART = 0000000000000100
-ARRAYEND = 0000000000000100
 #ARRAYSIZE = 0 => 1 ASTEROID IN ARRAY, ARRAYSIZE = 1 => 2 ASTEROIDS IN ARRAY AND SO ON..
 ARRAYSIZE = 2
 OFFSET = 8
+
 
 ASTEROID_START = 7A
 
@@ -40,6 +40,10 @@ RELOAD_TIME = 10
 SHOT_TIME = 0
 SHOT_LIFE = 5
 
+#Shot  stuff
+SHOT_AMOUNT = 9
+SHOT_OFFSET = 20
+SHOT_ARRAY_START = 300
 #Modify the model memory
 LINE_START = 1FC
 LOAD 0 LINE_START
@@ -53,7 +57,7 @@ ITER:
   LOAD 2 NULL
 
   LOAD 7 SHIP_ANGLE
-  LOAD 8 TURN_SPEED
+  LOAD 3 TURN_SPEED
 
   TESTLEFT:
     BTST F 5
@@ -226,15 +230,15 @@ GOUP:
   VECADD 1 1 A
   BRA TESTRIGHT
 TURN_LEFT:
-  ADD 7 7 8
+  ADD 7 7 3
 
-  #Make sure overflow doesn't gause weird issues
+  #Make sure overflow doesn't cause weird issues
   LOAD E ANGLE_MASK
   AND 7 7 E
 
   BRA TEST_TURN_RIGHT
 TURN_RIGHT:
-  SUB 7 7 8
+  SUB 7 7 3
   
   #Make sure overflow doesn't gause weird issues
   LOAD E ANGLE_MASK
@@ -289,17 +293,68 @@ UPDATE_SHOT:
   LOAD 1 SHOT_TIME
   LOAD 2 NULL
 
+  #Reset the shot
   IF TIMER >= SHOT_TIME
     STOREOBJ NULL 4
     STOREOBJ NULL 5
+    #Don't do collision check
+    BRA SHOT_UPDATE_DONE
   ENDIF
+
+  UNIT_VEC = 0001000000000000
+  HIT_THRESHOLD = 80
+  LOAD 9 UNIT_VEC
+
+  LOAD 4 SHIP_REAL_POS
+  LOAD 8 SHIP_ANGLE
+
+
+  LOAD 0 NULL
+  ALIAS 0 i
+  LOAD 1 ARRAYSIZE
+  LOAD 2 ARRAYSTART
+  ALIAS 2 CURRENT_AST
+  WHILE i <= ARRAYSIZE
+    LOAD.R 3 CURRENT_AST 0
+    ALIAS 3 AST_POS
+
+    #Difference between the asteroid and the ship
+    VECSUB 5 SHIP_REAL_POS AST_POS
+    ALIAS 5 SHIP_DIFF
+
+    #Calculating the length of the vector to the ship
+    LEN 6 SHIP_DIFF
+    ALIAS 6 SHIP_DISTANCE
+
+    ADDI SHIP_ANGLE SHIP_ANGLE 10
+    MULCOS 7 SHIP_ANGLE SHIP_DISTANCE
+    ALIAS 7 COS_VALUE
+    
+    DOT 9 UNIT_VEC SHIP_DISTANCE
+    ALIAS 9 DOT_VALUE
+
+    #Subtract the 'angles' and remove the cos value
+    SUB DOT_VALUE DOT_VALUE COS_VALUE
+    LEN DOT_VALUE DOT_VALUE
+    
+    IF COS_VALUE >= DOT_VALUE
+      LOAD B NULL
+      MOVHI B 002000f0
+      STORE.R B CURRENT_AST 0
+    ENDIF
+
+    #Go to the next asteroid
+    ADDI CURRENT_AST CURRENT_AST 6
+    ADDI i i 1 
+  ENDWHILE
+
   BRA SHOT_UPDATE_DONE
 
 UPDATE_ASTEROIDS:
   # ------------ UPDATING ASTEROIDS ------------
-  ##Lägger in lite testinfo
+  ##Adding testinfo
   LOAD 3 ARRAYSTART
-  MOVHI 0 00000001
+  MOVHI 0 00000000
   MOVLO 0 0
   STORE.R 0 ARRAYSTART 1
   STORE.R 0 ARRAYSTART 3
