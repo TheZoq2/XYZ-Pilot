@@ -15,9 +15,9 @@ entity lab is
         ps2_kbd_clk	 : in std_logic; 		-- USB keyboard PS2 clock
         ps2_kbd_data : in std_logic;         -- USB keyboard PS2 data
 		rst			 : in std_logic;					-- Reset
-        seg : out std_logic_vector(7 downto 0);
-        an : out std_logic_vector(3 downto 0);
-        Led :  out  std_logic_vector(7 downto 0) := (others => '0'));
+        seg : out std_logic_vector(7 downto 0);   -- Data for the 7-seg display
+        an : out std_logic_vector(3 downto 0);    -- Data for the 7-seg display
+        Led :  out  std_logic_vector(7 downto 0) := (others => '0')); -- Debug info for leds
 end lab;
 
 architecture Behavioral of lab is
@@ -28,12 +28,13 @@ component cpu is
 			pm_instruction : in std_logic_vector(63 downto 0);	-- Instruction from program memory
 			pc_out		: out std_logic_vector(15 downto 0) := (others => '0'); -- Program Counter
             pc_re       : out std_logic := '1'; -- Read Enable to be sent to program mem
-            obj_mem_data : out std_logic_vector(63 downto 0);
-            obj_mem_adress : out std_logic_vector(8 downto 0);
-            obj_mem_we  : out std_logic;
-            frame_done  : in std_logic;
-            kbd_reg     : in std_logic_vector(6 downto 0) := (others => '0');
-            debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); 
+            obj_mem_data : out std_logic_vector(63 downto 0); -- Data to be sent to object memory
+            obj_mem_adress : out std_logic_vector(8 downto 0); -- The adress to be sent to object memory
+            obj_mem_we  : out std_logic; -- Write Enable for object memory
+            frame_done  : in std_logic; -- Signal from vga_motor informing that a full frame has been displayed
+            kbd_reg     : in std_logic_vector(6 downto 0) := (others => '0'); -- Signal from kbd_enc showing which 
+                                                                              -- keys are being pressed down
+            debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); -- Info to be shown on the 7-seg
 end component;
 
 -- UART
@@ -144,7 +145,7 @@ end component;
 
 
 
--- DEBUG COMPONENT
+-- Debuf component (score display in final product)
 component dbg_segment
   port (
     clk : in std_logic;
@@ -153,12 +154,12 @@ component dbg_segment
     segment_n : out std_logic_vector(3 downto 0));
 end component;
 
--- "Fake" signals for writin to pixel_mem
+-- Signals between gpu and pixel_mem
 signal gpu_pixel_write_data	:	std_logic;
 signal gpu_pixel_write_addr	: 	std_logic_vector(16 downto 0);
 signal gpu_pixel_we			:	std_logic;
 
--- Signals between cpu and program_mem
+-- Signals between program_mem and cpu 
 signal program_mem_read_instruction	:	std_logic_vector(63 downto 0);
 signal program_mem_read_adress	: 	std_logic_vector(15 downto 0) := (others => '0');
 signal program_mem_re			:	std_logic;
@@ -168,12 +169,15 @@ signal object_mem_write_adress :   std_logic_vector(8 downto 0) := (others => '0
 signal object_mem_write_adress_unsigned :   GPU_Info.ObjAddr_t := (others => '0');
 signal object_mem_write_data :   GPU_Info.ObjData_t := (others => '0');
 signal object_mem_we :   std_logic := '0';
--- Signals between Object memory and gpu
+
+-- Signals between object memory and gpu
 signal object_mem_read_adress :   GPU_Info.ObjAddr_t;
 signal object_mem_read_data :   GPU_Info.ObjData_t;
 
--- Signals to CPU
-signal cpu_clk					: std_logic := '0';
+-- Signal between uart and cpu
+signal cpu_clk					: std_logic := '0'; 
+
+-- Signal between kbd_enc and cpu
 signal kbd_reg                  : std_logic_vector(6 downto 0);
 
 -- Signals between vga_motor and pixel_mem
@@ -184,36 +188,28 @@ signal vga_pixel_write_data	:	std_logic;
 signal vga_pixel_write_addr	: 	std_logic_vector(16 downto 0);
 signal vga_pixel_we			:	std_logic;
 
-signal current_line: unsigned(7 downto 0) := to_unsigned(0, 8);
-signal time_at_current: unsigned(31 downto 0) := to_unsigned(0, 32);
 
 -- Signals between uart and program_mem
 signal program_mem_write_instruction: std_logic_vector(63 downto 0);
 signal program_mem_write_adress: std_logic_vector(15 downto 0);
 signal program_mem_we : std_logic;
 
+-- In order to function correctly we have to slow the system down to 25 MHz
 signal slow_clk_counter: std_logic_vector(1 downto 0) := "00";
 signal slow_clk: std_logic;
 
-
+-- Signal between vga_motor and cpu
 signal vga_done: std_logic;
 
--- Debug signals
+-- Debug signals that in the final product shows score in game
 signal debug_data : std_logic_vector(15 downto 0);
 signal cpu_debug_data : std_logic_vector(15 downto 0);
-signal pm_debug_data : std_logic_vector(15 downto 0);
-signal object_mem_debug_data : std_logic_vector(15 downto 0);
-signal uart_instruction_debug_data : std_logic_vector(15 downto 0);
-
-signal debug_mem_pos    : std_logic_vector(15 downto 0) := (others => '0'); 
-signal debug_mem_instr  : std_logic_vector(63 downto 0) := (others => '0'); 
 
 
 
 begin
-
-object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
-uart_instruction_debug_data <= program_mem_write_instruction(15 downto 0);
+  -- Converting signal from std_logic_vector to unsigned
+  object_mem_write_adress_unsigned <= unsigned(object_mem_write_adress);
 
     process(clk) begin
         if rising_edge(clk) then
@@ -223,23 +219,7 @@ uart_instruction_debug_data <= program_mem_write_instruction(15 downto 0);
 
     slow_clk <= '1' when slow_clk_counter = 0 else '0';
 
-  -- DEBUG PROCESSES --
-  
-  --process(clk)
-  --begin
-    --if rising_edge(clk) then
-      --if slow_clk_counter = 0 then
-        --if program_mem_read_adress = 15 then
-          --program_mem_read_adress <= (others => '0');
-        --else
-          --program_mem_read_adress <= program_mem_read_adress + 1;
-        --end if;
-        --program_mem_re <= '1';
-      --end if;
-    --end if;
-  --end process;
   Led <=  program_mem_read_adress(7 downto 0);
-    -- PLS IGNORE
 
     --GPU port map
     gpu_map: gpu port map(
@@ -252,12 +232,10 @@ uart_instruction_debug_data <= program_mem_write_instruction(15 downto 0);
                              vga_done => vga_done
                          );
 
-    -- Debug
-    debug_data <= cpu_debug_data; 
-    --debug_data <= uart_instruction_debug_data;
-    --debug_data <= object_mem_debug_data;
+    -- Debug / Score
+    debug_data <= cpu_debug_data;
 
--- CPU component connection
+    -- CPU component connection
     CPUCOMP : cpu port map(clk=>slow_clk,pm_instruction=>program_mem_read_instruction,
             pc_out=>program_mem_read_adress,
             pc_re=>program_mem_re,
@@ -267,7 +245,8 @@ uart_instruction_debug_data <= program_mem_write_instruction(15 downto 0);
             frame_done=>vga_done,
             kbd_reg=>kbd_reg,
             debuginfo=>cpu_debug_data);
--- VGA motor component connection
+
+    -- VGA motor component connection
 	VGAMOTOR : vga_motor port map(
                             clk=>slow_clk,
                             data=>vga_pixel_read_data,
@@ -283,7 +262,7 @@ uart_instruction_debug_data <= program_mem_write_instruction(15 downto 0);
                             write_data => vga_pixel_write_data,
                             write_enable => vga_pixel_we
                         );
-
+   -- Object memory component connection
    OBJECTMEM : ObjMem port map(
                            clk=>slow_clk,
                            read_addr=>object_mem_read_adress,
@@ -292,7 +271,8 @@ uart_instruction_debug_data <= program_mem_write_instruction(15 downto 0);
                            write_data=>object_mem_write_data,
                            we=>object_mem_we,
                            debuginfo=>object_mem_debug_data);
--- Pixel memory component connection
+
+    -- Pixel memory component connection
 	PIXELMEM : pixel_mem port map(
                         clk=>slow_clk,
                         gpu_write_adress => gpu_pixel_write_addr,
@@ -319,7 +299,7 @@ uart_instruction_debug_data <= program_mem_write_instruction(15 downto 0);
 -- Keyboard Encoder component connection
 	KBDENC: kbd_enc port map(clk=>slow_clk,ps2_kbd_clk=>ps2_kbd_clk,ps2_kbd_data=>ps2_kbd_data,
     kbd_reg=>kbd_reg);
--- Debug
+-- Debug / Score display
    DEBUG : dbg_segment port map (
           clk         => slow_clk,
           debug_value => debug_data,
