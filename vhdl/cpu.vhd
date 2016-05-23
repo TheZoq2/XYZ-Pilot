@@ -77,10 +77,13 @@ component FractionalMultiplyer is
 end component;
 
 component LinearFeedbackSR is
-  port(
-    clk : in std_logic;
-    data : out Vector.InMemory_t
-    );
+port (
+  -- System clock
+  clk : in std_logic;
+
+  -- Current register data
+  data : out Vector.InMemory_t
+  );
 end component;
 
 component VectorDot is

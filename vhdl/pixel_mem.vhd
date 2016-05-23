@@ -32,7 +32,7 @@ architecture Behavioral of pixel_mem is
     signal ram1 : ram_t := (others => '0');
 
     -- Clears all adresses
-    signal ram2 : ram_t := (0 => '1', 2 => '1', 4 => '1', others => '0');
+    signal ram2 : ram_t := (others => '0');
 
 
     signal current_memory: std_logic := '1';
