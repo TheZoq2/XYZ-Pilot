@@ -39,15 +39,34 @@ end entity;
 
 architecture Behavioral of GPU is
 	type gpu_state_type is (
+          -- Read the object from object memory.
           READ_OBJECT,
+
+          -- Read line data from model memory pointer to by object.
           FETCH_LINE,
+
+          -- Prepare initial state for line drawing.
           PREPARE_LINE,
+
+          -- Choose whether to iterate over the x-axis or y-axis.
           START_LINE,
+
+          -- Draw the current pixel of the line to the pixel memory.
           DRAW_LINE_PIXEL,
+
+          -- Update line pixel position and loop index.
           PREPARE_NEXT_LINE_PIXEL,
+
+          -- Increase line pointer to next line and fetch it.
           PREPARE_NEXT_LINE,
+
+          -- Suspend GPU operation until the next frame.
           WAIT_FOR_VGA,
+
+          -- Calculate trigonometry functions for various data. 
           CALC_TRIG,
+
+          -- Use values from trigonometry calculations to perform rotation transform.
           CALC_ROTATED
         );
 

@@ -8,25 +8,40 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 -- entity
 entity dbg_segment is
-	port (clk		: in std_logic;								-- System clock
-              debug_value : in std_logic_vector(15 downto 0);
-              segment_out : out std_logic_vector(7 downto 0);
-              segment_n : out std_logic_vector(3 downto 0));
+	port (
+          -- System clock
+          clk		: in std_logic;
+
+          -- Two byte value to display on segment display
+          debug_value : in std_logic_vector(15 downto 0);
+
+          -- Segments to light up
+          segment_out : out std_logic_vector(7 downto 0);
+
+          -- Segment index to light up
+          segment_n : out std_logic_vector(3 downto 0));
 end dbg_segment;
 
 
 -- architecture
 architecture Behavioral of dbg_segment is
+  -- Amount of clock cycles to wait before changing the lit up segment index.
+  -- A value of 0x0186A0 (100 000) gives a 1 KHz segment clock.
   constant clk_mod : std_logic_vector(23 downto 0) := X"0186A0";
 
+  -- The current number of clock cycles since the last segment index change.
   signal clk_n : std_logic_vector(23 downto 0) := (others => '0');
 
+  -- 4-bit value for the current segment index.
   signal displayed_value : std_logic_vector(3 downto 0) := (others => '0');
+
+  -- Inner signal for segment_n.
   signal displayed_n : std_logic_vector(3 downto 0) := "1110";
 
   begin
 
     -- Number counter
+    -- Shifts displayed_n around when clk_n has reached clk_mod.
     segment_n <= displayed_n;
     process(clk)
       begin
@@ -41,6 +56,7 @@ architecture Behavioral of dbg_segment is
       end process;
 
     -- Display mapping
+    -- Map part of the debug_value to the currently displayed 4-bits.
     with displayed_n select
       displayed_value <=
       debug_value(3 downto 0) when "1110",
@@ -49,6 +65,7 @@ architecture Behavioral of dbg_segment is
       debug_value(15 downto 12) when others;
 
     -- Segment mapping
+    -- See NEXYZ 3 manual for details.
     with displayed_value select
       segment_out <=
       "11000000" when "0000",
