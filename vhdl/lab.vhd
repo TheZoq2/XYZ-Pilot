@@ -93,14 +93,12 @@ end component;
 component pixel_mem is
 port (
         clk : in std_logic;
-        switch_buffer: in std_logic;
-
+        switch_buffer: in std_logic; -- One pulse, decides when to switch buffers
         -- port IN
         gpu_write_adress: in std_logic_vector(16 downto 0);
         gpu_we : in std_logic;
         gpu_write_data : in std_logic;
-
-        -- port IN
+        -- port IN (for clearing after reading)
         vga_write_adress: in std_logic_vector(16 downto 0);
         vga_we : in std_logic;
         vga_write_data : in std_logic;
@@ -108,8 +106,7 @@ port (
         vga_read_adress: in std_logic_vector(16 downto 0);
         vga_re : in std_logic;
         vga_read_data : out std_logic
-);							-- Read data
-
+    );
 end component;
 
 -- Object memory
@@ -122,8 +119,7 @@ port (
         -- port 2
         write_addr : in GPU_Info.ObjAddr_t;
         write_data : in GPU_Info.ObjData_t;
-        we         : in std_logic := '0';
-        debuginfo  : out std_logic_vector(15 downto 0)
+        we         : in std_logic := '0'
     );
 end component;
 

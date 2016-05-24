@@ -1,4 +1,4 @@
--- CPU
+-- CPU, performing basic instructions for game logic
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;            -- basic IEEE library
@@ -67,7 +67,7 @@ component cos_table is
         result: out datatypes.small_number_t
     );
 end component;
--- FRANS KOMMENTERA DETTA FÖR JAG VET INTE VAD JAG SKA SKRIVA-------------------------------------------------
+
 component FractionalMultiplyer is
     port(
         big_num: in Datatypes.std_number_t;
@@ -76,6 +76,7 @@ component FractionalMultiplyer is
     );
 end component;
 
+-- Used to randomize values in game
 component LinearFeedbackSR is
 port (
   -- System clock

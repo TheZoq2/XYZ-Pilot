@@ -1,13 +1,14 @@
-
+-- Model Memory, containing the models for the objects in the game.
+-- Read only, the models are hard coded in memory.
+-- Two 64 bit points makes one line in a model
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
 use work.Vector;
 
---Constants
+-- Constants
 package GPU_Info is
-    --TODO: Optimse the size of obj addr and model addr
     --The length of the addresses and data in the object memory
     constant OBJ_ADDR_SIZE: positive := 9;
     constant OBJ_DATA_SIZE: positive := Vector.MEMORY_SIZE;
@@ -40,11 +41,9 @@ end entity;
 
 architecture Behavioral of ModelMem is
 
--- Deklaration av ett dubbelportat block-RAM
--- med 2048 adresser av 8 bitars bredd.
-type ram_t is array (0 to 511) of Vector.InMemory_t;
 
-    -- Nollställ alla bitar på alla adresser
+-- Declaration of model memory with 2048 adresses containing 64 bit data
+type ram_t is array (0 to 511) of Vector.InMemory_t;
     signal ram : ram_t := ( 
     -- Start of ship
     0 => x"fff00000fffc0000",
@@ -224,7 +223,7 @@ type ram_t is array (0 to 511) of Vector.InMemory_t;
     182 => x"ffffffffffffffff",
     183 => x"ffffffffffffffff",
 
-
+    -- Projectile
     508 => x"0000000000000000",
     509 => x"000f000000000000",
     510 => x"ffffffffffffffff",
@@ -236,7 +235,7 @@ begin
 PROCESS(clk)
 BEGIN
   if (rising_edge(clk)) then
-    -- synkron skrivning/läsning port 1
+    -- Syncronised read
     read_data <= ram(to_integer(read_addr));
   end if;
 END PROCESS;

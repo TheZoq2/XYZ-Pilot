@@ -1,4 +1,4 @@
--- VGA MOTOR, 
+-- VGA MOTOR, putting information from pixel_mem to the screen
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;            -- basic IEEE library
