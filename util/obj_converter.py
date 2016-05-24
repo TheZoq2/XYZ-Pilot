@@ -1,3 +1,5 @@
+#!/bin/python
+
 import sys
 
 points = [];
@@ -8,7 +10,7 @@ input_file = sys.stdin.read();
 
 input_lines = input_file.split("\n");
 
-current_index = 0;
+
 for line in input_lines:
     coords = line.split(" ");
 

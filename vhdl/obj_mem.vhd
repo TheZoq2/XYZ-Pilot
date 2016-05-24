@@ -22,11 +22,19 @@ end entity;
 
 architecture Behavioral of ObjMem is
 
--- Deklaration av ett dubbelportat block-RAM
--- med 512 adresser av 64 bitars bredd.
-type ram_t is array (0 to 511) of Vector.InMemory_t;
+--Memory which stores data about each object that should be drawn on the screen. The CPU writes
+--to this memory while the GPU reads from it.
 
-    -- Nollställ alla bitar på alla adresser
+--The format of the models is as follows:
+--0: position
+--1: angle
+--2: scale (unused)
+--3: model_address. The start of the model to be drawn in the model memory
+
+--The GPU will read continuously until it encounters an object that is entirely FFFF...FF at which point it
+--knows that all objects have been drawn and it will wait until the current frame is done drawing.
+type ram_t is array (0 to 511) of Vector.InMemory_t;
+    -- Storing some starting data along with FF...F i the rest of the memory
     signal ram : ram_t := (
         0  => x"0070_0070_0000_0000",
         1  => x"0000_0000_0000_0000",
@@ -62,10 +70,6 @@ type ram_t is array (0 to 511) of Vector.InMemory_t;
 
 begin
 
---debuginfo <= ram(8)(51 downto 48) & 
-  --             ram(8)(35 downto 32) & 
-    --           ram(8)(19 downto 16) & 
-      --         ram(8)(3 downto 0);
 
 PROCESS(clk)
 BEGIN
