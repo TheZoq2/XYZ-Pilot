@@ -457,6 +457,11 @@ begin
       end if;
     end if;
   end process;
+  
+  -- Writing to object memory
+  obj_mem_data <= z_3;
+  obj_mem_adress <= d_3(8 downto 0);
+  obj_mem_we <= '1' when ir3_op = storeobj_op_code or ir3_op = storeobj_rel_op_code else '0';
 
 
   ---- 5. WB ----
@@ -497,11 +502,6 @@ begin
       end if;
     end if;
   end process;
-
-  -- Writing to object memory
-  obj_mem_data <= z_3;
-  obj_mem_adress <= d_3(8 downto 0);
-  obj_mem_we <= '1' when ir3_op = storeobj_op_code or ir3_op = storeobj_rel_op_code else '0';
 
 
 end Behavioral;
