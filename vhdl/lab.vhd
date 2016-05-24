@@ -40,9 +40,9 @@ end component;
 -- UART
 component uart is
 	port (clk,rx		: in std_logic;								-- System clock
-			cpu_clk,we	: out std_logic;
-			mem_instr	: out std_logic_vector(63 downto 0) := (others => '0');
-			mem_pos		: out std_logic_vector(15 downto 0) := (others => '0'));
+			we	        : out std_logic;                            -- Write Enable to program mem
+			mem_instr	: out std_logic_vector(63 downto 0) := (others => '0'); -- Instruction to be sent to pm
+			mem_pos		: out std_logic_vector(15 downto 0) := (others => '0')); -- The adress to be sent to pm
 end component;
 
 -- KEYBOARD ENCODER
@@ -50,8 +50,6 @@ component kbd_enc is
   port ( clk	                : in std_logic;			-- system clock (100 MHz)
          ps2_kbd_clk	        : in std_logic; 		-- USB keyboard PS2 clock
          ps2_kbd_data	        : in std_logic;         -- USB keyboard PS2 data
-         test                   : out std_logic_vector(3 downto 0) := "0000";
-         testbit                : out std_logic := '0';
          kbd_reg                : out std_logic_vector(0 to 6) := (others => '0')); 
         -- [W,A,S,D,SPACE,J,L] 1 means key is pushed down, 0 means key is up	
 end component;
@@ -59,20 +57,23 @@ end component;
 -- VGA Motor
 component vga_motor is
 	port (
-        clk			    : in std_logic;							-- System clock
-		data			: in std_logic;							-- Data from pixel memory
-		addr			: out std_logic_vector(16 downto 0);	-- Adress for pixel memory
-		re				: out std_logic;						-- Read enable for pixel memory
-	 	rst				: in std_logic;							-- Reset
-	 	h_sync		    : out std_logic;						-- Horizontal sync
-	 	v_sync		    : out std_logic;						-- Vertical sync
-		pixel_data		: out std_logic_vector(7 downto 0);	-- Data to be sent to the screen
+        clk		    : in std_logic;							-- System clock, because this already is 25 MHz, we dont 
+                                                            -- have to use clk_25
+		data		: in std_logic;							-- Data from pixel memory
+		addr		: out std_logic_vector(16 downto 0);	-- Adress for pixel memory
+		re			: out std_logic;						-- Read enable for pixel memory
+	 	rst			: in std_logic;							-- Reset
+	 	h_sync	  	: out std_logic;						-- Horizontal sync
+	 	v_sync		: out std_logic;						-- Vertical sync
+		pixel_data	: out std_logic_vector(7 downto 0);     -- Data to be sent to the screen
 
-        write_addr      : out std_logic_vector(16 downto 0);
-        write_data      : out std_logic;
-        write_enable    : out std_logic;
-        vga_done        : out std_logic
-    );
+        write_addr  : out std_logic_vector(16 downto 0);    -- Adress for clearing pixel_mem
+        write_data  : out std_logic;                        -- Data to be sent to pixel_mem (=0)
+        write_enable: out std_logic;                        -- Write Enable to be sent to pixel_mem
+        vga_done : out std_logic                      -- 1 when gpu and vga should switch buffers,
+                                                      -- and when cpu should start working, if waiting
+
+    );				
 end component;
 
  -- Program Memory
@@ -174,8 +175,6 @@ signal object_mem_we :   std_logic := '0';
 signal object_mem_read_adress :   GPU_Info.ObjAddr_t;
 signal object_mem_read_data :   GPU_Info.ObjData_t;
 
--- Signal between uart and cpu
-signal cpu_clk					: std_logic := '0'; 
 
 -- Signal between kbd_enc and cpu
 signal kbd_reg                  : std_logic_vector(6 downto 0);
@@ -269,8 +268,7 @@ begin
                            read_data=>object_mem_read_data,
                            write_addr=>object_mem_write_adress_unsigned,
                            write_data=>object_mem_write_data,
-                           we=>object_mem_we,
-                           debuginfo=>object_mem_debug_data);
+                           we=>object_mem_we);
 
     -- Pixel memory component connection
 	PIXELMEM : pixel_mem port map(
@@ -294,7 +292,7 @@ begin
 	write_instruction=>program_mem_write_instruction, read_adress=>program_mem_read_adress,
 	re=>program_mem_re, read_instruction=>program_mem_read_instruction);
 -- UART component connection
-	UARTCOMP: uart port map(clk=>slow_clk,rx=>rx,cpu_clk=>cpu_clk,we=>program_mem_we,
+	UARTCOMP: uart port map(clk=>slow_clk,rx=>rx,we=>program_mem_we,
 	mem_instr=>program_mem_write_instruction,mem_pos=>program_mem_write_adress);
 -- Keyboard Encoder component connection
 	KBDENC: kbd_enc port map(clk=>slow_clk,ps2_kbd_clk=>ps2_kbd_clk,ps2_kbd_data=>ps2_kbd_data,
