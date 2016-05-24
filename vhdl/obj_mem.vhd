@@ -1,9 +1,9 @@
 -- Object Memory, storing information for each object in the game
 -- Every object has:
 --                  Position
---                  Rotation
+--                  Angle
 --                  Scale (not used in final product)
---                  Model (start position in model mem)
+--                  Model (start position in model memory)
 library IEEE;
 
 use IEEE.Numeric_std.all;
@@ -28,18 +28,21 @@ end entity;
 architecture Behavioral of ObjMem is
 
 -- Declaration of model memory with 512 adresses containing 64 bit data
-type ram_t is array (0 to 511) of Vector.InMemory_t;
 
+-- Memory which stores data about each object that should be drawn on the screen. The CPU writes
+-- to this memory while the GPU reads from.
+-- The GPU will read continuously until it encounters an object that is entirely FFFF...FF at which point it
+-- knows that all objects have been drawn and it will wait until the current frame is done drawing.
+type ram_t is array (0 to 511) of Vector.InMemory_t;
+    -- Storing some starting data along with FF...F i the rest of the memory
     signal ram : ram_t := (
-        -- Ship is hardcoded, the rest is created by CPU
-        0  => x"0070_0070_0000_0000",
+        0  => x"0070_0070_0000_0000", -- Ship is hardcoded, the rest is created by CPU
         1  => x"0000_0000_0000_0000",
         2  => x"0000_0000_0000_0000",
         3  => x"0000_0000_0000_0000",
         others => (others => '1'));
 
 begin
-
 PROCESS(clk)
 BEGIN
   if (rising_edge(clk)) then
