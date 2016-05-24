@@ -68,6 +68,7 @@ component cos_table is
     );
 end component;
 
+-- Used for multiplying a regular 16 bit signed number with a cos value
 component FractionalMultiplyer is
     port(
         big_num: in Datatypes.std_number_t;
