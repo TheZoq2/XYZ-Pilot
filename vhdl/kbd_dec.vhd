@@ -6,16 +6,16 @@ use IEEE.NUMERIC_STD.ALL;               -- IEEE library for the unsigned type
                                         -- and various arithmetic operations
 
 -- entity
-entity kbd_enc is
+entity kbd_dec is
   port ( clk	                : in std_logic;			-- system clock (100 MHz)
          ps2_kbd_clk	        : in std_logic; 		-- USB keyboard PS2 clock
          ps2_kbd_data	        : in std_logic;         -- USB keyboard PS2 data
          kbd_reg                : out std_logic_vector(0 to 6) := (others => '0')); 
         -- [W,A,S,D,SPACE,J,L] 1 means key is pushed down, 0 means key is up	
-end kbd_enc;
+end kbd_dec;
 
 -- architecture
-architecture behavioral of kbd_enc is
+architecture behavioral of kbd_dec is
   signal ps2_clk		: std_logic;			-- Synchronized PS2 clock
   signal ps2_data		: std_logic;			-- Synchronized PS2 data
   signal ps2_clk_q1     : std_logic := '1';
