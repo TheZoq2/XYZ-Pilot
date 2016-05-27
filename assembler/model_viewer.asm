@@ -4,6 +4,7 @@ NOP
 model1_start = 0
 model2_start = 7A
 model3_start = BE
+model4_start = 203
 
 obj_start = 100
 LOAD 1 obj_start
@@ -16,6 +17,9 @@ STORE.R 0 obj_start 1
 
 LOAD 0 model3_start
 STORE.R 0 obj_start 2
+
+LOAD 0 model4_start
+STORE.R 0 obj_start 3
 
 current_obj = 0
 
@@ -59,7 +63,7 @@ DO_SWITCH:
     ADDI current_obj current_obj 1
     
     MOVHI 1 00000000
-    MOVLO 1 00000003
+    MOVLO 1 00000004
     ALIAS 1 MAX_OBJ
     IF current_obj >= MAX_OBJ
         MOVHI current_obj 0
