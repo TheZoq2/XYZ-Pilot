@@ -338,7 +338,7 @@ begin
         when load_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
         when load_rel_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));                             
         when cmp_op_code => d_1 <= reg_file(conv_integer(ir1_reg1));
-        when dbg_op_code => d_1 <= reg_file(conv_integer(ir1_reg1)); debuginfo <= reg_file(conv_integer(ir1_reg1))(15 downto 0);
+        when dbg_op_code => d_1 <= reg_file(conv_integer(ir1_reg1)); 
         when others => d_1 <= reg_file(conv_integer(ir1_reg3));
       end case;
 

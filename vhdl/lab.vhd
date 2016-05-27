@@ -32,7 +32,7 @@ component cpu is
             obj_mem_adress : out std_logic_vector(8 downto 0); -- The adress to be sent to object memory
             obj_mem_we  : out std_logic; -- Write Enable for object memory
             frame_done  : in std_logic; -- Signal from vga_motor informing that a full frame has been displayed
-            kbd_reg     : in std_logic_vector(6 downto 0) := (others => '0'); -- Signal from kbd_enc showing which 
+            kbd_reg     : in std_logic_vector(6 downto 0) := (others => '0'); -- Signal from kbd_dec showing which 
                                                                               -- keys are being pressed down
             debuginfo   : out std_logic_vector(15 downto 0) := (others => '0')); -- Info to be shown on the 7-seg
 end component;
@@ -45,8 +45,8 @@ component uart is
 			mem_pos		: out std_logic_vector(15 downto 0) := (others => '0')); -- The adress to be sent to pm
 end component;
 
--- KEYBOARD ENCODER
-component kbd_enc is
+-- KEYBOARD DECODER
+component kbd_dec is
   port ( clk	                : in std_logic;			-- system clock (100 MHz)
          ps2_kbd_clk	        : in std_logic; 		-- USB keyboard PS2 clock
          ps2_kbd_data	        : in std_logic;         -- USB keyboard PS2 data
@@ -172,7 +172,6 @@ signal object_mem_read_adress :   GPU_Info.ObjAddr_t;
 signal object_mem_read_data :   GPU_Info.ObjData_t;
 
 
--- Signal between kbd_enc and cpu
 signal kbd_reg                  : std_logic_vector(6 downto 0);
 
 -- Signals between vga_motor and pixel_mem
@@ -290,8 +289,8 @@ begin
 -- UART component connection
 	UARTCOMP: uart port map(clk=>slow_clk,rx=>rx,we=>program_mem_we,
 	mem_instr=>program_mem_write_instruction,mem_pos=>program_mem_write_adress);
--- Keyboard Encoder component connection
-	KBDENC: kbd_enc port map(clk=>slow_clk,ps2_kbd_clk=>ps2_kbd_clk,ps2_kbd_data=>ps2_kbd_data,
+-- Keyboard Decoder component connection
+	KBDDEC: kbd_dec port map(clk=>slow_clk,ps2_kbd_clk=>ps2_kbd_clk,ps2_kbd_data=>ps2_kbd_data,
     kbd_reg=>kbd_reg);
 -- Debug / Score display
    DEBUG : dbg_segment port map (

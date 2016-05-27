@@ -36,9 +36,9 @@ signal read_byte	: std_logic_vector(9 downto 0) := (others => '0');  -- The byte
 begin
 
  -- D-vippor
-process(uart_clk)
+process(clk)
 begin
-	if rising_edge(uart_clk) then
+	if rising_edge(clk) and is_eof = '0' then
 		rx1 <= rx;
 		rx2 <= rx1;
 	end if;
@@ -46,9 +46,9 @@ end process;
 
  -- Shift Instruction Register
  -- When a whole byte has been loaded, it is stored in a 64 bit instruction register
-process(uart_clk)
+process(clk)
 begin
-	if rising_edge(uart_clk) then
+	if rising_edge(clk) and is_eof = '0' then
 		if (lp = '1') then
 			instr <= instr(55 downto 0) & read_byte(8 downto 1);
 		end if;
@@ -57,9 +57,9 @@ end process;
 
  -- Shift Byte Register
  -- Shift register storing a byte of data (plus start, end and parity bit)
-process(uart_clk)
+process(clk)
 begin
-	if rising_edge(uart_clk) then
+	if rising_edge(clk) and is_eof = '0' then
 		if (sp = '1')then
 			read_byte <= rx2 & read_byte(9 downto 1);
 		end if;
@@ -67,8 +67,8 @@ begin
 end process;
 
  -- Control Unit
-process(uart_clk) begin
-	if rising_edge(uart_clk) then
+process(clk) begin
+	if rising_edge(clk) and is_eof = '0' then
       if sp='1' then
         -- Shift pulse = 1 -> shift pulse is cleared
         -- If the counters have reached their max value, they are also cleared 
