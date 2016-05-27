@@ -1,3 +1,4 @@
+-- Components used in CPU to perform calculations regarding vectors
 -----------------------------------------------------------
 --                  Square root algoritm
 --Code taken from http://vhdlguru.blogspot.se/2010/03/vhdl-function-for-finding-square-root.html
@@ -42,6 +43,17 @@ end sqrt_pkg;
 
 -----------------------------------------------------------
 --              Small  number multiplyer
+--Used to multiply two numbers that are (smaller than 2) together. 
+--
+--The format of the numbers is as follows:
+--Bit
+--15    sign
+--14-9  unused
+--8-0   unsigned value
+--
+--The reason we didn't simply use regular sign numbers is that
+--we had to do a lot of bitshifts to multiply these smaller numbers
+--with bigger numbers.
 -----------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -70,6 +82,7 @@ end Behavioral;
 
 -----------------------------------------------------------
 --              Decimal number multiplyer
+--Used for multiplying a regular signed number with a `small number`
 -----------------------------------------------------------
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -111,6 +124,7 @@ end Behavioral;
 
 -----------------------------------------------------------
 --              Vector adder
+--Adds two vectors together
 -----------------------------------------------------------
 library IEEE;
 use IEEE.numeric_std.all;
@@ -160,6 +174,8 @@ begin
     result(2) <= vec2(2) - vec1(2);
     result(3) <= vec2(3) - vec1(3);
 end Behavioral;
+----------------------------------------------------------
+--          Calculates the length of a vector
 ----------------------------------------------------------
 
 library IEEE;
@@ -213,6 +229,10 @@ end behavioral;
 
 --########################################################
 --             Vector splitter / merger
+--In the memory circuits, vectors are stored as 64 bit vectors
+--While calculations on them are done on 4 element arrays of
+--signed 16 bit numbers. These components go between the two
+--representations
 --########################################################
 library IEEE;
 use IEEE.std_logic_1164.all;

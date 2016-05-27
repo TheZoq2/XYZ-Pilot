@@ -1,3 +1,4 @@
+#!/bin/python
 import sys
 
 def tohex(val, nbits):
@@ -9,6 +10,10 @@ input_file = sys.stdin.read();
 input_lines = input_file.split("\n");
 
 current_index = 0;
+
+if len(sys.argv) == 2:
+    current_index = int(sys.argv[1])
+
 for line in input_lines:
     coords = line.split(" ");
 

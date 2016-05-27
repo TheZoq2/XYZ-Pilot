@@ -1,4 +1,3 @@
-#Make sure asteroids don't spawn with 0 velocity
 NOP
 
 RESTART:
@@ -47,7 +46,7 @@ SHOT_LIFE = 5
 #Shot  stuff
 CURRENT_SHOT = 0
 SHOT_AMOUNT = 9
-#Remember that  this is HEX
+#Remember that this is HEX
 SHOT_OFFSET = 18
 SHOT_ARRAY_START = 300
 SHOT_MEM_SIZE = 4
@@ -61,8 +60,9 @@ STOREOBJ 0 4
 BRA INIT
 FINISHED_INIT:
 
+# ------ MAIN GAME LOOP ------
 ITER:
-  # ------------ UPDATING SHIP ------------
+  # --- UPDATING SHIP ---
   LOAD 0 SHIPPOS
   LOAD 1 SHIPVEL
 
@@ -80,7 +80,6 @@ ITER:
   TESTRIGHT:
     BTST F 3
     BEQ GORIGHT
-  
   TEST_TURN_LEFT:
     BTST F 0
     BEQ TURN_LEFT
@@ -135,22 +134,24 @@ ITER:
   #Update the visual position
   STORE FINAL_POS SHIP_REAL_POS
 
+  # Check if ship is crossing the borders of the screen
   BRA BORDERCONTROL
   FINISHED_BORDER_CONTROL:
 
   LOAD 8 SHIP_REAL_POS
   STOREOBJ SHIP_REAL_POS 0
 
-  #Do shooting stuff
+  # Do shooting stuff
   BTST F 2
   BEQ SHOOT
   HAS_SHOT:
-
+  
   BRA UPDATE_SHOT
   SHOT_UPDATE_DONE:
 
-  #End of shooting stuff
+  # End of shooting stuff
   
+  # Updating asteroids
   BRA UPDATE_ASTEROIDS
   DONE_UPDATE_ASTEROIDS:
   
@@ -161,7 +162,10 @@ ITER:
   STORE TIMER TIMER
 
   BRA ITER
-#Initialisation
+
+# ------ "subroutines" used in main loop ------
+
+#Initialisation of values at start of the game
 INIT:
   BOX = 19
 
@@ -178,11 +182,11 @@ INIT:
     LOAD 4 ASTEROID_GRAVEYARD
     STORE.R 4 CURRENT_ASTEROID 0
     
-    ADDI CURRENT_ASTEROID  CURRENT_ASTEROID 6
+    ADDI CURRENT_ASTEROID CURRENT_ASTEROID 6
     ADDI i i 1
   ENDWHILE
 
-  #RESET SHOTS
+  # RESET SHOTS
   LOAD 0 NULL
   ALIAS 0 i
   LOAD 1 SHOT_AMOUNT
@@ -448,7 +452,6 @@ UPDATE_SHOT:
   BRA SHOT_UPDATE_DONE
 
 UPDATE_ASTEROIDS:
-  #The part of the code that trump would enjoy  assuming asteroids are  mexican
   LOAD 0 NULL
   ALIAS 0 i
   LOAD 1 ARRAYSIZE
@@ -457,7 +460,7 @@ UPDATE_ASTEROIDS:
   WHILE i <= ARRAYSIZE
     LOAD.R 4 ARRAYSTART 0
     ALIAS 4 POS
-    #Check the borders for asteroids(mexicans)
+    #Check the borders for asteroids
     #Add 30 to the coordinates to make 0,0 be at the  border. This will caluse 
     #overflows which will mess up the compare in our favour
     MOVHI 5 00300030
@@ -521,6 +524,7 @@ UPDATE_ASTEROIDS:
     ALIAS 4 POS
 
     LOAD 5 ASTEROID_GRAVEYARD
+    # "respawn a new asteroid"
     IF POS == ASTEROID_GRAVEYARD
       #Random position along the borders
       LOAD 7 ONE
@@ -530,11 +534,12 @@ UPDATE_ASTEROIDS:
       AND 4 4 5
       ALIAS 4 SIDE
       MOVHI 9 00000000
-      MOVLO 9 00000020
-      ALIAS 9 BORDER_BOX
-      
+      MOVLO 9 00000008
+      ALIAS 9 OFFSETY
+      # SIDE decides which side (left, right, top, bottom) the asteroid will spawn on
+      # The code inside the if statements sets a random position on that side
       IF SIDE == NULL
-        # LEFT SIDE
+        # LEFT SIDE, random y pos
         # -32 DECIMAL
         MOVHI 6 00000000
         MOVLO 6 0000FFE0
@@ -545,32 +550,14 @@ UPDATE_ASTEROIDS:
         MOVHI 7 00000000
         AND 5 5 7
         ALIAS 5 STARTY
-        VECSUB STARTY STARTY BORDER_BOX
+        VECSUB STARTY STARTY OFFSETY
         LSLI STARTY STARTY 20
         VECADD 8 STARTX STARTY
         ALIAS 8 STARTPOS
       ENDIF
       VECSUB SIDE SIDE ONE
       IF SIDE == NULL
-        # TOP SIDE
-        # -32 DECIMAL
-        MOVHI 6 00000000
-        MOVLO 6 0000FFE0
-        ALIAS 6 STARTY
-        LSLI STARTY STARTY 20
-        RANDOM 5
-        MOVLO 7 000001FF
-        MOVHI 7 00000000
-        AND 5 5 7
-        ALIAS 5 STARTX
-        VECSUB STARTX STARTX BORDER_BOX
-        LSLI STARTX STARTX 30
-        VECADD 8 STARTX STARTY
-        ALIAS 8 STARTPOS
-      ENDIF
-      VECSUB SIDE SIDE ONE
-      IF SIDE == NULL
-        # RIGHT SIDE
+        # RIGHT SIDE, random y pos
         # 352 DECIMAL
         MOVHI 6 00000000
         MOVLO 6 00000160
@@ -581,14 +568,35 @@ UPDATE_ASTEROIDS:
         MOVHI 7 00000000
         AND 5 5 7
         ALIAS 5 STARTY
-        VECSUB STARTY STARTY BORDER_BOX
+        VECSUB STARTY STARTY OFFSETY
         LSLI STARTY STARTY 20
+        VECADD 8 STARTX STARTY
+        ALIAS 8 STARTPOS
+      ENDIF
+      MOVHI 9 00000000
+      MOVLO 9 00000060
+      ALIAS 9 OFFSETX
+      VECSUB SIDE SIDE ONE
+      IF SIDE == NULL
+        # TOP SIDE, random x pos
+        # -32 DECIMAL
+        MOVHI 6 00000000
+        MOVLO 6 0000FFE0
+        ALIAS 6 STARTY
+        LSLI STARTY STARTY 20
+        RANDOM 5
+        MOVLO 7 000001FF
+        MOVHI 7 00000000
+        AND 5 5 7
+        ALIAS 5 STARTX
+        VECSUB STARTX STARTX OFFSETX
+        LSLI STARTX STARTX 30
         VECADD 8 STARTX STARTY
         ALIAS 8 STARTPOS
       ENDIF
       VECSUB SIDE SIDE ONE
       IF SIDE == NULL
-        # BOTTOM SIDE
+        # BOTTOM SIDE, random x pos
         # 288 DECIMAL
         MOVHI 6 00000000
         MOVLO 6 00000120
@@ -599,7 +607,7 @@ UPDATE_ASTEROIDS:
         MOVHI 7 00000000
         AND 5 5 7
         ALIAS 5 STARTX
-        VECSUB STARTX STARTX BORDER_BOX
+        VECSUB STARTX STARTX OFFSETX
         LSLI STARTX STARTX 30
         VECADD 8 STARTX STARTY
         ALIAS 8 STARTPOS

@@ -1,3 +1,5 @@
+-- Consisting of two buffers, the pixel memory switches between these two, where the gpu is
+-- writing to one and the vga motor is reading from the other (and clearing)
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
@@ -5,17 +7,18 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 entity pixel_mem is
 port (
         clk : in std_logic;
-        switch_buffer: in std_logic;
+        switch_buffer: in std_logic; -- One pulse, decides when to switch buffers
 
         -- port IN
         gpu_write_adress: in std_logic_vector(16 downto 0);
         gpu_we : in std_logic;
         gpu_write_data : in std_logic;
 
-        -- port IN
+        -- port IN (for clearing after reading)
         vga_write_adress: in std_logic_vector(16 downto 0);
         vga_we : in std_logic;
         vga_write_data : in std_logic;
+
         -- port OUT
         vga_read_adress: in std_logic_vector(16 downto 0);
         vga_re : in std_logic;
@@ -32,7 +35,7 @@ architecture Behavioral of pixel_mem is
     signal ram1 : ram_t := (others => '0');
 
     -- Clears all adresses
-    signal ram2 : ram_t := (0 => '1', 2 => '1', 4 => '1', others => '0');
+    signal ram2 : ram_t := (others => '0');
 
 
     signal current_memory: std_logic := '1';
@@ -41,48 +44,38 @@ architecture Behavioral of pixel_mem is
     signal r1_read_data :std_logic;
     signal r2_read_data :std_logic;
 
-    --The input to the two rams
+
+    --- The input to the two rams ---
+    -- Adresses are divided into aliases
+    alias gpu_write_x: std_logic_vector(8 downto 0) is gpu_write_adress(16 downto 8);
+    alias gpu_write_y: std_logic_vector(7 downto 0) is gpu_write_adress(7 downto 0);
+
+    alias vga_write_x: std_logic_vector(8 downto 0) is vga_write_adress(16 downto 8);
+    alias vga_write_y: std_logic_vector(7 downto 0) is vga_write_adress(7 downto 0);
+
+    alias vga_read_x: std_logic_vector(8 downto 0) is vga_read_adress(16 downto 8);
+    alias vga_read_y: std_logic_vector(7 downto 0) is vga_read_adress(7 downto 0);
+
     signal r1_write_data :std_logic;
     signal r2_write_data :std_logic;
 
     signal r1_write_x: std_logic_vector(8 downto 0);
     signal r1_write_y: std_logic_vector(7 downto 0);
-    signal r1_read_x: std_logic_vector(8 downto 0);
-    signal r1_read_y: std_logic_vector(7 downto 0);
+    alias r1_read_x: std_logic_vector(8 downto 0) is vga_read_x;
+    alias r1_read_y: std_logic_vector(7 downto 0) is vga_read_y;
 
     signal r2_write_x: std_logic_vector(8 downto 0);
     signal r2_write_y: std_logic_vector(7 downto 0);
-    signal r2_read_x: std_logic_vector(8 downto 0);
-    signal r2_read_y: std_logic_vector(7 downto 0);
+    alias r2_read_x: std_logic_vector(8 downto 0) is vga_read_x;
+    alias r2_read_y: std_logic_vector(7 downto 0) is vga_read_y;
 
     signal r1_we: std_logic;
     signal r2_we: std_logic;
     signal r1_re: std_logic;
     signal r2_re: std_logic;
 
-    signal gpu_write_x: std_logic_vector(8 downto 0);
-    signal gpu_write_y: std_logic_vector(7 downto 0);
-
-    signal vga_write_x: std_logic_vector(8 downto 0);
-    signal vga_write_y: std_logic_vector(7 downto 0);
-    signal vga_read_x: std_logic_vector(8 downto 0);
-    signal vga_read_y: std_logic_vector(7 downto 0);
 begin
-
-	gpu_write_x <= gpu_write_adress(16 downto 8);
-	gpu_write_y <= gpu_write_adress(7 downto 0);
-
-	vga_read_x <= vga_read_adress(16 downto 8);
-	vga_read_y <= vga_read_adress(7 downto 0);
-	vga_write_x <= vga_write_adress(16 downto 8);
-	vga_write_y <= vga_write_adress(7 downto 0);
-
-    --Read pins
-    r1_read_x <= vga_read_x;
-    r1_read_y <= vga_read_y;
-    r2_read_x <= vga_read_x;
-    r2_read_y <= vga_read_y;
-
+    --- Which buffer to write to and read from is decided here ---
     vga_read_data <= r2_read_data when current_memory = '1' else r1_read_data;
 
     --Read enable pins

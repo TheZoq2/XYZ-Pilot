@@ -1,3 +1,4 @@
+-- Program Memory, containing the instructions for the CPU
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
@@ -17,12 +18,11 @@ end program_mem;
 architecture Behavioral of program_mem is
 
 
--- Declaration of program memory of 65535 (2048) adresses with an instruction size of 64 bits
+-- Declaration of program memory of 2048 adresses with an instruction size of 64 bits
 type ram_t is array (0 to 2047) of std_logic_vector(63 downto 0);
 
 -- Clears all adresses
 signal ram: ram_t := (others => (others => '0'));
-
 
 begin
     process(clk)

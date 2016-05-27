@@ -39,18 +39,38 @@ end entity;
 
 architecture Behavioral of GPU is
 	type gpu_state_type is (
+          -- Read the object from object memory.
           READ_OBJECT,
+
+          -- Read line data from model memory pointer to by object.
           FETCH_LINE,
+
+          -- Prepare initial state for line drawing.
           PREPARE_LINE,
+
+          -- Choose whether to iterate over the x-axis or y-axis.
           START_LINE,
+
+          -- Draw the current pixel of the line to the pixel memory.
           DRAW_LINE_PIXEL,
+
+          -- Update line pixel position and loop index.
           PREPARE_NEXT_LINE_PIXEL,
+
+          -- Increase line pointer to next line and fetch it.
           PREPARE_NEXT_LINE,
+
+          -- Suspend GPU operation until the next frame.
           WAIT_FOR_VGA,
+
+          -- Calculate trigonometry functions for various data. 
           CALC_TRIG,
+
+          -- Use values from trigonometry calculations to perform rotation transform.
           CALC_ROTATED
         );
 
+    --Add two `small_number_t` types together.
     function add_small_num(num1: datatypes.small_number_t; num2: datatypes.small_number_t)
         return datatypes.small_number_t is
 
@@ -101,20 +121,20 @@ architecture Behavioral of GPU is
     signal current_obj_offset: unsigned(2 downto 0) := (others => '0');
     signal obj_mem_vec: vector.Elements_t;
 
-    --Decides which vector register in the gpu to write the current line in the model memory  to
-    signal set_start_or_end: std_logic := '0';
-
+    --The start and end vector of the line we are drawing
     signal start_vector: work.Vector.InMemory_t := (others => '0');
     signal end_vector: work.Vector.InMemory_t := (others => '0');
 
+    --The start and end of the current line on the screen
     signal screen_start: Vector.Elements_t;
     signal screen_end: Vector.Elements_t;
 
+    --Position,scale(not implemented) and rotation of the current object being drawn
     signal obj_position: Vector.Elements_t;
     signal obj_angle: Vector.Elements_t;
     signal obj_scale: Vector.Elements_t;
 
-    --Versions of draw_start and end that have not been corrected for the line to be in the first
+    --Versions of screen_start and end that have not been corrected for the line to be in the first
     --octant
     signal raw_start: Vector.Elements_t;
     signal raw_end: Vector.Elements_t; 
@@ -126,16 +146,24 @@ architecture Behavioral of GPU is
     --The address in the model memory that the next 
     signal line_start_addr: GPU_Info.ModelAddr_t := (others => '0');
 
+    --State of the line being fetched
     signal fetch_line_state: Line_Fetch_State.type_t := Line_Fetch_State.SET_START;
 
+
+    --The angle currently being calculated
     signal calc_angle: unsigned(7 downto 0) := x"00";
+    --The sin value of the current angle
     signal sin_val: datatypes.small_number_t;
 
+    --Which trig function being calculated
     signal trig_calc_stage: unsigned(2 downto 0) := (others => '0');
 
+    --Selects which element of the start or end vector we are multiplying by
     signal calc_rotation_start_or_end: std_logic := '0';
     signal rotation_calc_stage: unsigned(4 downto 0) := (others => '0');
 
+    --Selects if the last trig result or the value stored in the trigonometric buffer should
+    --used as input to the small number multiplyer
     type big_mul_in_selector_t is (
         SEL_TRIG_BUFF,
         SEL_TRIG_RESULT
@@ -166,6 +194,7 @@ architecture Behavioral of GPU is
     signal big_mult_num: datatypes.std_number_t;
     signal big_mult_result: datatypes.std_number_t;
 
+    --The value being multiplyed by a trig value
     signal big_mul_trig_in: datatypes.small_number_t;
 
     signal current_rotated_vector: Vector.Elements_t;
@@ -184,6 +213,7 @@ architecture Behavioral of GPU is
     signal x_incr : signed(15 downto 0);
     signal y_incr : signed(15 downto 0);
 
+    --Components for vector calculations
     component VectorSubtractor is
         port(
                 --The two vectors that should be added together
@@ -200,6 +230,7 @@ architecture Behavioral of GPU is
         );
     end component;
 
+    --Stores lines that make up the 3d models
     component ModelMem is
         port(
             clk: in std_logic;
@@ -208,6 +239,7 @@ architecture Behavioral of GPU is
         );
     end component;
             
+    --Lookup table for sin function. For the cos function, cos(a) = sin(a + 90) is used
     component sin_table is
         port(
                 angle: in unsigned (7 downto 0);
@@ -215,6 +247,7 @@ architecture Behavioral of GPU is
             );
     end component;
 
+    --Used to multiply numbers <2 with regular signed numbers
     component FractionalMultiplyer is
         port(
                 big_num: in Datatypes.std_number_t;
@@ -223,6 +256,7 @@ architecture Behavioral of GPU is
             );
     end component;
 
+    --Used to multiply 2 small (<2) numbers together
     component SmallNumberMultiplyer is
         port(
                 num1: in Datatypes.small_number_t;
@@ -270,18 +304,8 @@ begin
 
     obj_mem_addr <= current_obj_start + current_obj_offset;
 
-    --screen_start(0) <= raw_start(0);
-    --screen_start(1) <= raw_start(1);
-    ----screen_start(1) <= y_cos - z_sin;
 
-    --screen_start(2) <= x"0000";
-    --screen_start(3) <= x"0000";
-    --screen_end(0) <= raw_end(0);
-    --screen_end(1) <= raw_end(1);
-    ----screen_end(1) <= y_cos_end - z_sin_end;
-    --screen_end(2) <= x"0000";
-    --screen_end(3) <= x"0000";
-
+    --Selects if we should select the start or end vector of the curent line
     with fetch_line_state select
         model_mem_addr <= line_start_addr when Line_Fetch_State.SET_START,
                           line_start_addr when Line_Fetch_State.STORE_START,
@@ -290,6 +314,8 @@ begin
     --Change between calculating the rotation of the start or end vector
     current_rotated_vector <= raw_start when calc_rotation_start_or_end = '1' and gpu_state = CALC_ROTATED else raw_end;
     
+    --Selects wether or not we should multiply the previous trig result or the buffer that stores intermediate
+    --trig results
     big_mul_trig_in <= trig_result when big_mul_in_selector = SEL_TRIG_RESULT else trig_buff;
 
     --###########################################################################
@@ -318,12 +344,13 @@ begin
                     line_start_addr <= unsigned(obj_mem_data(GPU_Info.MODEL_ADDR_SIZE - 1 downto 0));
                 elsif current_obj_offset = 3 then --If this is the position value
                     obj_scale <=  obj_mem_vec;
-                elsif current_obj_offset = 2 then
+                elsif current_obj_offset = 2 then --If this is the angle
                     obj_angle <=  obj_mem_vec;
-                elsif current_obj_offset = 1 then
+                elsif current_obj_offset = 1 then --If this is the Scale
                     obj_position <=  obj_mem_vec;
                 end if;
             elsif gpu_state = CALC_TRIG then
+                --This state calculates all the combinations of sin or cos of xyz rotation of the current object
 
                 trig_calc_stage <= trig_calc_stage + 1;
                 --Do the actual calculations
@@ -372,8 +399,12 @@ begin
                     gpu_state <= CALC_ROTATED;
                 end if;
             elsif gpu_state = CALC_ROTATED then
+                --This state calculates the x and y component of the current line when we rotate
+                --it with the objects angles. This is done by multiplying the x,y,z coordinates
+                --with the following matrix shown here
+                -- `http://www.wolframalpha.com/input/?i=[[cos%28c%29,+-sin%28c%29,+0],[sin%28c%29,cos%28c%29,0],[0,0,1]]+*+[[cos%28b%29,+0,+sin%28b%29],[0,1,0],[-sin%28b%29,0,cos%28b%29]]+*+[[1,0,0],[0,cos%28a%29,-sin%28a%29],[0,sin%28a%29,cos%28a%29]]`
+                
                 rotation_calc_stage <= rotation_calc_stage + 1;
-
 
                 case rotation_calc_stage is
                     when "00000" => --cos(a)*cos(b) * x
@@ -464,7 +495,9 @@ begin
                         big_mul_in_selector <= SEL_TRIG_BUFF;
                     when "10010" =>
                         rotation_result(1) <= current_coord + big_mult_Result;
-                    when others =>
+                    when others => 
+                        --Calculate the end vector instead of the start, or 
+                        --move on to the next state if the end has been calculated
                         if calc_rotation_start_or_end = '1' then
                             screen_end <= rotation_result;
                             gpu_state <= PREPARE_LINE;
@@ -540,6 +573,8 @@ begin
 
                 gpu_state <= FETCH_LINE;
             elsif gpu_state = WAIT_FOR_VGA then
+                --Waiting until the vga motor notifies the rest of the system
+                --that the current frame is done
                 if vga_done = '1' then
                     gpu_state <= READ_OBJECT;
                     --angle <= angle + 1;
@@ -561,6 +596,7 @@ begin
     pixel_address(7 downto 0) <= std_logic_vector(y_out(7 downto 0));
     pixel_data <= '1';
 
+    --Make sure we don't write outside the screen
     pixel_write_enable <= '1' when gpu_state = DRAW_LINE_PIXEL and 
                           x_out > 0 and
                           y_out > 0 and
