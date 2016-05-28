@@ -185,3 +185,6 @@ work
 
 # Compiled vhdl
 /vhdl/lab-synthdir/
+
+#Latex temp files
+*.aux
