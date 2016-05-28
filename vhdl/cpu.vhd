@@ -1,4 +1,4 @@
--- CPU
+-- CPU, performing basic instructions for game logic
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;            -- basic IEEE library
@@ -67,6 +67,7 @@ component cos_table is
         result: out datatypes.small_number_t
     );
 end component;
+
 -- Used for multiplying a regular 16 bit signed number with a cos value
 component FractionalMultiplyer is
     port(
@@ -76,6 +77,7 @@ component FractionalMultiplyer is
     );
 end component;
 
+-- Used to randomize values in game
 component LinearFeedbackSR is
 port (
   -- System clock
@@ -455,6 +457,11 @@ begin
       end if;
     end if;
   end process;
+  
+  -- Writing to object memory
+  obj_mem_data <= z_3;
+  obj_mem_adress <= d_3(8 downto 0);
+  obj_mem_we <= '1' when ir3_op = storeobj_op_code or ir3_op = storeobj_rel_op_code else '0';
 
 
   ---- 5. WB ----
@@ -495,11 +502,6 @@ begin
       end if;
     end if;
   end process;
-
-  -- Writing to object memory
-  obj_mem_data <= z_3;
-  obj_mem_adress <= d_3(8 downto 0);
-  obj_mem_we <= '1' when ir3_op = storeobj_op_code or ir3_op = storeobj_rel_op_code else '0';
 
 
 end Behavioral;

@@ -1,3 +1,4 @@
+-- Components used in CPU to perform calculations regarding vectors
 -----------------------------------------------------------
 --                  Square root algoritm
 --Code taken from http://vhdlguru.blogspot.se/2010/03/vhdl-function-for-finding-square-root.html
