@@ -387,11 +387,54 @@ endfunc
 
     \subsubsection{Beräkning av linjens roterade position}
     Den nyligen inlästa linjen roteras med hjälp av en rotationsmatris (figur
-    \ref{rot_matrix}) som beräknas med de värden som tidigare bestämdes för
+    \ref{fig:rot_matrix}) som beräknas med de värden som tidigare bestämdes för
     objektets rotation. Egentligen beräknas inte rotationsmatrisen utan
     resultatet av rotationsmatrisen multiplicerat med positions vektorn beräknas
     direkt. Eftersom att GPUn inte hanterar djup beräknas bara X och  Y
-    elementen i den nya positionen viket kan ses  i figur \ref{rot_matrix}. 
+    elementen i den nya positionen. Den roterade vektorn kan ses i
+    figur \ref{fig:rotated_vector}. 
+
+    \begin{figure}
+        \[
+            \begin{pmatrix}
+                cos(c) & -sin(c) & 0 \\ 
+                sin(c) & cos(c)  & 0 \\
+                0      &    0    & 1
+            \end{pmatrix}
+            \cdot
+            \begin{pmatrix}
+                cos(c)  &    0    & sin(b) \\ 
+                0       &    1    & 0 \\
+                0       &    0    & cos(b)
+            \end{pmatrix}
+            \cdot
+            \begin{pmatrix}
+                cos(b) & 0 & sin(b) \\ 
+                0 & 1  & 0 \\
+                -sin(b)      &    0    & cos(b) \\
+            \end{pmatrix}
+            \cdot
+            \begin{pmatrix}
+                x \\
+                y \\
+                z \\
+            \end{pmatrix}
+        \]
+        \caption{Matriserna som ska multipliceras för att rotera med eulervinklar \((a, b, c)\)}
+        \label{fig:rot_matrix}
+    \end{figure}
+
+    \begin{figure}
+        \[
+            \begin{pmatrix}
+x cos(b) cos(c)+y (cos(c) sin(a) sin(b)-cos(a) sin(c))+z (cos(a) cos(c) sin(b)+sin(a) sin(c)) \\
+x cos(b) sin(c)+z (cos(a) sin(b) sin(c)-cos(c) sin(a))+y (cos(a) cos(c)+sin(a) sin(b) sin(c)) \\
+z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
+            \end{pmatrix}
+        \]
+        \caption{Matriserna som ska multipliceras för att rotera med eulervinklar}
+        \label{fig:rotated_vector}
+    \end{figure}
 
     Beräkningen sker sekventiellt för både start och slutvektorn för linen. För
     att beräkna varje element beräknas först de trigonometriska funktionerna
@@ -402,15 +445,110 @@ endfunc
     element i  slutvektorn har beräknats sparas  det och nästa element beräknas.
     När  processen är klar för både start och slutvektorn går GPUn vidare  till
     att rita ut linjerna. Ett blockschema för processen kan ses i figur
-    \ref{rotated_matrix} 
+    \ref{fig:rotation_hardware} 
+
+    \subsubsection{Utritning av linje}
+    När linjens början och slut bestämts i skärmkoordinater används Bresenhams
+    linjealgortim för att rita ut den. Först förbereds algortimens
+    begynnelsevillkor för att sedan stega igenom den axel för linjen som är
+    längst och fylla de positioner som stegas igenom i pixelminnet. En
+    detaljerad beskrivning av algoritmen finns i teorikapitlet. 
+
+    \subsubsection{Väntan}
+
+    När alla objekt ritats ut väntar grafikprocessorn med att börja om
+    utritningen tills vga-motorn signalerat att en bild skickats till
+    bildskärmen. 
+
+    \subsection{Pixelminne}
+
+    Pixelminnet fungerar som kommunikationsbrygga mellan GPUn och VGA motorn.
+    Eftersom att GPUn inte kommer ihåg vilka linjer som har ritats ut så måste
+    skärmen någon gång rensas från den förra bilden. Vi valde att låta VGA motorn
+    sköta det eftersom att den ändå stegar igenom varje pixel i bilden. Ett problem
+    med den lösningen är att GPUn inte kan rita sin bild samtidigt som VGA motorn
+    rensar då delar av bilden i så fall skulle rensas bort innan de ritas ut. Därför
+    valde vi att dubbelbuffra pixelminnet. 
+
+    Pixelminnet består av två identiska block RAM, ett som GPUn skriver till och ett
+    som VGA motorn läser och rensar. När VGA motorn är färdig med en bild signalerar
+    den till pixelminnet att det ska byta RAM som läses och skrivs. Då läser VGA
+    motorn från det RAM som GPUn skrev till vid förra bilduppdateringen och GPUn får
+    ett nyrensat minne att skriva i. 
 
     \begin{figure}[H]
         \centering
-        \includegraphics[width=0.8\linewidth]{rot_matrix}
-        \caption{rot_matrix}
-        \label{fig:rot_matrix}
+        \includegraphics[width=0.8\linewidth]{pixelmem}
+        \caption{Blockschema över pixelminnet}
+        \label{fig:pixelmem}
     \end{figure}
 
+    \subsection{VGA motorn}
+
+    VGA-motorn är den komponent som stegar igenom varje pixel på skärmen för att
+    sätta ett bildvärde på dem. En pixel kan vara svart eller vit. Denna
+    information fås från pixelminnet som VGA-motorn har konstant kommunikation
+    med. Eftersom det tar en klockpuls för att läsa från pixelminnet bestämmer
+    VGA-motorn vilken position på skärmen som den borde vara vid nästa klockpuls
+    för att synka positionen på skärmen med det värde som fås från pixelminnet.
+    Bilden som ritas ut är 320x240 som skalas upp till 640x480. Detta innebär
+    att varje “storpixel” i pixelminnet beskriver vilken färg som 4 pixlar på
+    skärmen ska få. För att få ut rätt adress i pixelminnet vid läsning
+    divideras x- och y-position enkelt med 2. När den sista pixeln för en
+    “storpixel” sätts på skärmen skickar VGA-motorn en signal till pixelminnet
+    för att nollställa just den “storpixeln”. När en hel bild har uppdaterats
+    sänds en signal till konstruktionens CPU och GPU för att informera att de
+    ska fortsätta jobba. En detaljerad beskrivning syns i figur \ref{VGA_motor}. 
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{VGA_motor}
+        \caption{Blockschema över VGA motorn}
+        \label{fig:VGA_motor}
+    \end{figure}
+
+    
+
+
+
+    \section{Mjukvara}
+    \subsection{Assembler}
+
+    För att lättare kunna skapa program till apparaten har vi designat ett program
+    för att tolka assemblykod och konvertera det till maskinkod som sen kan laddas
+    in via UART och exekveras. Genom att också förse assemblern med vissa mer
+    avancerade programstatser blir det väldigt enkelt att skapa större program. 
+
+    \subsubsection{Labels}
+    En av de enklaste funktionerna i en assembler är att kunna namnge hoppadresser
+    och på så sätt slippa ändra hoppadresser varje gång som kod läggs till i mitten
+    av programmet. 
+
+    \subsubsection{Variabler}
+    Det är möjligt att definiera variabler längst med programmet som det
+    reserveras en minnesplats till i arbetsminnet. Variabler kan antingen
+    användas som konstanter eller ändras allt eftersom med hjälp av samma
+    syntax. 
+    \subsubsection{Registeralias}
+    Eftersom variabler endast kan användas i instruktionerna LOAD och STORE blir
+    det många instruktioner som använder så kallade magiska nummer för att
+    referera till de register som används. Lösningen som används i vår assembler
+    stödjer därför möjligheten att sätta alias för register. Genom att också
+    uppdatera dessa alias så fort man laddar in ett värde med LOAD blir
+    programstrukturen betydligt mer lättöverskådlig. 
+    \subsubsection{Kommentarer}
+    På grund av begränsningar i tolkens funktionalitet kan bara en typ av
+    statement användas per rad, och det gäller även för kommenterar. Rader som
+    börjar med tecknet för kommentarer hamnar inte i den genererande
+    programkoden och kan istället användas för att förklara koden. 
+    \subsubsection{Loopar}
+    Eftersom mycket i det program som vi  \textbf{PATRIK F:R FAN DU KAN JU INTE BARA
+        DRA UTAN ATT AVSLUTA MENINGEN. HUR I HELVETE SKA JAG VETA VAD SOM SKA
+        STÅ  HÄR. DET KAN JU BLI MISSFÖRSTÅND!}
+
+    \subsection{Spellogiken}
+
+    \section{Referenser}
 \end{document}
 
 
