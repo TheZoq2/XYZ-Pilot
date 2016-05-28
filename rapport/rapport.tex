@@ -1,0 +1,419 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc} %Make sure all UTF8 characters work in the document
+\usepackage[T1]{fontenc}
+
+\usepackage{listings} %Add code sections
+\usepackage{color}
+\usepackage{textcomp}
+\usepackage{url}
+\definecolor{listinggray}{gray}{0.9}
+\definecolor{lbcolor}{rgb}{0.9,0.9,0.9}
+\lstset{
+	backgroundcolor=\color{lbcolor},
+	tabsize=4,
+	rulecolor=,
+    basicstyle=\scriptsize,
+    upquote=true,
+    aboveskip={1.5\baselineskip},
+    columns=fixed,
+    showstringspaces=false,
+    extendedchars=true,
+    breaklines=true,
+    prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+    frame=single,
+    showtabs=false,
+    showspaces=false,
+    showstringspaces=false,
+    identifierstyle=\ttfamily,
+    keywordstyle=\color[rgb]{0,0,1},
+    commentstyle=\color[rgb]{0.133,0.545,0.133},
+    stringstyle=\color[rgb]{0.627,0.126,0.941},
+}
+
+%Set page size
+\usepackage{geometry}
+\geometry{margin=3cm}
+
+\usepackage{amssymb,amsmath}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{caption}
+    \captionsetup[table]{name=Tabell}
+\captionsetup[figure]{name=Figur}
+\usepackage{graphicx}
+
+%Set content name
+\renewcommand*\contentsname{Innehållsförteckning}
+
+\usepackage[yyyymmdd]{datetime}
+\renewcommand{\dateseparator}{--}
+
+
+
+%For swedish decimal divider style
+\DeclareMathSymbol{.}{\mathord}{letters}{"3B}
+
+\usepackage{siunitx}
+ 
+
+\usepackage{tikz}
+
+\usepackage{parskip} %used for \setlength 
+\setlength{\parindent}{15pt}  %Add line break after each paragraph 
+\raggedright %Right justify text
+\title{R-laboration: Svängande balk}
+\author{Frans Skarman}
+\date{November 2015}
+
+%Graphics
+
+%\def \zeleSource {Zele, John M, \textit{Python as a First Language} [www] <\url{http://mcsp.wartburg.edu/zelle/python/python-first.html}> hämtad 2015-11-04}
+\begin{document}
+    \begin{titlepage}
+
+        
+
+    	\vspace{2cm}
+        \centering
+    	{\huge\bfseries XYZ-Pilot\par}
+    	\vfill
+    
+    	\vfill
+    \end{titlepage}
+    
+    \section{Inledning}
+    Den här tekniska rapporten behandlar ett projektarbete i kursen TSEA83:
+    Datorkonstruktion på Linköpings Universitet.
+
+
+
+
+
+    \subsection{Bakgrund}
+    Kursen TSEA83 läses av studenter på civilingenjörsprogrammet datateknik och
+    avser att ge studenter kunskap om hur datorer fungerar i dess minsta
+    beståndsdelar. Förutom projektarbetet består kursen av en förberedande
+    laborationsdel som lägger behandlar de grundläggande kunskaperna i
+    processorkonstruktion och VHDL-kod. 
+    
+
+
+    \subsection{Syfte}
+    Denna rapport syftar att ge en förståelse för vår konstruktions arkitektur
+    och tekniska detaljer samt vilka lösningar vi tillämpat för att nå vår
+    färdiga produkt. Läsaren ska efter att ha tagit del av rapporten ha
+    förståelse för apparatens olika komponenter och de grundläggande teorier som
+    krävs för detta. Rapporten förklarar också hur apparaten används för att
+    fungera.
+
+
+    \subsection{Källor}
+    \textbf{TODO}
+
+    
+    \newpage
+        
+    \section{Apparaten}
+    Vår apparat använder ett tangentbord för input och visar sedan spelet på en
+    skärm med hjälp av VGA. Programkoden, som innehåller instruktioner för
+    processorn, laddas in via UART. Det program vi valt att realisera för apparaten
+    är ett rymdspel som går ut på att skjuta sönder asteroider för poäng. Poängen
+    man får syns hexadecimalt på 7-segments-displayen. Figur \ref{demo_img} visar en bild som
+    beskriver hur konstruktionen ser ut.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\textwidth]{demo_img}
+        \caption{Med hjälp av tangentbordet är det möjligt att styra skeppet på
+        skärmen och skjuta asteroider\label{demo_img}}
+    \end{figure}
+
+    Konstruktionen byggs genom att koppla in VGA från skärmen, UART och
+    strömsladd från valfri USB-port på en dator samt en tangentbordssladd i
+    FPGAn enligt figur \ref{fig:connection}. För att starta programmet behöver du vara inne i
+    mappen XYZ-Pilot/assembler och skriva in kommandot:
+    
+    \begin{lstlisting}[language=bash]
+    ./assemble.sh game.asm
+    \end{lstlisting}
+ 
+    Detta skript programmerar hårdvaran och laddar in mjukvaran via UART. Inom
+    kort borde skeppet synas på skärmen och tangentbordet kan användas för att
+    spela. 
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{connection.png}
+        \caption{Bilden beskriver  de sladdar som ska kopplas in i kortet}
+        \label{fig:connection}
+    \end{figure}
+
+    
+
+
+    \section{Teori}
+    \subsection{3D-grafik}
+    3d objekt representeras oftast som en mängd vektorer som beskriver hörnpunkter i
+    objektet, linjer som binder ihop dessa vektorer och ytor som binder ihop dessa
+    linjer. I vårat projekt finns inga ytor och för enkelhetens skull beskriver vi
+    inte linjer som två index till punkter utan direkt som två vektorer. 
+
+    I moderna GPUer används 4 dimensionella  vektorer istället för 3d vilket
+    möjliggör rotation, skalning och translation av en vektor i en enda
+    matrismultiplikation. Från början tänkte vi också göra det vilket är anledningen
+    till att våra  vektorer är 4 dimensionella. 
+
+    
+    \subsection{Bresenhams linjealgoritm}
+    Bresenhams linjealgoritm utvecklades på IBM under tidigt 1960-tal och hade den
+    stora fördelen att dess implementation endast kräver heltalsaddition,
+    subtraktion och shiftande av bitar. Eftersom algoritmen är så pass snabb och
+    simpel finns den realiserad i många existerande grafikprocessorer och vilket är
+    varför vi valt att använda den i vårt projekt.  
+
+    Algoritmen bygger på att räkna ut felet som uppstår jämfört motstående axel när
+    algortimen rör sig från början till slut. Blir felet tillräckligt stort
+    korrigeras det och felet minskar då med en enhet. Felet ökar med absolutvärdet
+    av kvoten mellan komponenternas längd för varje passerad pixel i algoritmens
+    ursprungliga form, som då kräver decimaltalsaritmetik. En implementation av
+    detta följer nedan. 
+
+    \begin{lstlisting}[]
+func drawLine(x0, y0, x1, y1)
+    dx = x1 - x0
+    dy = y1 - y0
+    e = -1
+    de = abs(dy / dx)
+
+    x = x0
+    y = y0
+
+    while x < x1 do
+        fill(x, y)
+        e += de
+        if e >= 0 then
+            y += 1
+            e -= 1
+        endif
+        x += 1
+    endwhile
+endfunc
+    \end{lstlisting}
+
+    I och med att det är mer kostsamt och ineffektivt att använda
+    decimaltalsaritmetik än heltalsaritmetik var en viktig egenskap med just
+    Bresenhams algoritm att den går att skriva om för detta. En annan begränsning
+    med algoritmen i dess grundutförande är att den endast fungerar för linjer som
+    rör sig med riktningen av den sista oktanten och därför ser den algoritm som är
+    implementerad i vår hårdvara aningen mer komplicerad ut än grundfallet. Vad som
+    sker i hårdvaran går att göra enklare genom att använda transformering av in-
+    och utdata beroende på vilken oktant linjen rör sig i istället för att använda
+    if-satser. 
+
+    \begin{lstlisting}[]
+func drawLine(x0, y0, x1, y1)
+    dx = abs(x1 - x0)
+    dy = abs(y1 - y0)
+    x = 0
+    y = 0
+    i = 0
+
+    x_incr = 1 if (x1 - x0) > 0 else -1
+    y_incr = 1 if (y1 - y0) > 0 else -1
+    
+    if dx > dy then
+        len = dx
+        D = 2 * dy - dx
+    else
+        len = dy
+        D = 2 * dx - dy
+    endif
+
+    while i < len do
+        fill(x, y)
+        if D > 0 then
+            if dx > dy then
+                y += y_incr
+                D -= 2 * dx
+            else
+                x += x_incr
+                D -= 2 * dy
+            endif
+        endif
+        
+        if dx > dy then
+            x += x_incr
+            D += 2 * dy
+        else
+            y += y_incr
+            D += 2 * dx
+        endif
+
+        i += 1
+    endwhile
+    
+    fill(x, y)
+endfunc
+    \end{lstlisting}
+    
+
+
+
+
+    \section{Hårdvaran}
+
+    Vår konstruktion består i grunden av en hårdvaruaccelererad grafikprocessor
+    för 3-dimensionella objekt och modeller som utökas med en centralprocessor
+    som kan manipulera objekten som renderas och även utföra aritmetik på tal
+    och vektorer. Programmet som körs på apparaten programmeras vid start via
+    UART. En översikt av konstruktionen ses i blockschemat i figur
+    \ref{fig:top_module}. 
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{top_module.png}
+        \caption{Översiktligt blockschema över  konstruktionen}
+        \label{fig:top_module}
+    \end{figure}
+    
+    \subsection{Centralprocessor}
+    \textbf{TODO: copy paste}
+
+
+
+
+    \subsection{UART}
+    För att snabbt och enkelt ladda in programkod i programminnet används UART.
+    Eftersom varje instruktion i programminnet är 64 bitar lång krävs det alltså 8
+    bytes för att ladda in en hel instruktion. Detta görs genom två olika
+    skiftregister, ett 10-bitars skiftregister som innehåller de 10 senaste bitarna
+    och ett 64-bitars skiftregister som innehåller de 8 senaste bytes som laddats
+    in. När 8 bytes laddats in (en hel instruktion) i UART-komponenten laddas dessa
+    in i programminnet samtidigt som minnets nuvarande adress inkrementeras med ett.
+    Allt detta styrs av en styrenhet bestående av tre räknare, en som räknar varje
+    klockpuls för varje bit, en som räknar alla bitar för varje byte och en som
+    räknar alla bitar för varje instruktion. När dessa räknare nått sitt maxvärde
+    sätts respektive laddpulser (sp, lp, mp) som får skiftregistren och
+    programminnet att uppdateras. Den sista “instruktionen” består enbart av ettor
+    och får UART-komponenten att sluta arbeta. Figur \ref{uart_block} visar ett enkelt blockschema
+    som beskriver kretsen. 
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{uart_block}
+        \caption{Blockschema för UART kretsen}
+        \label{fig:uart_block}
+    \end{figure}
+
+
+
+    \subsection{Tangentbordsavkodare}
+
+    För att använda ett tangentbord används en komponent som hanterar de
+    PS/2-signaler som uppstår vid tangentnedtryck. Kretsen beskrivs i figur
+    \ref{kbd_dec}. En
+    enkel tillståndsmaskin används för att ta reda på vilken tangent som är
+    nedtryckt. Tillståndsmaskinen består av två tillstånd, IDLE och BREAK. Vid IDLE
+    undersöks om nuvarande byte i shiftregistret stämmer med den kod för relevanta
+    tangenter (tangenten sätts som nedtryckt) eller om koden är lika med den som
+    föregår den sekvens som uppstår när en tangent släpps (tillståndet sätts till
+    BREAK). Vid BREAK undersöks om nuvarande byte i shiftregistret stämmer med
+    relevanta tangenter varvid tangenten sätts som uppsläppt. Tillståndet övergår
+    alltid till IDLE vid BREAK.  
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{kbd_dec}
+        \caption{Blockschema för tangentbordsavkodaren}
+        \label{fig:kbd_dec}
+    \end{figure}
+
+    \subsection{Objektminne}
+
+    För att rendera modellerna på skärmen lagras olika objekt med specificerad
+    modell, position och rotation. Objekten i minnet kan manipuleras med hjälp av
+    processorinstruktioner och på så sätt ändra dess antal och egenskaper. 
+
+    Formatet består av 4 ord per objekt där varje ord representerar en egenskap av
+    position, rotation, skala, och en pekare till modellminnet i denna ordning.
+    Notera att egenskapen för skala inte används i den nuvarande implementationen av
+    grafikprocessorn utan finns kvar för kompatibilitetsskäl. Efter alla objekt
+    finns ett ord bestående av enbart höga bitar. Strukturen på objektminnet kan ses
+    i figur \ref{fig:obj_mem_structure}. 
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[]{obj_mem_structure}
+        \caption{Objektminnets struktur}
+        \label{fig:obj_mem_structure}
+    \end{figure}
+
+
+
+    \subsection{Grafikprocessor}
+    Alla objekt definierade i objektminnet renderas varje bildskärmsuppdatering från
+    dess 3-dimensionella representation till 2-dimensionella koordinater på skärmen
+    med hjälp av apparatens grafikprocessor. Detta sker i ett antal steg som kan ses
+    i figur \ref{gpu_states}. 
+    Grafikprocessorn kommer, 60 gånger i sekunden, läsa in alla objekt i
+    objektminnet och omvandla deras information till pixelminnet. Vid uppdatering av
+    ett objekt kommer grafikprocessorn först läsa in den information som finns i
+    objektminnet. Därefter räknas trigonometriska värden ut från objektets rotation.
+    Nu kommer grafikenheten, för varje linje i objektets modell, bestämma vilka
+    pixlar mellan start- och slutpunkt som ska sättas som “vit” i pixelminnet. 
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{gpu_states}
+        \caption{Översiktligt state-diagram för GPUn}
+        \label{fig:gpu_states}
+    \end{figure}
+
+    \subsubsection{Inläsning av modeller}
+    \textbf{TODO}
+
+    \subsubsection{Beräkning av trigonometriska funktioner}
+    Objektets rotation används för att beräkna olika trigonometriska värden som
+    används i beräkningen av linjernas koordinater med avseende på rotationen. Det
+    sker med hjälp av ett sinus lookup table där varje kombination av sin och cos
+    för x,y,z vinkeln beräknas sekventiellt. 
+
+    \subsubsection{Inläsning av linjer}
+    Varje linje består  av två vektorer, en start och en slutvektor. Dessa står i
+    modellminnet och en modell avslutas med en linje som har FFFF… som både start
+    och slutvektor. Om den inlästa inte är en slutmarkör går GPUn vidare till nästa
+    state, annars går den till att läsa nästa  linje. (egentligen sker den kollen
+    efter beräkningen av den  roterade vektorn). 
+
+    \subsubsection{Beräkning av linjens roterade position}
+    Den nyligen inlästa linjen roteras med hjälp av en rotationsmatris (figur
+    \ref{rot_matrix}) som beräknas med de värden som tidigare bestämdes för
+    objektets rotation. Egentligen beräknas inte rotationsmatrisen utan
+    resultatet av rotationsmatrisen multiplicerat med positions vektorn beräknas
+    direkt. Eftersom att GPUn inte hanterar djup beräknas bara X och  Y
+    elementen i den nya positionen viket kan ses  i figur \ref{rot_matrix}. 
+
+    Beräkningen sker sekventiellt för både start och slutvektorn för linen. För
+    att beräkna varje element beräknas först de trigonometriska funktionerna
+    ihop två och två. Är det 3 trig funktioner  i en delberäkning sparas
+    resultatet av de två första  i en  buffer som sedan multipliceras med den
+    tredje. När en delberäkning är klar  multipliceras den med ett av elementen
+    i positionsvektorn och resultatet sparas i en accumulator. När  ett helt
+    element i  slutvektorn har beräknats sparas  det och nästa element beräknas.
+    När  processen är klar för både start och slutvektorn går GPUn vidare  till
+    att rita ut linjerna. Ett blockschema för processen kan ses i figur
+    \ref{rotated_matrix} 
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{rot_matrix}
+        \caption{rot_matrix}
+        \label{fig:rot_matrix}
+    \end{figure}
+
+\end{document}
+
+
+%notes
+\iffalse
+\fi
