@@ -436,8 +436,8 @@ endforeach
     förhandsgranska godtyckliga modeller.
 
     Formatet består av ett jämt antal ord där en linje består av ett ord för start och ett för
-    stopp. De 16 första bitarna i ett ord för antingen start eller stopp representerar x-positionen
-    och de 16 följande bitarna representerar y-positionen. Efter alla linjer följer två ord med 
+    stopp. De 48 första bitarna i dessa ord representerar koordinatens position, där 16 bitar
+    vardera används för respektive axel i ordningen x, y, z. Efter alla linjer följer två ord med 
     alla bitar höga för att indikera modellens slut. Se figur \ref{fig:model_mem_structure}.
 
     \begin{figure}[H]
