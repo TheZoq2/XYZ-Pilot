@@ -764,6 +764,42 @@ ENDIF
     \end{figure}
 
 	\section{Slutsats}
+        Med vår apparat har vi utvärderat flera olika tekniker och algoritmer som använts i verklig
+        hårdvara. Vi kan med kunskapen vi funnit efter att ha implementerat dessa på egen hand
+        konstatera att mycket tidig hårdvara hade hårda krav på simplicitet i kretsarna där både
+        Bresenham's Linjealgoritm och Linear-Feedback Shift Register är tydliga exempel på detta. Vi
+        visste i början av projektet att funktioner liknande dessa skulle behövas men det var inte
+        förrän vi började som vi tittade på de här historiska komponenterna på riktigt.
+
+        Den större
+        delen av vår grafikprocessor är väldigt mycket mer komplicerad än dessa kretsar och bygger
+        på komplicerade trigonometriska kretsar. Trots att vi visste att det skulle innebära mycket
+        matematik att implementera den tredimensionella projektion vi definierat i 
+        designspecifikationen var vi inte beredda på riktigt hur mycket som skulle krävas, vilket är
+        varför all planerad funktionalitet inte implementerats. Med detta sagt är det mycket vi
+        lärt oss om grafikprocessorer i det här projektet som lyft det området inom datateknik för
+        hela gruppen och det har blivit lättare att greppa vad ett grafikkort faktiskt gör.
+
+        Grafikprocessorn är den del i projektet där vi haft minst tidigare erfarenhet eller
+        dokumentation att gå på. I princip alla andra delar av apparaten har vi kunnat använda
+        simpla och beprövade kretsar med inspiration från algoritmer och blockscheman. CPU:n som är
+        den näst mest komplicerade kretsen i apparaten har vi fått förklarad under föreläsningar och
+        laborationer så det har inte blivit särskilt mycket nytt att resonera runt där. GPU:n har
+        beprövat våra kunskaper i VHDL och hårdvarutänkande i allt från design av blockscheman till
+        att vara konsekvent i kodbasen. Hade det gått att implementera den här kretsen på ett bättre
+        sätt än vi gjort? Ja, helt klart. Det finns många designfel i vår apparat ur ett
+        hårdvaruperspektiv men det betyder inte att vi inte har en bra lösning; med den tidigare
+        kunskap inom ämnet vi har är det orimligt att vänta sig att vi skulle upptäcka de felen från
+        början. När projektet närmade sig sitt slut kunde vi identifiera vissa fel som ledde till
+        sämre prestanda men eftersom vår apparats resurser låg långt över gränsen för vad som
+        faktiskt behövdes och eftersom tiden var knaper valde vi att inte ta itu med problemen.
+
+        I det stora hela har möjligheten att kunna definiera fullständigt godtyckliga logiska 
+        kretsar med hjälp av VHDL inneburit att vi lärt oss otroligt mycket inom ämnet och det har
+        i princip bara varit tiden och FPGA-chippets storlek som satt gränserna. Faktum är att vi
+        med tillräckligt mycket tid säkert hade kunnat implementerat hela vår designspecifikation
+        och även projicera det tredimensionella rummet med djup - trots att vi inte kunnat något
+        alls om ämnet tidigare.
 \end{document}
 
 
