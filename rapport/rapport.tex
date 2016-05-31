@@ -100,8 +100,9 @@
     avser att ge studenter kunskap om hur datorer fungerar i dess minsta
     beståndsdelar. Förutom projektarbetet består kursen av en förberedande
     laborationsdel som lägger behandlar de grundläggande kunskaperna i
-    processorkonstruktion och VHDL-kod. \footnote{\url{
-http://kdb-5.liu.se/liu/lith/studiehandboken/svkursplan.lasso?&k_kurskod=TSEA83&k_budget_year=2016}}
+    processorkonstruktion och VHDL-kod\footnote{Kursplan för TSEA83 Datorkonstruktion, 
+    studiehandboken på LiTH, \url{http://kdb-5.liu.se/liu/lith/studiehandboken/svkursplan.lasso?&k_kurskod=TSEA83&k_budget_year=2016}
+    (hämtad 2016-05-24)}.
     
 
 
@@ -183,7 +184,7 @@ http://kdb-5.liu.se/liu/lith/studiehandboken/svkursplan.lasso?&k_kurskod=TSEA83&
     algortimen rör sig från början till slut. Blir felet tillräckligt stort
     korrigeras det och felet minskar då med en enhet. Felet ökar med absolutvärdet
     av kvoten mellan komponenternas längd för varje passerad pixel i algoritmens
-    ursprungliga form, som då kräver decimaltalsaritmetik. En implementation av
+    ursprungliga form, som då kräver decimaltalsaritmetik\footnote{Bresenham's Line Algorithm, \url{https://en.wikipedia.org/wiki/Bresenham\%27s_line_algorithm} (hämtad 2016-05-24)}. En implementation av
     detta följer nedan. 
 
     \begin{lstlisting}[]
@@ -343,7 +344,7 @@ endforeach
 	på olika sätt beroende på vilken instruktion som körs. När beräkningar är gjorde sätts 
 	elementen ihop igen för en resulterande vektor. En enkel illustration i figur \ref{fig:vector_instr} beskriver 
 	hur detta fungerar. Notera att hårdvara för kvadrering krävs för beräkning av vektorlängd. 
-	Algoritmen för denna vhdl-kod har tagits från vhdlguru.blogspot.se.
+	Algoritmen för denna vhdl-kod har tagits från vhdlguru.blogspot.se\footnote{A VHDL Function for finding SQUARE ROOT, \url{http://vhdlguru.blogspot.se/2010/03/vhdl-function-for-finding-square-root.html} (hämtad 2016-05-27)}.
 
     \begin{figure}[H]
         \centering
@@ -351,11 +352,6 @@ endforeach
         \caption{Illustration över hur vektorinstruktioner fungerar}
         \label{fig:vector_instr}
     \end{figure}
-
-    \subsubsection{Linear feedback shift register}
-    Ännu en unik instruktion är den som sätter ett till synes slumpmässigt tal i valfri 
-	register. För att lyckas med detta används komponenten Linear Feedback Shift Register.
-    \footnote{\url{http://vhdlguru.blogspot.se/2010/03/vhdl-function-for-finding-square-root.html}}
 
     \subsection{UART}
     För att snabbt och enkelt ladda in programkod i programminnet används UART.
@@ -549,8 +545,6 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
     begynnelsevillkor för att sedan stega igenom den axel för linjen som är
     längst och fylla de positioner som stegas igenom i pixelminnet. En
     detaljerad beskrivning av algoritmen finns i teorikapitlet.
-    \footnote{\url{https://en.wikipedia.org/wiki/Bresenham\%27s\_line\_algorithm}}
-    %TODO: Fix this url, it contains a \
 
     \subsubsection{Väntan}
 
@@ -820,6 +814,14 @@ ENDIF
         med tillräckligt mycket tid säkert hade kunnat implementerat hela vår designspecifikation
         och även projicera det tredimensionella rummet med djup - trots att vi inte kunnat något
         alls om ämnet tidigare.
+
+    \section{Referenser}
+    \begin{enumerate}
+      \item Bresenham's Line Algorithm, \url{https://en.wikipedia.org/wiki/Bresenham\%27s_line_algorithm} (hämtad 2016-05-24)
+      \item Kursplan för TSEA83 Datorkonstruktion, 
+        studiehandboken på LiTH, \url{http://kdb-5.liu.se/liu/lith/studiehandboken/svkursplan.lasso?&k_kurskod=TSEA83&k_budget_year=2016} (hämtad 2016-05-24)
+      \item A VHDL Function for finding SQUARE ROOT, \url{http://vhdlguru.blogspot.se/2010/03/vhdl-function-for-finding-square-root.html} (hämtad 2016-05-27)
+    \end{enumerate}
 
     \section{VHDL kod}
     Koden är väl kommenterad och borde vara lätt att förstå med hjälp av den här
