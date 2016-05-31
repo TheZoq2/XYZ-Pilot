@@ -623,7 +623,7 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
     element och en som kan gå tvärt om. 
 
     Vektor-addition och subtraktion är relativt enkla, kombinatoriska kretsar
-    adderar och
+    och adderar respektive
     subtraherar bara varje element i vektorn. Även skalärprodukt och
     längdberäkningarna görs kombinatoriskt precis som det skulle göras rent
     matematiskt. 
@@ -641,7 +641,7 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
     plats i bitvektorn där heltals delen börjar. Alla heltal förskjuts så att de
     börjar vid den punkten, sedan multipliceras talen med varandra och förskjuts
     tillbaka dubbelt så långt. Detta fungerar tack vare ekvation
-    \ref{eq:mult_shift}
+    \ref{eq:mult_shift}.
 
     \begin{equation}
         \label{eq:mult_shift}
@@ -652,7 +652,7 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
     Eftersom vi inte var säkra på hur aritmetiska shift-funktoner skulle
     behandla signed tal valde vi att implementera ett eget format för små tal.
     Vi insåg att vi aldrig skulle behöva multiplicera två stora tal med varandra
-    och bry oss om decimal delen, det räcker med multiplikation av små
+    och bry oss om decimaldelen, det räcker med multiplikation av små
     "decimaltal" och multiplikation av heltal med små decimaltal. De stora talen
     behandlas endast som 16 bitars signed tal samtidigt som små tal är 16 bitars
     bitvektorer där den sista biten är sign-bit och de 9 första bitarna är
@@ -661,7 +661,7 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
 
     Multiplikation av två små tal sker genom att de två "storleksdelarna"
     multipliceras ihop och resultatet förskjuts tillbaka åt höger. Tecknet på
-    det nya talet blir XOR av de två original tecknen. Ett blockschema för
+    det nya talet blir XOR av de två originaltecknen. Ett blockschema för
     kretsen kan ses i figur \ref{fig:small_numbers}.
 
     Multiplikation av ett litet och ett stort tal är aningen mer komplicerat
@@ -669,7 +669,7 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
     signed tal. Absolutbeloppet av det stora talet förskjuts 8 bitar åt vänster
     och multipliceras med värdes delen av det lilla talet. Resultatet förskjuts
     tillbaka 16 bitar. För att få rätt tecken på resultatet multipliceras
-    resultatet med -1 om xor av de båda talens teckenbit är 1. Även den här
+    resultatet med -1 om XOR av de båda talens teckenbit är 1. Även den här
     processen beskrivs i figur \ref{fig:small_numbers}.
 
     \begin{figure}[H]
@@ -797,7 +797,7 @@ ENDIF
         förrän vi började som vi tittade på de här historiska komponenterna på riktigt.
 
         Den större
-        delen av vår grafikprocessor är väldigt mycket mer komplicerad än dessa kretsar och bygger
+        delen av vår grafikprocessor är väldigt mycket mer avancerad än dessa kretsar och bygger
         på komplicerade trigonometriska kretsar. Trots att vi visste att det skulle innebära mycket
         matematik att implementera den tredimensionella projektion vi definierat i 
         designspecifikationen var vi inte beredda på riktigt hur mycket som skulle krävas, vilket är
