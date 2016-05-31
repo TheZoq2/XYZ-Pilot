@@ -61,17 +61,15 @@
 \usepackage{parskip} %used for \setlength 
 \setlength{\parindent}{15pt}  %Add line break after each paragraph 
 \raggedright %Right justify text
-\title{R-laboration: Svängande balk}
-\author{Frans Skarman}
-\date{November 2015}
+\title{Rapport XYZ-Pilot}
+\author{Jesper Westell}
+\date{Juni 2016}
 
 %Graphics
 
 %\def \zeleSource {Zele, John M, \textit{Python as a First Language} [www] <\url{http://mcsp.wartburg.edu/zelle/python/python-first.html}> hämtad 2015-11-04}
 \begin{document}
     \begin{titlepage}
-
-        
 
     	\vspace{2cm}
         \centering
@@ -153,15 +151,15 @@
 
     \section{Teori}
     \subsection{3D-grafik}
-    3d objekt representeras oftast som en mängd vektorer som beskriver hörnpunkter i
+    3D-objekt representeras oftast som en mängd vektorer som beskriver hörnpunkter i
     objektet, linjer som binder ihop dessa vektorer och ytor som binder ihop dessa
-    linjer. I vårat projekt finns inga ytor och för enkelhetens skull beskriver vi
+    linjer. I vårt projekt finns inga ytor och för enkelhetens skull beskriver vi
     inte linjer som två index till punkter utan direkt som två vektorer. 
 
-    I moderna GPUer används 4 dimensionella  vektorer istället för 3d vilket
+    I moderna GPUer används 4-dimensionella  vektorer istället för 3D vilket
     möjliggör rotation, skalning och translation av en vektor i en enda
     matrismultiplikation. Från början tänkte vi också göra det vilket är anledningen
-    till att våra  vektorer är 4 dimensionella. 
+    till att våra  vektorer är 4-dimensionella. 
 
     
     \subsection{Bresenhams linjealgoritm}
@@ -263,7 +261,7 @@ endfunc
     \section{Hårdvaran}
 
     Vår konstruktion består i grunden av en hårdvaruaccelererad grafikprocessor
-    för 3-dimensionella objekt och modeller som utökas med en centralprocessor
+    	för 3-dimensionella objekt och modeller som utökas med en centralprocessor
     som kan manipulera objekten som renderas och även utföra aritmetik på tal
     och vektorer. Programmet som körs på apparaten programmeras vid start via
     UART. En översikt av konstruktionen ses i blockschemat i figur
@@ -277,9 +275,49 @@ endfunc
     \end{figure}
     
     \subsection{Centralprocessor}
-    \textbf{TODO: copy paste}
+	För att manipulera det som ritas med hjälp av grafikenheten används en processor 
+	som med hjälp av instruktioner i programminnet bestämmer de värden som finns i 
+	objektminnet. Processorn, som är naivt pipelinad, läser av instruktioner från 
+	programminnet och utför beräkningar som får spelet att uppdateras. Alla minnen 
+	och register är 64 bitar breda för att vektorer ska få plats på en adress. 
+	Ett översiktligt blockschema finns i Figur \ref{fig:cpu}.
 
+	För att spara programminne används extra hårdvara som automatiskt kör tre NOPar 
+	mellan varje instruktion. Denna krets ger även möjligheten för processorn att “vänta” 
+	på att VGA-motorn ska rendera klart en bild. En av processorns instruktioner får 
+	NOP-logiken att ständigt skapa NOPar i processorn, något som kommer att pågå tills 
+	VGA-motorn skickar en signal när den har renderat en bild.
 
+	Det sista registret bland registerfilerna används för att spara information om vilka 
+	knappar på tangentbordet är nedtryckta. Varje gång det finns en instruktion i IM4 som 
+	inte skriver till något register passar processorn på att uppdatera detta register 
+	från det register som finns i tangentbordsavkodaren. Detta innebär att de nedtryckta 
+	tangenterna ständigt hålls uppdaterade eftersom majoriteten av instruktionerna som körs 
+	är NOPar.
+
+	\begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{cpu.png}
+        \caption{Överskådligt blockschema över kretsen}
+        \label{fig:cpu}
+    \end{figure}
+	
+	\subsection{Vektorinstruktioner}
+	Förutom vanliga instruktioner har processorn även stöd för instruktioner som hanterar 
+	vektorer. Bland annat används addition och subtraktion av vektorer, samt skalärprodukt 
+	och vektorlängd. Detta är möjligt tack vare separata komponenter som används i ALUn. 
+	Innan en vektor ska användas vid beräkning delas den först upp i element som sedan används 
+	på olika sätt beroende på vilken instruktion som körs. När beräkningar är gjorde sätts 
+	elementen ihop igen för en resulterande vektor. En enkel illustration i figur \ref{fig:vector_instr} beskriver 
+	hur detta fungerar. Notera att hårdvara för kvadrering krävs för beräkning av vektorlängd. 
+	Algoritmen för denna vhdl-kod har tagits från vhdlguru.blogspot.se.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{vector_instr.png}
+        \caption{Illustration över hur vektorinstruktioner fungerar}
+        \label{fig:vector_instr}
+    \end{figure}
 
 
     \subsection{UART}
@@ -295,7 +333,7 @@ endfunc
     räknar alla bitar för varje instruktion. När dessa räknare nått sitt maxvärde
     sätts respektive laddpulser (sp, lp, mp) som får skiftregistren och
     programminnet att uppdateras. Den sista “instruktionen” består enbart av ettor
-    och får UART-komponenten att sluta arbeta. Figur \ref{uart_block} visar ett enkelt blockschema
+    och får UART-komponenten att sluta arbeta. Figur \ref{fig:uart_block} visar ett enkelt blockschema
     som beskriver kretsen. 
 
     \begin{figure}[H]
@@ -311,7 +349,7 @@ endfunc
 
     För att använda ett tangentbord används en komponent som hanterar de
     PS/2-signaler som uppstår vid tangentnedtryck. Kretsen beskrivs i figur
-    \ref{kbd_dec}. En
+    \ref{fig:kbd_dec}. En
     enkel tillståndsmaskin används för att ta reda på vilken tangent som är
     nedtryckt. Tillståndsmaskinen består av två tillstånd, IDLE och BREAK. Vid IDLE
     undersöks om nuvarande byte i shiftregistret stämmer med den kod för relevanta
@@ -354,7 +392,7 @@ endfunc
     Alla objekt definierade i objektminnet renderas varje bildskärmsuppdatering från
     dess 3-dimensionella representation till 2-dimensionella koordinater på skärmen
     med hjälp av apparatens grafikprocessor. Detta sker i ett antal steg som kan ses
-    i figur \ref{gpu_states}. 
+    i figur \ref{fig:gpu_states}. 
     Grafikprocessorn kommer, 60 gånger i sekunden, läsa in alla objekt i
     objektminnet och omvandla deras information till pixelminnet. Vid uppdatering av
     ett objekt kommer grafikprocessorn först läsa in den information som finns i
