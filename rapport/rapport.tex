@@ -422,7 +422,24 @@ endforeach
         \label{fig:obj_mem_structure}
     \end{figure}
 
+    \subsection{Modellminne}
+    Inprogrammerat i apparatens FPGA finns de modeller som apparaten stödjer där dessa lagras som
+    ett antal linjer i en 3-dimensionell rymd. För att lättare fylla detta minne finns det verktyg
+    för att konvertera Wavefrontmodeller (*.obj) till det format som används i VHDL-koden. Med 
+    hjälp av detta och tillräckligt mycket minne kan vår apparat även användas för att
+    förhandsgranska godtyckliga modeller.
 
+    Formatet består av ett jämt antal ord där en linje består av ett ord för start och ett för
+    stopp. De 16 första bitarna i ett ord för antingen start eller stopp representerar x-positionen
+    och de 16 följande bitarna representerar y-positionen. Efter alla linjer följer två ord med 
+    alla bitar höga för att indikera modellens slut. Se figur \ref{fig:model_mem_structure}.
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{model_mem_structure}
+        \caption{Modellminnets struktur}
+        \label{fig:model_mem_structure}
+    \end{figure}
 
     \subsection{Grafikprocessor}
     Alla objekt definierade i objektminnet renderas varje bildskärmsuppdatering från
