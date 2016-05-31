@@ -370,7 +370,11 @@ endfunc
     \end{figure}
 
     \subsubsection{Inläsning av modeller}
-    \textbf{TODO}
+    Varje linje består  av två vektorer, en start och en slutvektor. Dessa står i
+    modellminnet och en modell avslutas med en linje som har FFFF… som både start
+    och slutvektor. Om den inlästa inte är en slutmarkör går GPUn vidare till nästa
+    state, annars går den till att läsa nästa  linje. (egentligen sker den kollen
+    efter beräkningen av den  roterade vektorn). 
 
     \subsubsection{Beräkning av trigonometriska funktioner}
     Objektets rotation används för att beräkna olika trigonometriska värden som
