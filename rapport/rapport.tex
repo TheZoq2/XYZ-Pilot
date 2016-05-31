@@ -73,11 +73,18 @@
 
     	\vspace{2cm}
         \centering
+        \includegraphics[width=0.7\textwidth]{title_img.jpeg} \par
     	{\huge\bfseries XYZ-Pilot\par}
+        \vspace{1cm}
+        \large{Jesper Westell, Patrik Sletmo \& Frans Skarman}
+
     	\vfill
-    
-    	\vfill
+
+        \large{\today}
     \end{titlepage}
+
+    \tableofcontents
+    \newpage
     
     \section{Inledning}
     Den här tekniska rapporten behandlar ett projektarbete i kursen TSEA83:
@@ -92,7 +99,8 @@
     avser att ge studenter kunskap om hur datorer fungerar i dess minsta
     beståndsdelar. Förutom projektarbetet består kursen av en förberedande
     laborationsdel som lägger behandlar de grundläggande kunskaperna i
-    processorkonstruktion och VHDL-kod. 
+    processorkonstruktion och VHDL-kod. \footnote{\url{
+http://kdb-5.liu.se/liu/lith/studiehandboken/svkursplan.lasso?&k_kurskod=TSEA83&k_budget_year=2016}}
     
 
 
@@ -297,7 +305,7 @@ endfunc
 
 	\begin{figure}[H]
         \centering
-        \includegraphics[width=0.8\linewidth]{cpu.png}
+        \includegraphics[width=0.8\linewidth]{CPU.png}
         \caption{Överskådligt blockschema över kretsen}
         \label{fig:cpu}
     \end{figure}
@@ -319,10 +327,10 @@ endfunc
         \label{fig:vector_instr}
     \end{figure}
 
-	\subsubsection{Linear Feedback Shift Register}
-	Ännu en unik instruktion är den som sätter ett till synes slumpmässigt tal i valfri 
+    \subsubsection{Linear feedback shift register}
+    Ännu en unik instruktion är den som sätter ett till synes slumpmässigt tal i valfri 
 	register. För att lyckas med detta används komponenten Linear Feedback Shift Register.
-	\textbf{TODO: någon skriv, helst Patrik som kan}
+    \footnote{\url{http://vhdlguru.blogspot.se/2010/03/vhdl-function-for-finding-square-root.html}}
 
     \subsection{UART}
     För att snabbt och enkelt ladda in programkod i programminnet används UART.
@@ -412,7 +420,11 @@ endfunc
     \end{figure}
 
     \subsubsection{Inläsning av modeller}
-    \textbf{TODO}
+    Varje linje består  av två vektorer, en start och en slutvektor. Dessa står i
+    modellminnet och en modell avslutas med en linje som har FFFF… som både start
+    och slutvektor. Om den inlästa inte är en slutmarkör går GPUn vidare till nästa
+    state, annars går den till att läsa nästa  linje. (egentligen sker den kollen
+    efter beräkningen av den  roterade vektorn). 
 
     \subsubsection{Beräkning av trigonometriska funktioner}
     Objektets rotation används för att beräkna olika trigonometriska värden som
@@ -494,7 +506,9 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
     linjealgortim för att rita ut den. Först förbereds algortimens
     begynnelsevillkor för att sedan stega igenom den axel för linjen som är
     längst och fylla de positioner som stegas igenom i pixelminnet. En
-    detaljerad beskrivning av algoritmen finns i teorikapitlet. 
+    detaljerad beskrivning av algoritmen finns i teorikapitlet.
+    \footnote{\href{
+            https://en.wikipedia.org/wiki/Bresenham\%27s\_line\_algorithm}}
 
     \subsubsection{Väntan}
 
