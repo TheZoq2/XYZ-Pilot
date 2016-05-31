@@ -548,6 +548,72 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
     
 
 
+    \subsection{Matematikhårdvara}
+    För att rita 3d modeller hade vi två stora matematiska problem som behövde
+    lösas. För det första behövdes hårdvara för att behandla vektorer som
+    används för den största delen av 3d grafiken och spellogiken. Det andra som
+    behövs är hårdvara för beräkning av sinus och cosinus värden för vinklar som
+    används vid rotation.
+    
+    \subsubsection{Vektorer}
+    Hårdvaran för att behandla vektorer har två viktiga jobb, att spara vektorer
+    och att göra matematiska beräkningar på dem. Vektorer sparas som vanliga
+    bitvektorer i datorns minne där varje 16 bitar representerar ett element i
+    vektorn och vi har en komponent som kan gå från minnesrepresentation till
+    element och en som kan gå tvärt om. 
+
+    Vektor addition och subtraktion är relativt enkla, kombinatoriska kretsar
+    adderar och
+    subtraherar bara varje element i vektorn. Även skalärprodukt och
+    längdberäkningarna görs kombinatoriskt precis som det skulle göras rent
+    matematiskt. 
+
+    \subsubsection{Trigonometriska funktioner}
+    För att "beräkna" cosinus och sinus av vinklar används ett enkelt lookup
+    table som tar en 8 bitars vinkel och returnerar ett värde för cosinus eller
+    sinus. För att förenkla hårdvaran beräknas sinus i CPUn genom att addera en
+    fjärdedels period till vinkeln och beräkna cosinus av den vinkeln. 
+
+    \subsubsection{Beräkningar med "små" tal}
+    Eftersom att VHDL inte har inbyggt stöd för varken flyttal eller någon form
+    av fixed point system behövde vi designa ett eget system för att
+    multiplicera tal som är mindre än 1. Grundprincipen är att vi väljer en
+    plats i bitvektorn där heltals delen börjar. Alla heltal förskjuts så att de
+    börjar vid den punkten, sedan multipliceras talen med varandra och förskjuts
+    tillbaka dubbelt så långt. Detta fungerar tack vare ekvation
+    \ref{eq:mult_shift}
+
+    \begin{equation}
+        \label{eq:mult_shift}
+        a \cdot b = \frac{a 2^n}{2^n} \cdot \frac{b 2^n}{2^n} = \frac{a2^n *
+        b2^n}{2^{2n}}
+    \end{equation}
+
+    Eftersom vi inte var säkra på hur aritmetiska shift funktoner skulle
+    behandla signed tal valde vi att implementera ett eget format för små tal.
+    Vi insåg att vi aldrig skulle behöva multiplicera två stora tal med varandra
+    och bry oss om decimal delen, det recker med multiplikation av små
+    "decimaltal" och multiplikation av heltal med små decimaltal. De stora talen
+    behandlas endast som 16 bitars signed tal medan små tal är 16 bitars
+    bitvektorer där den sista biten är sign bit och de 9 första bitarna är
+    storleken på talet, sparad som unsigned där bit 9 är den enda heltals biten
+    för att möjliggöra sparning av talet 1. 
+
+    Multiplikation av två små tal sker genom att de två "storleks delarna"
+    multipliceras ihop och resultatet förskjuts tillbaka åt höger. Tecknet på
+    det nya talet blir xor av de två original tecknen. Ett blockschema för
+    kretsen kan ses i figur \ref{fig:small_numbers}.
+
+    Multiplikation av ett litet och ett stort tal är aningen mer komplicerat
+    eftersom att det stora talet är signed och resultatet också ska vara ett
+    signed tal. Absolutbeloppet av det stora talet förskjuts 8 bitar åt vänster
+    och multipliceras med värdes delen av det lilla talet. Resultatet förskjuts
+    tillbaka 16 bitar. För att få rätt tecken på resultatet multipliceras
+    resultatet med -1 om xor av de båda talens teckenbit är 1. Även den här
+    processen beskrivs i figur \ref{fig:small_numbers}.
+
+
+
 
     \section{Mjukvara}
     \subsection{Assembler}
