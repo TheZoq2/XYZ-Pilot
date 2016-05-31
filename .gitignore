@@ -188,3 +188,7 @@ work
 
 #Latex temp files
 *.aux
+
+# Compiled report
+/rapport/rapport.toc
+/rapport/rapport.pdf
