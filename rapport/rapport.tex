@@ -669,7 +669,31 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
         STÅ  HÄR. DET KAN JU BLI MISSFÖRSTÅND!}
 
     \subsection{Spellogiken}
-	Spelet kan ses som en stor loop där allt i loopen sker 60 gånger i sekunden. 
+	Spelet kan ses som en stor loop där allt i loopen sker 60 gånger i sekunden. Flödesschemat
+	i figur \ref{fig:game_logic} visar en ungefärlig bild över hur spelet fungerar. Nytt spel
+	startas alltid med att initialisera värden och sätta variabler. Efter detta hamnar kontrollflödet
+	i den stora loopen som börjar med att uppdatera skeppets position. Precis innan skeppets slutgiltiga
+	position skrivs i objektminnet görs en kontroll om skeppet är utanför någon gräns. Om detta 
+	stämmer nollställs hastigheten i den riktningen och positionen justeras innan det
+	skrivs in i objektminnet. Efter detta uppdateras skottens position och ett eventuellt nytt 
+	skott skjuts iväg. Asteroiderna uppdateras i flera steg. Först kontrolleras det om någon asteroid 
+	hamnat utanför en gräns som satts. Om detta stämmer ändras asteroidens position till en fast punkt,
+    ASTEROID\_GRAVEYARD som det döpts till i koden. När denna kontroll gjorts för alla asteroider kommer 
+	de att uppdatera sin position och rotation. De som nyligen flyttats till ASTEROID\_GRAVEYARD kommer 
+	få en ny position utanför skärmen, slumpmässigt valt på en rektangel utanför skärmen, samtidigt 
+	som de får en slumpmässig hastighet och rotation. För varje asteroid kontrolleras även kollision
+	med skott, varvid asteroidens position uppdateras till ASTEROID\_GRAVEYARD och antalet poäng ökas. 
+	Slutligen kontrolleras kollision mellan skeppet och någon av asteroiderna. Om detta stämmer har 
+	spelaren förlorat och spelet startas på nytt. Om ingen kollision skett kommer processorn vänta på att
+	VGA-motorn renderat en skärm innan den gör om allt igen. Kollisionsdetektion sker genom att kolla 
+	vektorlängden mellan två objekts postionsvektorer.
+	
+	\begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{game_logic.png}
+        \caption{Flödesschema över spelets logik}
+        \label{fig:game_logic}
+    \end{figure}
 \end{document}
 
 
