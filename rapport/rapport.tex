@@ -99,7 +99,7 @@
     Kursen TSEA83 läses av studenter på civilingenjörsprogrammet datateknik och
     avser att ge studenter kunskap om hur datorer fungerar i dess minsta
     beståndsdelar. Förutom projektarbetet består kursen av en förberedande
-    laborationsdel som lägger behandlar de grundläggande kunskaperna i
+    laborationsdel som behandlar de grundläggande kunskaperna i
     processorkonstruktion och VHDL-kod\footnote{Kursplan för TSEA83 Datorkonstruktion, 
     studiehandboken på LiTH, \url{http://kdb-5.liu.se/liu/lith/studiehandboken/svkursplan.lasso?&k_kurskod=TSEA83&k_budget_year=2016}
     (hämtad 2016-05-24)}.
@@ -177,11 +177,11 @@
     Bresenhams linjealgoritm utvecklades på IBM under tidigt 1960-tal och hade den
     stora fördelen att dess implementation endast kräver heltalsaddition,
     subtraktion och shiftande av bitar. Eftersom algoritmen är så pass snabb och
-    simpel finns den realiserad i många existerande grafikprocessorer och vilket är
-    varför vi valt att använda den i vårt projekt.  
+    simpel finns den realiserad i många existerande grafikprocessorer och är
+    anledningen varför vi valt att använda den i vårt projekt.  
 
     Algoritmen bygger på att räkna ut felet som uppstår jämfört motstående axel när
-    algortimen rör sig från början till slut. Blir felet tillräckligt stort
+    algoritmen rör sig från början till slut. Blir felet tillräckligt stort
     korrigeras det och felet minskar då med en enhet. Felet ökar med absolutvärdet
     av kvoten mellan komponenternas längd för varje passerad pixel i algoritmens
     ursprungliga form, som då kräver decimaltalsaritmetik\footnote{Bresenham's Line Algorithm, \url{https://en.wikipedia.org/wiki/Bresenham\%27s_line_algorithm} (hämtad 2016-05-24)}. En implementation av
@@ -343,7 +343,7 @@ endforeach
 	Innan en vektor ska användas vid beräkning delas den först upp i element som sedan används 
 	på olika sätt beroende på vilken instruktion som körs. När beräkningar är gjorde sätts 
 	elementen ihop igen för en resulterande vektor. En enkel illustration i figur \ref{fig:vector_instr} beskriver 
-	hur detta fungerar. Notera att hårdvara för kvadrering krävs för beräkning av vektorlängd. 
+	hur detta fungerar. Notera att hårdvara för att bestämma kvadratroten av ett tal krävs för beräkning av vektorlängd. 
 	Algoritmen för denna vhdl-kod har tagits från vhdlguru.blogspot.se\footnote{A VHDL Function for finding SQUARE ROOT, \url{http://vhdlguru.blogspot.se/2010/03/vhdl-function-for-finding-square-root.html} (hämtad 2016-05-27)}.
 
     \begin{figure}[H]
@@ -360,7 +360,7 @@ endforeach
     skiftregister, ett 10-bitars skiftregister som innehåller de 10 senaste bitarna
     och ett 64-bitars skiftregister som innehåller de 8 senaste bytes som laddats
     in. När 8 bytes laddats in (en hel instruktion) i UART-komponenten laddas dessa
-    in i programminnet samtidigt som minnets nuvarande adress inkrementeras med ett.
+    in i programminnet samtidigt som minnets nuvarande adress adderas med ett.
     Allt detta styrs av en styrenhet bestående av tre räknare, en som räknar varje
     klockpuls för varje bit, en som räknar alla bitar för varje byte och en som
     räknar alla bitar för varje instruktion. När dessa räknare nått sitt maxvärde
@@ -386,8 +386,8 @@ endforeach
     enkel tillståndsmaskin används för att ta reda på vilken tangent som är
     nedtryckt. Tillståndsmaskinen består av två tillstånd, IDLE och BREAK. Vid IDLE
     undersöks om nuvarande byte i shiftregistret stämmer med den kod för relevanta
-    tangenter (tangenten sätts som nedtryckt) eller om koden är lika med den som
-    föregår den sekvens som uppstår när en tangent släpps (tillståndet sätts till
+    tangenter (--> tangenten sätts som nedtryckt) eller om koden är lika med den som
+    föregår den sekvens som uppstår när en tangent släpps (--> tillståndet sätts till
     BREAK). Vid BREAK undersöks om nuvarande byte i shiftregistret stämmer med
     relevanta tangenter varvid tangenten sätts som uppsläppt. Tillståndet övergår
     alltid till IDLE vid BREAK.  
@@ -406,7 +406,7 @@ endforeach
     processorinstruktioner och på så sätt ändra dess antal och egenskaper. 
 
     Formatet består av 4 ord per objekt där varje ord representerar en egenskap av
-    position, rotation, skala, och en pekare till modellminnet i denna ordning.
+    position, rotation, skala samt en pekare till modellminnet i denna ordning.
     Notera att egenskapen för skala inte används i den nuvarande implementationen av
     grafikprocessorn utan finns kvar för kompatibilitetsskäl. Efter alla objekt
     finns ett ord bestående av enbart höga bitar. Strukturen på objektminnet kan ses
@@ -458,31 +458,24 @@ endforeach
     \end{figure}
 
     \subsubsection{Inläsning av modeller}
-    Varje linje består  av två vektorer, en start och en slutvektor. Dessa står i
-    modellminnet och en modell avslutas med en linje som har FFFF… som både start
+    Varje linje i en modell består av två vektorer, en start och en slutvektor. Dessa står i
+    modellminnet och en modell avslutas med en linje som har enbart höga bitar som både start
     och slutvektor. Om den inlästa inte är en slutmarkör går GPUn vidare till nästa
-    state, annars går den till att läsa nästa  linje. (egentligen sker den kollen
-    efter beräkningen av den  roterade vektorn). 
+    state, annars går den till att läsa nästa modell. (egentligen sker den kollen
+    efter beräkningen av den roterade vektorn). 
 
     \subsubsection{Beräkning av trigonometriska funktioner}
     Objektets rotation används för att beräkna olika trigonometriska värden som
     används i beräkningen av linjernas koordinater med avseende på rotationen. Det
-    sker med hjälp av ett sinus lookup table där varje kombination av sin och cos
+    sker med hjälp av ett "sinus lookup table" där varje kombination av sin och cos
     för x,y,z vinkeln beräknas sekventiellt. 
-
-    \subsubsection{Inläsning av linjer}
-    Varje linje består  av två vektorer, en start och en slutvektor. Dessa står i
-    modellminnet och en modell avslutas med en linje som har FFFF… som både start
-    och slutvektor. Om den inlästa inte är en slutmarkör går GPUn vidare till nästa
-    state, annars går den till att läsa nästa  linje. (egentligen sker den kollen
-    efter beräkningen av den  roterade vektorn). 
 
     \subsubsection{Beräkning av linjens roterade position}
     Den nyligen inlästa linjen roteras med hjälp av en rotationsmatris (figur
     \ref{fig:rot_matrix}) som beräknas med de värden som tidigare bestämdes för
     objektets rotation. Egentligen beräknas inte rotationsmatrisen utan
     resultatet av rotationsmatrisen multiplicerat med positions vektorn beräknas
-    direkt. Eftersom att GPUn inte hanterar djup beräknas bara X och  Y
+    direkt. Eftersom GPUn inte hanterar djup beräknas bara X och  Y
     elementen i den nya positionen. Den roterade vektorn kan ses i
     figur \ref{fig:rotated_vector}. 
 
@@ -524,18 +517,18 @@ x cos(b) sin(c)+z (cos(a) sin(b) sin(c)-cos(c) sin(a))+y (cos(a) cos(c)+sin(a) s
 z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
             \end{pmatrix}
         \]
-        \caption{Matriserna som ska multipliceras för att rotera med eulervinklar}
+        \caption{Resultatet vid matrismultiplikation}
         \label{fig:rotated_vector}
     \end{figure}
 
     Beräkningen sker sekventiellt för både start och slutvektorn för linen. För
     att beräkna varje element beräknas först de trigonometriska funktionerna
-    ihop två och två. Är det 3 trig funktioner  i en delberäkning sparas
-    resultatet av de två första  i en  buffer som sedan multipliceras med den
-    tredje. När en delberäkning är klar  multipliceras den med ett av elementen
-    i positionsvektorn och resultatet sparas i en accumulator. När  ett helt
-    element i  slutvektorn har beräknats sparas  det och nästa element beräknas.
-    När  processen är klar för både start och slutvektorn går GPUn vidare  till
+    ihop två och två. Är det exempelvis tre trigonometriska funktioner i en delberäkning sparas
+    resultatet av de två första i en buffer som sedan multipliceras med den
+    tredje. När en delberäkning är klar multipliceras den med ett av elementen
+    i positionsvektorn och resultatet sparas i en accumulator. När ett helt
+    element i slutvektorn har beräknats sparas det och nästa element beräknas.
+    När processen är klar för både start och slutvektorn går GPUn vidare till
     att rita ut linjerna. Ett blockschema för processen kan ses i figur
     \ref{fig:rotation_hardware} 
 
@@ -554,18 +547,18 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
 
     \subsection{Pixelminne}
 
-    Pixelminnet fungerar som kommunikationsbrygga mellan GPUn och VGA motorn.
-    Eftersom att GPUn inte kommer ihåg vilka linjer som har ritats ut så måste
+    Pixelminnet fungerar som kommunikationsbrygga mellan GPUn och VGA-motorn.
+    Eftersom GPUn inte kommer ihåg vilka linjer som har ritats ut så måste
     skärmen någon gång rensas från den förra bilden. Vi valde att låta VGA motorn
     sköta det eftersom att den ändå stegar igenom varje pixel i bilden. Ett problem
     med den lösningen är att GPUn inte kan rita sin bild samtidigt som VGA motorn
-    rensar då delar av bilden i så fall skulle rensas bort innan de ritas ut. Därför
-    valde vi att dubbelbuffra pixelminnet. 
+    rensar då delar av bilden i så fall skulle rensas bort innan de ritas ut. Därför är
+    pixelminnet dubbelbuffrat. 
 
-    Pixelminnet består av två identiska block RAM, ett som GPUn skriver till och ett
-    som VGA motorn läser och rensar. När VGA motorn är färdig med en bild signalerar
-    den till pixelminnet att det ska byta RAM som läses och skrivs. Då läser VGA
-    motorn från det RAM som GPUn skrev till vid förra bilduppdateringen och GPUn får
+    Pixelminnet består alltså av två identiska block-RAM, ett som GPUn skriver till och ett
+    som VGA-motorn läser från och rensar. När VGA-motorn är färdig med en bild signalerar
+    den till pixelminnet att det ska byta RAM som läses och skrivs. Då läser VGA-motorn 
+    från det RAM som GPUn skrev till vid förra bilduppdateringen och GPUn får
     ett nyrensat minne att skriva i. 
 
     \begin{figure}[H]
@@ -590,7 +583,7 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
     “storpixel” sätts på skärmen skickar VGA-motorn en signal till pixelminnet
     för att nollställa just den “storpixeln”. När en hel bild har uppdaterats
     sänds en signal till konstruktionens CPU och GPU för att informera att de
-    ska fortsätta jobba. En detaljerad beskrivning syns i figur \ref{VGA_motor}. 
+    ska fortsätta jobba. En detaljerad beskrivning syns i figur \ref{fig:VGA_motor}. 
 
     \begin{figure}[H]
         \centering
@@ -599,14 +592,11 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
         \label{fig:VGA_motor}
     \end{figure}
 
-    
-
-
     \subsection{Matematikhårdvara}
-    För att rita 3d modeller hade vi två stora matematiska problem som behövde
+    För att rita 3D-modeller fanns två stora matematiska problem som behövde
     lösas. För det första behövdes hårdvara för att behandla vektorer som
-    används för den största delen av 3d grafiken och spellogiken. Det andra som
-    behövs är hårdvara för beräkning av sinus och cosinus värden för vinklar som
+    används för den största delen av 3D-grafiken och spellogiken. Det andra som
+    behövdes är hårdvara för beräkning av sinus- och cosinus-värden för vinklar som
     används vid rotation.
     
     \subsubsection{Vektorer}
@@ -616,14 +606,14 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
     vektorn och vi har en komponent som kan gå från minnesrepresentation till
     element och en som kan gå tvärt om. 
 
-    Vektor addition och subtraktion är relativt enkla, kombinatoriska kretsar
+    Vektor-addition och subtraktion är relativt enkla, kombinatoriska kretsar
     adderar och
     subtraherar bara varje element i vektorn. Även skalärprodukt och
     längdberäkningarna görs kombinatoriskt precis som det skulle göras rent
     matematiskt. 
 
     \subsubsection{Trigonometriska funktioner}
-    För att "beräkna" cosinus och sinus av vinklar används ett enkelt lookup
+    För att "beräkna" cosinus- och sinus-värden av vinklar används ett enkelt lookup
     table som tar en 8 bitars vinkel och returnerar ett värde för cosinus eller
     sinus. För att förenkla hårdvaran beräknas sinus i CPUn genom att addera en
     fjärdedels period till vinkeln och beräkna cosinus av den vinkeln. 
@@ -643,30 +633,28 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
         b2^n}{2^{2n}}
     \end{equation}
 
-    Eftersom vi inte var säkra på hur aritmetiska shift funktoner skulle
+    Eftersom vi inte var säkra på hur aritmetiska shift-funktoner skulle
     behandla signed tal valde vi att implementera ett eget format för små tal.
     Vi insåg att vi aldrig skulle behöva multiplicera två stora tal med varandra
-    och bry oss om decimal delen, det recker med multiplikation av små
+    och bry oss om decimal delen, det räcker med multiplikation av små
     "decimaltal" och multiplikation av heltal med små decimaltal. De stora talen
-    behandlas endast som 16 bitars signed tal medan små tal är 16 bitars
-    bitvektorer där den sista biten är sign bit och de 9 första bitarna är
-    storleken på talet, sparad som unsigned där bit 9 är den enda heltals biten
+    behandlas endast som 16 bitars signed tal samtidigt som små tal är 16 bitars
+    bitvektorer där den sista biten är sign-bit och de 9 första bitarna är
+    storleken på talet, sparad som unsigned där bit nummer 9 är den enda heltals-biten
     för att möjliggöra sparning av talet 1. 
 
-    Multiplikation av två små tal sker genom att de två "storleks delarna"
+    Multiplikation av två små tal sker genom att de två "storleksdelarna"
     multipliceras ihop och resultatet förskjuts tillbaka åt höger. Tecknet på
-    det nya talet blir xor av de två original tecknen. Ett blockschema för
+    det nya talet blir XOR av de två original tecknen. Ett blockschema för
     kretsen kan ses i figur \ref{fig:small_numbers}.
 
     Multiplikation av ett litet och ett stort tal är aningen mer komplicerat
-    eftersom att det stora talet är signed och resultatet också ska vara ett
+    eftersom det stora talet är signed och resultatet också ska vara ett
     signed tal. Absolutbeloppet av det stora talet förskjuts 8 bitar åt vänster
     och multipliceras med värdes delen av det lilla talet. Resultatet förskjuts
     tillbaka 16 bitar. För att få rätt tecken på resultatet multipliceras
     resultatet med -1 om xor av de båda talens teckenbit är 1. Även den här
     processen beskrivs i figur \ref{fig:small_numbers}.
-
-
 
 
     \section{Mjukvara}
@@ -701,7 +689,7 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
     programkoden och kan istället användas för att förklara koden. 
     \subsubsection{Loopar}
     Eftersom mycket i det program som används för apparaten bygger på att iterera över diverse data
-    blir det lätt krånligt att hålla koll på alla labels som behövs. För att göra programflödet
+    blir det lätt krångligt att hålla koll på alla labels som behövs. För att göra programflödet
     tydligare i utvecklingsfasen innehåller därför assemblern stöd för att upprepa en mängd kod
     tills dess villkor inte längre är uppfyllt. Assemblern genererar automatiskt kod för att ladda
     in eventuella variabler i register och kan även operera direkt på registeralias.
@@ -732,14 +720,14 @@ ENDIF
     \end{lstlisting}
 
     \subsection{3D modeller}
-    3D modeller kan skapas i valfritt 3d modellerings program som  kan exportera
-    till .obj format. Med hjälp av två skript kan obj filen sedan konverteras
+    3D-modeller kan skapas i valfritt 3D-modellerings program som kan exporteras
+    till .obj-format. Med hjälp av två skript kan .obj-filen sedan konverteras
     till data som läggs in i modellminnet. Det första skriptet,
     obj\_converter.py
-    konverterar en .obj fil till kordinaterna för alla linjer i modellen. Det
+    konverterar en .obj-fil till koordinaterna för alla linjer i modellen. Det
     andra  skriptet, coord\_generator.py tar listan av koordinater och genererar
-    data som passar i objektminnet. Coord generator skriptet kan ta en parameter
-    som bestämmer var i objektminnet modellen ska börja så  man enkelt kan
+    data som passar i objektminnet. Det andra skriptet kan ta en parameter
+    som bestämmer var i objektminnet modellen ska börja så man enkelt kan
     lägga till modellerna efter varandra. Hela operationen kan göras med
     följande kommando:
 
@@ -762,7 +750,7 @@ ENDIF
 	hamnat utanför en gräns som satts. Om detta stämmer ändras asteroidens position till en fast punkt,
     ASTEROID\_GRAVEYARD som det döpts till i koden. När denna kontroll gjorts för alla asteroider kommer 
 	de att uppdatera sin position och rotation. De som nyligen flyttats till ASTEROID\_GRAVEYARD kommer 
-	få en ny position utanför skärmen, slumpmässigt valt på en rektangel utanför skärmen, samtidigt 
+	få en ny position utanför skärmen, slumpmässigt valt längs en rektangel utanför skärmen, samtidigt 
 	som de får en slumpmässig hastighet och rotation. För varje asteroid kontrolleras även kollision
 	med skott, varvid asteroidens position uppdateras till ASTEROID\_GRAVEYARD och antalet poäng ökas. 
 	Slutligen kontrolleras kollision mellan skeppet och någon av asteroiderna. Om detta stämmer har 
@@ -782,7 +770,7 @@ ENDIF
         hårdvara. Vi kan med kunskapen vi funnit efter att ha implementerat dessa på egen hand
         konstatera att mycket tidig hårdvara hade hårda krav på simplicitet i kretsarna där både
         Bresenham's Linjealgoritm och Linear-Feedback Shift Register är tydliga exempel på detta. Vi
-        visste i början av projektet att funktioner som liknande dessa skulle behövas men det var inte
+        visste i början av projektet att funktioner som liknade dessa skulle behövas men det var inte
         förrän vi började som vi tittade på de här historiska komponenterna på riktigt.
 
         Den större
@@ -810,7 +798,7 @@ ENDIF
 
         I det stora hela har möjligheten att kunna definiera fullständigt godtyckliga logiska 
         kretsar med hjälp av VHDL inneburit att vi lärt oss otroligt mycket inom ämnet och det har
-        i princip bara varit tiden och FPGA-chippets storlek som satt gränserna. Faktum är att vi
+        i princip bara varit tiden och FPGA-chipets storlek som satt gränserna. Faktum är att vi
         med tillräckligt mycket tid säkert hade kunnat implementerat hela vår designspecifikation
         och även projicera det tredimensionella rummet med djup - trots att vi inte kunnat något
         alls om ämnet tidigare.
