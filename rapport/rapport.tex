@@ -736,6 +736,25 @@ IF X != Y
 ENDIF
     \end{lstlisting}
 
+    \subsection{3D modeller}
+    3D modeller kan skapas i valfritt 3d modellerings program som  kan exportera
+    till .obj format. Med hjälp av två skript kan obj filen sedan konverteras
+    till data som läggs in i modellminnet. Det första skriptet,
+    obj\_converter.py
+    konverterar en .obj fil till kordinaterna för alla linjer i modellen. Det
+    andra  skriptet, coord\_generator.py tar listan av koordinater och genererar
+    data som passar i objektminnet. Coord generator skriptet kan ta en parameter
+    som bestämmer var i objektminnet modellen ska börja så  man enkelt kan
+    lägga till modellerna efter varandra. Hela operationen kan göras med
+    följande kommando:
+
+    \begin{lstlisting}[language=bash]
+        python3 obj_converter.py <filnamn>.obj | python3 coord_converter <start index>
+    \end{lstlisting}
+
+    Resultatet av ovanstående kommando är en lång lista av minnesdata till
+    modellminnet som ska läggas in i deklarationen av modellminnet.
+
     \subsection{Spellogiken}
 	Spelet kan ses som en stor loop där allt i loopen sker 60 gånger i sekunden. Flödesschemat
 	i figur \ref{fig:game_logic} visar en ungefärlig bild över hur spelet fungerar. Nytt spel
@@ -764,6 +783,13 @@ ENDIF
     \end{figure}
 
 	\section{Slutsats}
+
+    \section{VHDL kod}
+    Koden är väl kommenterad och borde vara lätt att förstå med hjälp av den här
+    rapporten. En sak som kan vara värd att notera är dock att deklarationen av
+    GPU\_Info som innehåller ett antal typdeklarationner som används i GPUn
+    ligger i model\_mem.vhd. Detta är på grund av att vi hade problem med
+    include ordningen i makefilen och inte har flyttat ut GPU\_Info igen.
 \end{document}
 
 
