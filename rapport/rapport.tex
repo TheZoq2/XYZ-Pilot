@@ -263,11 +263,34 @@ func drawLine(x0, y0, x1, y1)
 endfunc
     \end{lstlisting}
     
+    \subsection{Linear-Feedback Shift Register}
+    För att implementera en slumpfunktion för vår apparat använder vi oss av ett så kallad 
+    Linear-Feedback Shift Register, härmed kallad LFSR. Ett LFSR är ett register som med hjälp av 
+    en inshiftad feedback-bit cyklar igenom ett antal tillstånd och på så sätt skapar en markant
+    bättre slumpfunktion än att bara stega upp ett värde varje cykel. Genom att uppfylla ett visst
+    antal faktorer går det att skapa en konfiguration för LFSR som resulterar i en maximal period.
+    En maximal period innehåller $2^{antal\_bitar} - 1$ cykler innan värdet på registret upprepas.
 
+    Ett LFSR bygger på att ett antal bitar av registret slås ihop med hjälp av en XOR-krets och
+    sedan skiftas in som den mest signifikanta biten. Genom att välja ett register med jämt antal 
+    relativt prima bitar som används i XOR-kretsen skapar man förutsättningen för att uppnå en
+    optimal period för registret. För att underlätta skapandet av optimala LFSR används tabeller
+    där de bitar som används för att skapa en maximal period är angivna. Eftersom komponenterna som
+    används för att realisera kretsen endast bygger på XOR-grindar blir kretsen billig att tillverka
+    och erbjuder ett stort värde jämfört med dess kostnad. Den funktion och det seed som används i
+    vår apparat med 64-bitars register är illustrerat i nedanstående kodblock.
 
+    \begin{lstlisting}[]
+SEED = 0x0408151623422760
+register = SEED
 
+foreach clock
+    next = ((register >> 0) ^ (register >> 1) ^ (register >> 3) ^ (register >> 4)) & 1
+    register = (register >> 1) | (next << 15)
+endforeach
+    \end{lstlisting}
 
-    \section{Hårdvaran}
+\section{Hårdvaran}
 
     Vår konstruktion består i grunden av en hårdvaruaccelererad grafikprocessor
     	för 3-dimensionella objekt och modeller som utökas med en centralprocessor
@@ -665,9 +688,36 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
     börjar med tecknet för kommentarer hamnar inte i den genererande
     programkoden och kan istället användas för att förklara koden. 
     \subsubsection{Loopar}
-    Eftersom mycket i det program som vi  \textbf{PATRIK F:R FAN DU KAN JU INTE BARA
-        DRA UTAN ATT AVSLUTA MENINGEN. HUR I HELVETE SKA JAG VETA VAD SOM SKA
-        STÅ  HÄR. DET KAN JU BLI MISSFÖRSTÅND!}
+    Eftersom mycket i det program som används för apparaten bygger på att iterera över diverse data
+    blir det lätt krånligt att hålla koll på alla labels som behövs. För att göra programflödet
+    tydligare i utvecklingsfasen innehåller därför assemblern stöd för att upprepa en mängd kod
+    tills dess villkor inte längre är uppfyllt. Assemblern genererar automatiskt kod för att ladda
+    in eventuella variabler i register och kan även operera direkt på registeralias.
+
+    \begin{lstlisting}
+WHILE X >= Y
+    # Perform operation
+ENDWHILE
+    \end{lstlisting}
+
+    \subsubsection{Villkorligt programflöde}
+    För att utöka syntaxen för programflödet ytterligare erbjuder assemblern möjligheten att
+    deklarera villkorligt programflöde, även kallat if-satser. Rent funktionellt är det mycket som
+    denna syntax har gemensamt med looparna, båda läser in och jämför variabler och registeralias på
+    samma sätt. Skillnaden är att if-satser endast kollar villkoret en gång och går sedan vidare.
+    En begränsning med denna sats är att den endast stödjer en jämförelse i taget, det går alltså
+    inte att ändra flödet ifall två villkor eller minst ett av flera villkor stämmer. För att uppnå
+    den funktionaliteten behöver man kedja flera satser för att uppnå önskat resultat. Det finns
+    heller inget stöd för att agera på motsatsen till ett villkor.
+
+    \begin{lstlisting}
+IF X == Y
+    # Operation 1
+ENDIF
+IF X != Y
+    # Operation 2
+ENDIF
+    \end{lstlisting}
 
     \subsection{Spellogiken}
 	Spelet kan ses som en stor loop där allt i loopen sker 60 gånger i sekunden. Flödesschemat
