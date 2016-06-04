@@ -733,9 +733,12 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
 	\textbf{MOVLO} - Insättning av låga bitar\\
 		\quad Operation: REG1(31-0)=DATA\\
 		\quad Syntax: MOVLO REG1, DATA \\
-	\textbf{STOREOBJ} - Lagring av data i objektminnet\\
+	\textbf{STOREOBJ} - Lagring av data i objektminnet, omedelbar adressering\\
 		\quad Operation: OBJMEM[DATA]=REG1\\
 		\quad Syntax: STOREOBJ REG1 DATA \\
+        \textbf{STOREOBJ.R} - Lagring av data i objektminnet, indexerad adressering\\
+                \quad Operation: OBJMEM[DATA+REG2]=REG1\\
+                \quad Syntax: STOREOBJ.R REG1 REG2 DATA\\
 	\textbf{STORE} - Lagring av data i dataminnet, omedelbar adressering\\
 		\quad Operation: DATAMEM(DATA)=REG1\\
 		\quad Syntax: STORE REG1, DATA \\
@@ -763,6 +766,10 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
 	\textbf{WAITFRAME} - Vänta på att VGA-motorn renderat en bild\\
 		\quad Operation: Kör NOPar tills CPUn får en signal från VGA-motorn\\
 		\quad Syntax: WAITFRAME\\
+        \textbf{DBG} - Ändrar det nuvarande värdet på segment-displayen\\
+                \quad Operation: Visar de 16 minst signifikanta bitarna i REG1 på
+                      segment-displayen\\
+                \quad Syntax: DBG REG1\\
 	\textbf{BTST} - Test av enskild bit i ett register\\
 		\quad Operation: Z=1, om REG1(DATA) == 1, annars Z=0\\
 		\quad Syntax: BTST REG1 DATA \\
