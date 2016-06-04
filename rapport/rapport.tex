@@ -2,34 +2,43 @@
 \usepackage[utf8]{inputenc} %Make sure all UTF8 characters work in the document
 \usepackage[T1]{fontenc}
 
-\usepackage{listings} %Add code sections
+\usepackage{listings}
 \usepackage{color}
-\usepackage{textcomp}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{ %
+  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}
+  basicstyle=\footnotesize,        % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{mygreen},    % comment style
+  deletekeywords={...},            % if you want to delete keywords from the given language
+  escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  frame=none,	                   % adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  keywordstyle=\color{black},       % keyword style
+  language=python,                 % the language of the code
+  otherkeywords={*,...},           % if you want to add more keywords to the set
+  numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=5pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+  rulecolor=\color{white},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stepnumber=1,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  stringstyle=\color{mymauve},     % string literal style
+  tabsize=2,	                   % sets default tabsize to 2 spaces
+  title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
 \usepackage[hyphens]{url}
 \usepackage[breaklinks]{hyperref}
-\definecolor{listinggray}{gray}{0.9}
-\definecolor{lbcolor}{rgb}{0.9,0.9,0.9}
-\lstset{
-	backgroundcolor=\color{lbcolor},
-	tabsize=4,
-	rulecolor=,
-    basicstyle=\scriptsize,
-    upquote=true,
-    aboveskip={1.5\baselineskip},
-    columns=fixed,
-    showstringspaces=false,
-    extendedchars=true,
-    breaklines=true,
-    prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
-    frame=single,
-    showtabs=false,
-    showspaces=false,
-    showstringspaces=false,
-    identifierstyle=\ttfamily,
-    keywordstyle=\color[rgb]{0,0,1},
-    commentstyle=\color[rgb]{0.133,0.545,0.133},
-    stringstyle=\color[rgb]{0.627,0.126,0.941},
-}
 
 %Set page size
 \usepackage{geometry}
@@ -769,6 +778,16 @@ z cos(a) cos(b)+y sin(a) cos(b)-x sin(b)
 	\textbf{RANDOM} - Inladdning av slumpmässigt tal i ett register \\
 		\quad Operation: REG1=RANDOMVALUE\\
 		\quad Syntax: RANDOM REG1\\
+    \textbf{LEN} - Beräknar längen av en vektor \\
+        \quad Operation: REG1=len(REG2)\\
+		\quad Syntax: LEN REG1 REG2\\
+    \textbf{DOT} - Beräknar skalärprodukten av en vektor \\
+        \quad Operation: REG1=dot(REG2)\\
+		\quad Syntax: DOT REG1 REG2\\
+    \textbf{MULCOS} - Beräknar cosinusvärdet av en vinkel och multiplicerar det med ett heltal \\
+        \quad Operation: REG1=cos(REG2) * REG3\\
+		\quad Syntax: DOT REG1 REG2 REG3\\
+        
 
     \subsection{Assembler}
 
